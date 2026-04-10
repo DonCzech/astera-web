@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-accent: #40accd;
+  --color-accent-hover: #298ead;
+  --color-text-dark: #1f1f1f;
+  --color-bg-gray: #f9f7f7;
+  --color-bg-blue: #f2f6fc;
+  --color-footer-bg: #f1f6fc;
+  --font-serif: 'Playfair Display', serif;
+  --font-sans: 'Poppins', sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #1f1f1f;
+  background: #ffffff;
+  margin: 0;
+  padding: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Playfair Display', serif;
+  color: #1f1f1f;
+}
+
+h1 { font-size: 38px; line-height: 45px; letter-spacing: 1px; font-weight: 700; }
+h2 { font-size: 32px; line-height: 40px; font-weight: 700; }
+h3 { font-size: 20px; line-height: 26px; font-weight: 600; }
+h4 { font-size: 20px; line-height: 30px; font-weight: 500; }
+
+.btn-primary {
+  display: inline-block;
+  background-color: #40accd;
+  color: #ffffff !important;
+  border-radius: 20px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 10px 50px;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-primary:hover { background-color: #298ead; }
+
+.input-round {
+  background-color: #f1f6fc;
+  border: 1px solid #dde5f0;
+  border-radius: 20px;
+  padding: 10px 18px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  color: #1f1f1f;
+  outline: none;
+}
+.input-round:focus { border-color: #40accd; }
+
+.roundit { border-radius: 12px; overflow: hidden; }
+
+.container-main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 30px;
+}
+
+@media (max-width: 992px) {
+  h1 { font-size: 30px; line-height: 38px; }
+  h2 { font-size: 26px; line-height: 34px; }
+}
+@media (max-width: 640px) {
+  h1 { font-size: 26px; line-height: 34px; }
+  h2 { font-size: 22px; line-height: 30px; }
+  .btn-primary { padding: 10px 30px; }
+}
