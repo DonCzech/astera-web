@@ -23,6 +23,38 @@ export interface SocialLink {
   href: string;
 }
 
+export type BlockType = "heading" | "text" | "image" | "button" | "banner" | "newsletter" | "spacer";
+
+export interface PageBlock {
+  id: string;
+  type: BlockType;
+  content?: string;
+  align?: "left" | "center" | "right";
+  level?: "h1" | "h2" | "h3" | "h4";
+  color?: string;
+  fontSize?: number;
+  src?: string;
+  alt?: string;
+  width?: string;
+  href?: string;
+  bgColor?: string;
+  textColor?: string;
+  size?: "sm" | "md" | "lg";
+  bgImage?: string;
+  subtitle?: string;
+  ctaText?: string;
+  ctaHref?: string;
+  body?: string;
+  height?: number;
+}
+
+export interface CustomPage {
+  id: string;
+  slug: string;
+  title: string;
+  blocks: PageBlock[];
+}
+
 export interface AboutPageSection {
   heroTitle: string;
   heroSubtitle: string;
@@ -91,6 +123,7 @@ export interface SiteContent {
     socialLinks: SocialLink[];
   };
   aboutPage: AboutPageSection;
+  pages: CustomPage[];
 }
 
 export const SITE = "https://www.asteralight.cz";
@@ -237,4 +270,5 @@ export const DEFAULT_CONTENT: SiteContent = {
       { number: "38+", label: "Years Clean & Sober" },
     ],
   },
+  pages: [],
 };

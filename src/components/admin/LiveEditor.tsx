@@ -1,7 +1,7 @@
 "use client";
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useContent } from "@/context/ContentContext";
-import { SiteContent, NavItem, ManifestCard, FooterLink } from "@/lib/content-types";
+import { SiteContent, NavItem, ManifestCard, FooterLink, CustomPage, PageBlock, BlockType } from "@/lib/content-types";
 import RichTextEditor from "./RichTextEditor";
 
 type Section = keyof SiteContent;
@@ -15,7 +15,8 @@ const SECTIONS: { key: Section; label: string }[] = [
   { key: "pickacard", label: "Pick Card" },
   { key: "oracle", label: "Oracle" },
   { key: "footer", label: "Footer" },
-  { key: "aboutPage", label: "Stránka: O nás" },
+  { key: "aboutPage", label: "O nás" },
+  { key: "pages", label: "📋 Stránky" },
 ];
 
 const PANEL_W = 460; // panel width desktop
@@ -417,6 +418,250 @@ function AboutPageEditor() {
   );
 }
 
+// ── Pages editor ─────────────────────────────────────────────────────────────────
+
+const BLOCK_TYPES: { type: BlockType; label: string; icon: string }[] = [
+  { type: "heading", label: "Nadpis", icon: "H" },
+  { type: "text", label: "Text", icon: "T" },
+  { type: "image", label: "Obrázek", icon: "🖼" },
+  { type: "button", label: "Button", icon: "⬜" },
+  { type: "banner", label: "Banner", icon: "🎨" },
+  { type: "newsletter", label: "Newsletter", icon: "📧" },
+  { type: "spacer", label: "Mezera", icon: "↕" },
+];
+
+function BlockEditorPanel({ block, onUpdate, onDelete, onUp, onDown, isFirst, isLast }: {
+  block: PageBlock;
+  onUpdate: (b: PageBlock) => void;
+  onDelete: () => void;
+  onUp: () => void;
+  onDown: () => void;
+  isFirst: boolean;
+  isLast: boolean;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const inp = (label: string, key: keyof PageBlock, type = "text") => (
+    <div style={{ marginBottom: 8 }}>
+      <label style={{ display: "block", fontSize: 10, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", marginBottom: 3 }}>{label}</label>
+      <input
+        type={type}
+        value={(block[key] as string) || ""}
+        onChange={e => onUpdate({ ...block, [key]: type === "number" ? Number(e.target.value) : e.target.value })}
+        style={{ width: "100%", padding: "5px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12, boxSizing: "border-box" }}
+      />
+    </div>
+  );
+  const sel = (label: string, key: keyof PageBlock, options: string[]) => (
+    <div style={{ marginBottom: 8 }}>
+      <label style={{ display: "block", fontSize: 10, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", marginBottom: 3 }}>{label}</label>
+      <select value={(block[key] as string) || ""} onChange={e => onUpdate({ ...block, [key]: e.target.value })}
+        style={{ width: "100%", padding: "5px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12 }}>
+        {options.map(o => <option key={o} value={o}>{o}</option>)}
+      </select>
+    </div>
+  );
+
+  const btype = BLOCK_TYPES.find(bt => bt.type === block.type);
+
+  return (
+    <div style={{ border: "1px solid #e5e7eb", borderRadius: 8, marginBottom: 8, overflow: "hidden" }}>
+      <div style={{ display: "flex", alignItems: "center", padding: "8px 10px", background: "#f9fafb", gap: 4 }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: "#374151", flex: 1, cursor: "pointer" }} onClick={() => setExpanded(e => !e)}>
+          {btype?.icon} {btype?.label} {expanded ? "▲" : "▼"}
+        </span>
+        <button onClick={onUp} disabled={isFirst} style={{ padding: "2px 7px", fontSize: 12, border: "1px solid #e5e7eb", borderRadius: 5, background: "#fff", cursor: isFirst ? "default" : "pointer", opacity: isFirst ? 0.4 : 1 }}>↑</button>
+        <button onClick={onDown} disabled={isLast} style={{ padding: "2px 7px", fontSize: 12, border: "1px solid #e5e7eb", borderRadius: 5, background: "#fff", cursor: isLast ? "default" : "pointer", opacity: isLast ? 0.4 : 1 }}>↓</button>
+        <button onClick={onDelete} style={{ padding: "2px 7px", fontSize: 12, border: "1px solid #fca5a5", borderRadius: 5, background: "#fff", color: "#ef4444", cursor: "pointer" }}>✕</button>
+      </div>
+      {expanded && (
+        <div style={{ padding: "10px 12px" }}>
+          {/* Common fields */}
+          {(block.type === "heading") && <>
+            {inp("Text nadpisu", "content")}
+            {sel("Úroveň", "level", ["h1", "h2", "h3", "h4"])}
+            {sel("Zarovnání", "align", ["left", "center", "right"])}
+            {inp("Barva (#hex)", "color")}
+            {inp("Velikost (px)", "fontSize", "number")}
+          </>}
+          {block.type === "text" && <>
+            <div style={{ marginBottom: 8 }}>
+              <label style={{ display: "block", fontSize: 10, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", marginBottom: 3 }}>Obsah (HTML)</label>
+              <textarea value={block.content || ""} onChange={e => onUpdate({ ...block, content: e.target.value })}
+                rows={4} style={{ width: "100%", padding: "5px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12, boxSizing: "border-box", resize: "vertical" }} />
+            </div>
+            {sel("Zarovnání", "align", ["left", "center", "right"])}
+          </>}
+          {block.type === "image" && <>
+            {inp("URL obrázku", "src")}
+            {inp("Alt text", "alt")}
+            {sel("Šířka", "width", ["100%", "75%", "50%", "25%", "auto"])}
+            {inp("Odkaz (href)", "href")}
+            {sel("Zarovnání", "align", ["left", "center", "right"])}
+          </>}
+          {block.type === "button" && <>
+            {inp("Text buttonu", "content")}
+            {inp("Odkaz (href)", "href")}
+            {inp("Barva pozadí (#hex)", "bgColor")}
+            {inp("Barva textu (#hex)", "textColor")}
+            {sel("Velikost", "size", ["sm", "md", "lg"])}
+            {sel("Zarovnání", "align", ["left", "center", "right"])}
+          </>}
+          {block.type === "banner" && <>
+            {inp("Nadpis", "content")}
+            {inp("Podtitulek", "subtitle")}
+            {inp("Barva pozadí (#hex nebo gradient)", "bgColor")}
+            {inp("URL obrázku pozadí", "bgImage")}
+            {inp("Text CTA buttonu", "ctaText")}
+            {inp("Odkaz CTA buttonu", "ctaHref")}
+            {sel("Zarovnání", "align", ["left", "center", "right"])}
+          </>}
+          {block.type === "newsletter" && <>
+            {inp("Nadpis", "content")}
+            {inp("Popis", "body")}
+            {sel("Zarovnání", "align", ["left", "center", "right"])}
+          </>}
+          {block.type === "spacer" && <>
+            {inp("Výška (px)", "height", "number")}
+          </>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PagesEditor() {
+  const { content, updateSection } = useContent();
+  const pages: CustomPage[] = content.pages || [];
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [newSlug, setNewSlug] = useState("");
+  const [newTitle, setNewTitle] = useState("");
+  const [addingBlock, setAddingBlock] = useState(false);
+
+  const selected = pages.find(p => p.id === selectedId) || null;
+
+  function addPage() {
+    if (!newSlug.trim() || !newTitle.trim()) return;
+    const slug = newSlug.toLowerCase().replace(/[^a-z0-9-]/g, "-");
+    const page: CustomPage = { id: Date.now().toString(), slug, title: newTitle.trim(), blocks: [] };
+    updateSection("pages", [...pages, page]);
+    setSelectedId(page.id);
+    setNewSlug(""); setNewTitle("");
+  }
+
+  function deletePage(id: string) {
+    if (!confirm("Smazat stránku?")) return;
+    updateSection("pages", pages.filter(p => p.id !== id));
+    if (selectedId === id) setSelectedId(null);
+  }
+
+  function updatePage(page: CustomPage) {
+    updateSection("pages", pages.map(p => p.id === page.id ? page : p));
+  }
+
+  function addBlock(type: BlockType) {
+    if (!selected) return;
+    const BLOCK_DEFAULTS: Record<BlockType, Partial<PageBlock>> = {
+      heading: { content: "Nový nadpis", level: "h2", align: "left" },
+      text: { content: "<p>Nový text...</p>", align: "left" },
+      image: { src: "", alt: "", width: "100%", align: "center" },
+      button: { content: "Klikni zde", href: "#", bgColor: "#40accd", textColor: "#fff", size: "md", align: "center" },
+      banner: { content: "Banner nadpis", subtitle: "Podnapis", bgColor: "linear-gradient(135deg,#40accd,#2e8fa8)", ctaText: "Zjistit více", ctaHref: "#", align: "center" },
+      newsletter: { content: "Přihlás se k odběru", body: "Dostávej novinky přímo na email.", align: "center" },
+      spacer: { height: 40 },
+    };
+    const defaults: Partial<PageBlock> = BLOCK_DEFAULTS[type] || {};
+    const block: PageBlock = { id: Date.now().toString(), type, ...defaults };
+    updatePage({ ...selected, blocks: [...selected.blocks, block] });
+    setAddingBlock(false);
+  }
+
+  function updateBlock(block: PageBlock) {
+    if (!selected) return;
+    updatePage({ ...selected, blocks: selected.blocks.map(b => b.id === block.id ? block : b) });
+  }
+
+  function deleteBlock(id: string) {
+    if (!selected) return;
+    updatePage({ ...selected, blocks: selected.blocks.filter(b => b.id !== id) });
+  }
+
+  function moveBlock(idx: number, dir: -1 | 1) {
+    if (!selected) return;
+    const arr = [...selected.blocks];
+    const tmp = arr[idx]; arr[idx] = arr[idx + dir]; arr[idx + dir] = tmp;
+    updatePage({ ...selected, blocks: arr });
+  }
+
+  if (!selected) {
+    return (
+      <div>
+        <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 16 }}>Vytvoř nebo vyber stránku pro editaci bloků.</p>
+        {pages.map(p => (
+          <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, padding: "8px 10px", border: "1px solid #e5e7eb", borderRadius: 8, background: "#f9fafb" }}>
+            <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer" }} onClick={() => setSelectedId(p.id)}>
+              {p.title} <span style={{ color: "#9ca3af", fontWeight: 400 }}>/{p.slug}</span>
+            </span>
+            <a href={`/${p.slug}`} target="_blank" style={{ fontSize: 11, color: "#40accd" }}>↗</a>
+            <button onClick={() => setSelectedId(p.id)} style={{ padding: "3px 10px", fontSize: 11, background: "#40accd", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer" }}>Upravit</button>
+            <button onClick={() => deletePage(p.id)} style={{ padding: "3px 8px", fontSize: 11, background: "#fff", color: "#ef4444", border: "1px solid #fca5a5", borderRadius: 6, cursor: "pointer" }}>✕</button>
+          </div>
+        ))}
+        <div style={{ marginTop: 16, padding: 12, border: "1px dashed #d1d5db", borderRadius: 8 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: "#374151", margin: "0 0 8px", textTransform: "uppercase" }}>Nová stránka</p>
+          <input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Název stránky" style={{ width: "100%", padding: "6px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12, marginBottom: 6, boxSizing: "border-box" }} />
+          <input value={newSlug} onChange={e => setNewSlug(e.target.value)} placeholder="URL (napr. o-nas)" style={{ width: "100%", padding: "6px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12, marginBottom: 8, boxSizing: "border-box" }} />
+          <button onClick={addPage} style={{ width: "100%", padding: "8px", background: "#40accd", color: "#fff", border: "none", borderRadius: 6, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>+ Vytvořit stránku</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+        <button onClick={() => setSelectedId(null)} style={{ padding: "5px 10px", fontSize: 12, background: "#f3f4f6", border: "1px solid #e5e7eb", borderRadius: 6, cursor: "pointer" }}>← Zpět</button>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#374151" }}>{selected.title}</div>
+          <a href={`/${selected.slug}`} target="_blank" style={{ fontSize: 11, color: "#40accd" }}>/{selected.slug} ↗</a>
+        </div>
+      </div>
+
+      {selected.blocks.map((block, i) => (
+        <BlockEditorPanel
+          key={block.id}
+          block={block}
+          onUpdate={updateBlock}
+          onDelete={() => deleteBlock(block.id)}
+          onUp={() => moveBlock(i, -1)}
+          onDown={() => moveBlock(i, 1)}
+          isFirst={i === 0}
+          isLast={i === selected.blocks.length - 1}
+        />
+      ))}
+
+      {addingBlock ? (
+        <div style={{ padding: 12, border: "1px dashed #d1d5db", borderRadius: 8, marginTop: 8 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: "#374151", margin: "0 0 10px", textTransform: "uppercase" }}>Přidat blok</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+            {BLOCK_TYPES.map(bt => (
+              <button key={bt.type} onClick={() => addBlock(bt.type)}
+                style={{ padding: "8px 10px", fontSize: 12, fontWeight: 600, background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 7, cursor: "pointer", textAlign: "left" }}>
+                {bt.icon} {bt.label}
+              </button>
+            ))}
+          </div>
+          <button onClick={() => setAddingBlock(false)} style={{ marginTop: 8, width: "100%", padding: "6px", fontSize: 12, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 6, cursor: "pointer", color: "#6b7280" }}>Zrušit</button>
+        </div>
+      ) : (
+        <button onClick={() => setAddingBlock(true)}
+          style={{ width: "100%", padding: "10px", marginTop: 8, background: "#f9fafb", border: "1px dashed #d1d5db", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#40accd" }}>
+          + Přidat blok
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ── Section editor map ──────────────────────────────────────────────────────────
 
 const EDITORS: Record<Section, React.ComponentType> = {
@@ -429,6 +674,7 @@ const EDITORS: Record<Section, React.ComponentType> = {
   oracle: OracleEditor,
   footer: FooterEditor,
   aboutPage: AboutPageEditor,
+  pages: PagesEditor,
 };
 
 // ── Main LiveEditor panel ──────────────────────────────────────────────────────
@@ -438,6 +684,13 @@ export default function LiveEditor() {
   const [open, setOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<Section>("hero");
   const [editorKey, setEditorKey] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= 600);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   if (!admin.isAdmin) return null;
 
@@ -465,8 +718,8 @@ export default function LiveEditor() {
         title="Uložit vše"
         style={{
           position: "fixed",
-          bottom: 28,
-          right: open ? PANEL_W + 72 : 90,
+          bottom: (open && isMobile) ? "92vh" : 28,
+          right: (open && !isMobile) ? PANEL_W + 72 : 90,
           zIndex: 9999,
           width: 52,
           height: 52,
@@ -492,8 +745,8 @@ export default function LiveEditor() {
         title={open ? "Zavřít editor" : "Otevřít editor"}
         style={{
           position: "fixed",
-          bottom: 28,
-          right: open ? PANEL_W + 12 : 28,
+          bottom: (open && isMobile) ? "92vh" : 28,
+          right: (open && !isMobile) ? PANEL_W + 12 : 28,
           zIndex: 9999,
           width: 52,
           height: 52,
@@ -515,7 +768,21 @@ export default function LiveEditor() {
 
       {/* Panel */}
       <div
-        style={{
+        style={isMobile ? {
+          position: "fixed",
+          bottom: open ? 0 : "-92vh",
+          left: 0,
+          right: 0,
+          height: "92vh",
+          background: "#fff",
+          boxShadow: "0 -6px 30px rgba(0,0,0,0.18)",
+          zIndex: 9998,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+          transition: "bottom 0.3s ease",
+          fontFamily: "'Poppins', sans-serif",
+        } : {
           position: "fixed",
           top: 0,
           right: open ? 0 : -PANEL_W - 10,
@@ -526,7 +793,7 @@ export default function LiveEditor() {
           zIndex: 9998,
           display: "flex",
           flexDirection: "column",
-          overflow: "hidden",           // ← crucial: constrains flex children
+          overflow: "hidden",
           transition: "right 0.3s ease",
           fontFamily: "'Poppins', sans-serif",
         }}
@@ -544,26 +811,36 @@ export default function LiveEditor() {
             >
               Odhlásit
             </button>
+            {isMobile && (
+              <button
+                onClick={() => setOpen(false)}
+                style={{ background: "rgba(255,255,255,0.2)", border: "1px solid rgba(255,255,255,0.3)", color: "#fff", padding: "5px 12px", borderRadius: 7, fontSize: 11, cursor: "pointer", fontWeight: 600, marginLeft: 4 }}
+              >
+                ✕ Zavřít
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Section tabs */}
-        <div style={{ flexShrink: 0, display: "flex", overflowX: "auto", borderBottom: "1px solid #e5e7eb", background: "#f9fafb", scrollbarWidth: "none" }}>
+        {/* Section tabs — 2-row wrap grid */}
+        <div style={{ flexShrink: 0, display: "flex", flexWrap: "wrap", borderBottom: "1px solid #e5e7eb", background: "#f9fafb", gap: 0 }}>
           {SECTIONS.map(s => (
             <button
               key={s.key}
               onClick={() => setActiveSection(s.key)}
               style={{
-                padding: "10px 14px",
-                fontSize: 12,
+                padding: "8px 10px",
+                fontSize: 11,
                 fontWeight: 600,
                 border: "none",
                 borderBottom: activeSection === s.key ? "2px solid #40accd" : "2px solid transparent",
-                background: "none",
+                background: activeSection === s.key ? "rgba(64,172,205,0.08)" : "none",
                 color: activeSection === s.key ? "#40accd" : "#6b7280",
                 cursor: "pointer",
                 whiteSpace: "nowrap",
-                transition: "color 0.15s",
+                transition: "color 0.15s, background 0.15s",
+                flex: "0 0 calc(20% - 0px)",
+                textAlign: "center",
               }}
             >
               {s.label}
@@ -624,7 +901,7 @@ export default function LiveEditor() {
           position: "fixed",
           top: 0,
           left: 0,
-          right: open ? PANEL_W : 0,
+          right: (open && !isMobile) ? PANEL_W : 0,
           zIndex: 9997,
           background: "#40accd",
           color: "#fff",

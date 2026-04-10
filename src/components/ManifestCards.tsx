@@ -37,8 +37,12 @@ export default function ManifestCards() {
               </div>
 
               <div style={{ padding: "20px 24px 12px", textAlign: "center" }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={card.badge} alt="" style={{ height: "40px", width: "auto", marginBottom: "12px" }} />
+                <EditableImg
+                  section="manifest"
+                  field={`cards.${i}.badge`}
+                  alt=""
+                  style={{ height: "40px", width: "auto", marginBottom: "12px", display: "inline-block" }}
+                />
               </div>
 
               <EditableText
