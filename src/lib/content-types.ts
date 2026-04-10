@@ -23,7 +23,7 @@ export interface SocialLink {
   href: string;
 }
 
-export type BlockType = "heading" | "text" | "image" | "button" | "banner" | "newsletter" | "spacer";
+export type BlockType = "heading" | "text" | "image" | "button" | "banner" | "newsletter" | "spacer" | "hero-section" | "cards-grid" | "two-col";
 
 export interface PageBlock {
   id: string;
@@ -46,6 +46,19 @@ export interface PageBlock {
   ctaHref?: string;
   body?: string;
   height?: number;
+  // hero-section
+  heroBgImage?: string;
+  heroOverlay?: string; // rgba color
+  // cards-grid
+  sectionTitle?: string;
+  cards?: Array<{ image: string; title: string; text: string; btnText: string; btnHref: string }>;
+  // two-col
+  imageLeft?: boolean;
+  twoColImage?: string;
+  twoColTitle?: string;
+  twoColText?: string;
+  twoColBtnText?: string;
+  twoColBtnHref?: string;
 }
 
 export interface CustomPage {

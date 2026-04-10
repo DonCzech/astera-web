@@ -1,12 +1,13 @@
 "use client";
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { useContent } from "@/context/ContentContext";
+import { usePathname } from "next/navigation";
 import { SiteContent, NavItem, ManifestCard, FooterLink, CustomPage, PageBlock, BlockType, SiteSettings } from "@/lib/content-types";
 import RichTextEditor from "./RichTextEditor";
 
 type Section = keyof SiteContent;
 
-const SECTIONS: { key: Section; label: string }[] = [
+const ALL_SECTIONS: { key: Section; label: string }[] = [
   { key: "header", label: "Header" },
   { key: "hero", label: "Hero" },
   { key: "newsletter", label: "Newsletter" },
@@ -19,6 +20,10 @@ const SECTIONS: { key: Section; label: string }[] = [
   { key: "pages", label: "📋 Stránky" },
   { key: "siteSettings", label: "⚙️ Web" },
 ];
+
+const HOMEPAGE_KEYS: Section[] = ["header", "hero", "newsletter", "about", "manifest", "pickacard", "oracle", "footer", "siteSettings"];
+const ABOUT_KEYS: Section[] = ["aboutPage", "siteSettings"];
+const CUSTOM_PAGE_KEYS: Section[] = ["pages", "siteSettings"];
 
 const PANEL_W = 460; // panel width desktop
 
@@ -422,6 +427,9 @@ function AboutPageEditor() {
 // ── Pages editor ─────────────────────────────────────────────────────────────────
 
 const BLOCK_TYPES: { type: BlockType; label: string; icon: string }[] = [
+  { type: "hero-section", label: "Hero sekce", icon: "🌟" },
+  { type: "cards-grid", label: "Karty (grid)", icon: "🃏" },
+  { type: "two-col", label: "Dva sloupce", icon: "⬛⬛" },
   { type: "heading", label: "Nadpis", icon: "H" },
   { type: "text", label: "Text", icon: "T" },
   { type: "image", label: "Obrázek", icon: "🖼" },
@@ -430,6 +438,60 @@ const BLOCK_TYPES: { type: BlockType; label: string; icon: string }[] = [
   { type: "newsletter", label: "Newsletter", icon: "📧" },
   { type: "spacer", label: "Mezera", icon: "↕" },
 ];
+
+// ── Cards grid block editor (own component, needs card-level state) ─────────────
+
+function CardsGridBlockEditor({ block, onUpdate }: { block: PageBlock; onUpdate: (b: PageBlock) => void }) {
+  const cards = block.cards || [];
+
+  function updateCard(i: number, field: string, val: string) {
+    const arr = [...cards];
+    arr[i] = { ...arr[i], [field]: val };
+    onUpdate({ ...block, cards: arr });
+  }
+
+  function addCard() {
+    onUpdate({ ...block, cards: [...cards, { image: "", title: "Nová karta", text: "", btnText: "Zjistit více", btnHref: "#" }] });
+  }
+
+  function removeCard(i: number) {
+    onUpdate({ ...block, cards: cards.filter((_, idx) => idx !== i) });
+  }
+
+  const cardInp = (i: number, label: string, field: string) => (
+    <div style={{ marginBottom: 5 }}>
+      <label style={{ display: "block", fontSize: 10, color: "#9ca3af", marginBottom: 2 }}>{label}</label>
+      <input value={(cards[i] as Record<string, string>)[field] || ""} onChange={e => updateCard(i, field, e.target.value)}
+        style={{ width: "100%", padding: "4px 7px", border: "1px solid #e5e7eb", borderRadius: 5, fontSize: 11, boxSizing: "border-box" }} />
+    </div>
+  );
+
+  return (
+    <div>
+      <div style={{ marginBottom: 10 }}>
+        <label style={{ display: "block", fontSize: 10, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", marginBottom: 3 }}>Název sekce</label>
+        <input value={block.sectionTitle || ""} onChange={e => onUpdate({ ...block, sectionTitle: e.target.value })}
+          style={{ width: "100%", padding: "5px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12, boxSizing: "border-box" }} />
+      </div>
+      {cards.map((_, i) => (
+        <div key={i} style={{ border: "1px solid #e5e7eb", borderRadius: 7, padding: "8px", marginBottom: 8, background: "#f9fafb" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "#374151" }}>Karta {i + 1}</span>
+            <button onClick={() => removeCard(i)} style={{ fontSize: 11, color: "#ef4444", border: "1px solid #fca5a5", background: "#fff", borderRadius: 5, padding: "2px 7px", cursor: "pointer" }}>✕</button>
+          </div>
+          {cardInp(i, "URL obrázku", "image")}
+          {cardInp(i, "Nadpis karty", "title")}
+          {cardInp(i, "Text karty", "text")}
+          {cardInp(i, "Text tlačítka", "btnText")}
+          {cardInp(i, "URL tlačítka", "btnHref")}
+        </div>
+      ))}
+      <button onClick={addCard} style={{ width: "100%", padding: "7px", fontSize: 12, fontWeight: 600, background: "#f0f9ff", border: "1px dashed #40accd", borderRadius: 6, cursor: "pointer", color: "#40accd" }}>
+        + Přidat kartu
+      </button>
+    </div>
+  );
+}
 
 function BlockEditorPanel({ block, onUpdate, onDelete, onUp, onDown, isFirst, isLast }: {
   block: PageBlock;
@@ -524,16 +586,49 @@ function BlockEditorPanel({ block, onUpdate, onDelete, onUp, onDown, isFirst, is
           {block.type === "spacer" && <>
             {inp("Výška (px)", "height", "number")}
           </>}
+          {block.type === "hero-section" && <>
+            {inp("Nadpis", "content")}
+            {inp("Podnapis", "subtitle")}
+            {inp("URL obrázku pozadí", "heroBgImage")}
+            {inp("Barva překrytí (rgba(0,0,0,0.4))", "heroOverlay")}
+            {inp("Barva pozadí (bez obrázku)", "bgColor")}
+            {inp("Text CTA buttonu", "ctaText")}
+            {inp("Odkaz CTA", "ctaHref")}
+            {sel("Zarovnání", "align", ["left", "center", "right"])}
+          </>}
+          {block.type === "cards-grid" && (
+            <CardsGridBlockEditor block={block} onUpdate={onUpdate} />
+          )}
+          {block.type === "two-col" && <>
+            {inp("Nadpis", "twoColTitle")}
+            <div style={{ marginBottom: 8 }}>
+              <label style={{ display: "block", fontSize: 10, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", marginBottom: 3 }}>Text (HTML)</label>
+              <textarea value={block.twoColText || ""} onChange={e => onUpdate({ ...block, twoColText: e.target.value })}
+                rows={3} style={{ width: "100%", padding: "5px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12, boxSizing: "border-box", resize: "vertical" }} />
+            </div>
+            {inp("URL obrázku", "twoColImage")}
+            {inp("Text tlačítka", "twoColBtnText")}
+            {inp("Odkaz tlačítka", "twoColBtnHref")}
+            <div style={{ marginBottom: 8 }}>
+              <label style={{ display: "block", fontSize: 10, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", marginBottom: 3 }}>Pozice obrázku</label>
+              <select value={block.imageLeft === false ? "right" : "left"} onChange={e => onUpdate({ ...block, imageLeft: e.target.value === "left" })}
+                style={{ width: "100%", padding: "5px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12 }}>
+                <option value="left">Obrázek vlevo</option>
+                <option value="right">Obrázek vpravo</option>
+              </select>
+            </div>
+          </>}
         </div>
       )}
     </div>
   );
 }
 
-function PagesEditor() {
+function PagesEditor({ autoSlug }: { autoSlug?: string } = {}) {
   const { content, updateSection } = useContent();
   const pages: CustomPage[] = content.pages || [];
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const autoPage = autoSlug ? pages.find(p => p.slug === autoSlug) : null;
+  const [selectedId, setSelectedId] = useState<string | null>(autoPage?.id ?? null);
   const [newSlug, setNewSlug] = useState("");
   const [newTitle, setNewTitle] = useState("");
   const [addingBlock, setAddingBlock] = useState(false);
@@ -569,6 +664,13 @@ function PagesEditor() {
       banner: { content: "Banner nadpis", subtitle: "Podnapis", bgColor: "linear-gradient(135deg,#40accd,#2e8fa8)", ctaText: "Zjistit více", ctaHref: "#", align: "center" },
       newsletter: { content: "Přihlás se k odběru", body: "Dostávej novinky přímo na email.", align: "center" },
       spacer: { height: 40 },
+      "hero-section": { content: "Váš Hero Nadpis", subtitle: "Podnapis sekce", bgColor: "linear-gradient(135deg,#40accd,#2e8fa8)", ctaText: "Zjistit více", ctaHref: "#", align: "center" },
+      "cards-grid": { sectionTitle: "Naše služby", cards: [
+        { image: "", title: "Karta 1", text: "Popis karty 1.", btnText: "Zjistit více", btnHref: "#" },
+        { image: "", title: "Karta 2", text: "Popis karty 2.", btnText: "Zjistit více", btnHref: "#" },
+        { image: "", title: "Karta 3", text: "Popis karty 3.", btnText: "Zjistit více", btnHref: "#" },
+      ]},
+      "two-col": { twoColTitle: "Nadpis sekce", twoColText: "<p>Text popis sekce.</p>", twoColBtnText: "Číst více", twoColBtnHref: "#", imageLeft: true },
     };
     const defaults: Partial<PageBlock> = BLOCK_DEFAULTS[type] || {};
     const block: PageBlock = { id: Date.now().toString(), type, ...defaults };
@@ -720,11 +822,13 @@ const EDITORS: Record<Section, React.ComponentType> = {
 // ── Main LiveEditor panel ──────────────────────────────────────────────────────
 
 export default function LiveEditor() {
-  const { admin, saveAll, revertSection, undo, canUndo, saveStatus, logout } = useContent();
+  const { admin, content, saveAll, revertSection, undo, canUndo, saveStatus, logout } = useContent();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<Section>("hero");
   const [editorKey, setEditorKey] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth <= 700);
     check();
@@ -746,6 +850,27 @@ export default function LiveEditor() {
       document.body.style.touchAction = "";
     };
   }, [isMobile, open]);
+
+  // Context-aware: detect current custom page
+  const currentCustomPage = useMemo(
+    () => (content.pages || []).find(p => `/${p.slug}` === pathname) ?? null,
+    [content.pages, pathname]
+  );
+
+  // Filter sections based on current route
+  const visibleSections = useMemo(() => {
+    if (pathname === "/") return ALL_SECTIONS.filter(s => HOMEPAGE_KEYS.includes(s.key));
+    if (pathname === "/about") return ALL_SECTIONS.filter(s => ABOUT_KEYS.includes(s.key));
+    if (currentCustomPage) return ALL_SECTIONS.filter(s => CUSTOM_PAGE_KEYS.includes(s.key));
+    return ALL_SECTIONS;
+  }, [pathname, currentCustomPage]);
+
+  // Auto-reset activeSection when visible sections change
+  useEffect(() => {
+    if (!visibleSections.find(s => s.key === activeSection)) {
+      setActiveSection(visibleSections[0]?.key ?? "hero");
+    }
+  }, [visibleSections, activeSection]);
 
   if (!admin.isAdmin) return null;
 
@@ -858,8 +983,8 @@ export default function LiveEditor() {
         <div style={{ flexShrink: 0, padding: "14px 18px", borderBottom: "1px solid #e5e7eb", background: "linear-gradient(135deg,#40accd,#2e8fa8)", color: "#fff" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
-              <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: "0.2px" }}>✏️ Site Editor</div>
-              <div style={{ fontSize: 11, opacity: 0.85, marginTop: 1 }}>{admin.email}</div>
+              <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: "0.2px" }}>✏️ {currentCustomPage ? currentCustomPage.title : "Site Editor"}</div>
+              <div style={{ fontSize: 11, opacity: 0.85, marginTop: 1 }}>{currentCustomPage ? `/${currentCustomPage.slug}` : admin.email}</div>
             </div>
             <button
               onClick={handleLogout}
@@ -880,7 +1005,7 @@ export default function LiveEditor() {
 
         {/* Section tabs — 2-row wrap grid */}
         <div style={{ flexShrink: 0, display: "flex", flexWrap: "wrap", borderBottom: "1px solid #e5e7eb", background: "#f9fafb", gap: 0 }}>
-          {SECTIONS.map(s => (
+          {visibleSections.map(s => (
             <button
               key={s.key}
               onClick={() => setActiveSection(s.key)}
@@ -906,7 +1031,11 @@ export default function LiveEditor() {
 
         {/* Editor content — scrollable */}
         <div style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden", padding: "18px 20px", boxSizing: "border-box", WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
-          <ActiveEditor key={`${activeSection}-${editorKey}`} />
+          {currentCustomPage && activeSection === "pages" ? (
+            <PagesEditor key={`pages-${currentCustomPage.slug}-${editorKey}`} autoSlug={currentCustomPage.slug} />
+          ) : (
+            <ActiveEditor key={`${activeSection}-${editorKey}`} />
+          )}
         </div>
 
         {/* Action bar */}

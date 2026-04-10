@@ -112,6 +112,106 @@ function NewsletterBlock({ b }: { b: PageBlock }) {
   );
 }
 
+function HeroSectionBlock({ b }: { b: PageBlock }) {
+  return (
+    <div style={{
+      position: "relative",
+      minHeight: 480,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      background: b.heroBgImage
+        ? `${b.heroOverlay || "linear-gradient(rgba(0,0,0,0.45),rgba(0,0,0,0.45))"}, url(${b.heroBgImage}) center/cover no-repeat`
+        : (b.bgColor || "linear-gradient(135deg,#1a0a2e,#2d1654)"),
+      borderRadius: 12,
+      overflow: "hidden",
+      textAlign: ALIGN[b.align || "center"],
+      padding: "60px 40px",
+    }}>
+      <div style={{ position: "relative", zIndex: 1, maxWidth: 700 }}>
+        <h1 style={{ color: "#fff", fontSize: 48, fontWeight: 800, fontFamily: "'Poppins',sans-serif", margin: "0 0 16px", lineHeight: 1.15 }}>
+          {b.content || "Hero Nadpis"}
+        </h1>
+        {b.subtitle && <p style={{ color: "rgba(255,255,255,0.85)", fontSize: 20, fontFamily: "'Poppins',sans-serif", margin: "0 0 32px", lineHeight: 1.6 }}>{b.subtitle}</p>}
+        {b.ctaText && (
+          <a href={b.ctaHref || "#"} style={{
+            display: "inline-block", padding: "14px 40px", background: b.bgColor || "#40accd",
+            color: "#fff", fontWeight: 700, borderRadius: 8, textDecoration: "none",
+            fontFamily: "'Poppins',sans-serif", fontSize: 16,
+          }}>
+            {b.ctaText}
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CardsGridBlock({ b }: { b: PageBlock }) {
+  const cards = b.cards || [];
+  return (
+    <div style={{ padding: "48px 0" }}>
+      {b.sectionTitle && (
+        <h2 style={{ textAlign: "center", fontFamily: "'Poppins',sans-serif", fontSize: 32, fontWeight: 700, color: "#1f1f1f", marginBottom: 36, marginTop: 0 }}>
+          {b.sectionTitle}
+        </h2>
+      )}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: cards.length === 1 ? "1fr" : cards.length === 2 ? "repeat(2,1fr)" : "repeat(3,1fr)",
+        gap: 24,
+      }} className="cards-grid-block">
+        {cards.map((card, i) => (
+          <div key={i} style={{ background: "#fff", borderRadius: 12, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
+            {card.image && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={card.image} alt={card.title} style={{ width: "100%", height: 220, objectFit: "cover", display: "block" }} />
+            )}
+            <div style={{ padding: "20px 24px", flex: 1, display: "flex", flexDirection: "column" }}>
+              <h3 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 20, fontWeight: 700, color: "#1f1f1f", margin: "0 0 12px" }}>{card.title}</h3>
+              <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 14, color: "#6b7280", lineHeight: 1.6, flex: 1, margin: "0 0 20px" }}>{card.text}</p>
+              {card.btnText && (
+                <a href={card.btnHref || "#"} className="btn-primary" style={{ display: "inline-block", padding: "10px 24px", fontSize: 13, textDecoration: "none" }}>
+                  {card.btnText}
+                </a>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+      <style>{`@media(max-width:768px){.cards-grid-block{grid-template-columns:1fr!important}}`}</style>
+    </div>
+  );
+}
+
+function TwoColBlock({ b }: { b: PageBlock }) {
+  const imgCol = (
+    <div style={{ flex: 1, minWidth: 0 }}>
+      {b.twoColImage && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={b.twoColImage} alt={b.twoColTitle || ""} style={{ width: "100%", height: "auto", borderRadius: 12, display: "block" }} />
+      )}
+    </div>
+  );
+  const textCol = (
+    <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+      {b.twoColTitle && <h2 style={{ fontFamily: "'Poppins',sans-serif", fontSize: 32, fontWeight: 700, color: "#1f1f1f", margin: "0 0 16px" }}>{b.twoColTitle}</h2>}
+      {b.twoColText && <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 16, lineHeight: 1.8, color: "#374151", margin: "0 0 24px" }} dangerouslySetInnerHTML={{ __html: b.twoColText }} />}
+      {b.twoColBtnText && (
+        <a href={b.twoColBtnHref || "#"} className="btn-primary" style={{ display: "inline-block", padding: "12px 32px", fontSize: 15, textDecoration: "none", alignSelf: "flex-start" }}>
+          {b.twoColBtnText}
+        </a>
+      )}
+    </div>
+  );
+  return (
+    <div style={{ display: "flex", gap: 48, alignItems: "center", padding: "40px 0", flexWrap: "wrap" }}>
+      {b.imageLeft !== false ? imgCol : textCol}
+      {b.imageLeft !== false ? textCol : imgCol}
+    </div>
+  );
+}
+
 export default function BlockRenderer({ blocks }: { blocks: PageBlock[] }) {
   if (!blocks || blocks.length === 0) {
     return <div style={{ padding: "60px 32px", textAlign: "center", color: "#9ca3af", fontFamily: "'Poppins',sans-serif" }}>Tato stránka nemá žádný obsah. Přidej bloky v editoru (✏️).</div>;
@@ -127,6 +227,9 @@ export default function BlockRenderer({ blocks }: { blocks: PageBlock[] }) {
           {b.type === "banner" && <BannerBlock b={b} />}
           {b.type === "newsletter" && <NewsletterBlock b={b} />}
           {b.type === "spacer" && <div style={{ height: b.height || 40 }} />}
+          {b.type === "hero-section" && <HeroSectionBlock b={b} />}
+          {b.type === "cards-grid" && <CardsGridBlock b={b} />}
+          {b.type === "two-col" && <TwoColBlock b={b} />}
         </div>
       ))}
     </>
