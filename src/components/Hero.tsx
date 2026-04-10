@@ -34,7 +34,7 @@ export default function Hero() {
           minHeight: "100vh",
           display: "flex",
           alignItems: "center",
-          paddingTop: "102px",
+          paddingTop: admin.isAdmin ? "128px" : "102px",
           paddingBottom: "100px",
           position: "relative",
         }}

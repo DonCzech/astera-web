@@ -6,13 +6,13 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export default function AboutPage() {
-  const { content } = useContent();
+  const { content, admin } = useContent();
   const p = content.aboutPage;
 
   return (
     <>
       <Header />
-      <main style={{ paddingTop: "102px", fontFamily: "'Poppins', sans-serif" }}>
+      <main style={{ paddingTop: admin.isAdmin ? "128px" : "102px", fontFamily: "'Poppins', sans-serif" }}>
 
         {/* Hero */}
         <section style={{

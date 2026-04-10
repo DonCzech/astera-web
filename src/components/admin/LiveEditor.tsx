@@ -287,6 +287,7 @@ function ManifestEditor() {
             <PlainInput value={card.btnHref} onChange={v => updateCard(i, "btnHref", v)} />
           </Field>
           <ImageField label="Obrázek karty" value={card.image} onChange={v => updateCard(i, "image", v)} />
+          <ImageField label="Badge obrázek" value={card.badge} onChange={v => updateCard(i, "badge", v)} />
         </div>
       ))}
     </div>
@@ -479,7 +480,7 @@ function CardsGridBlockEditor({ block, onUpdate }: { block: PageBlock; onUpdate:
             <span style={{ fontSize: 11, fontWeight: 700, color: "#374151" }}>Karta {i + 1}</span>
             <button onClick={() => removeCard(i)} style={{ fontSize: 11, color: "#ef4444", border: "1px solid #fca5a5", background: "#fff", borderRadius: 5, padding: "2px 7px", cursor: "pointer" }}>✕</button>
           </div>
-          {cardInp(i, "URL obrázku", "image")}
+          <ImageField label="Obrázek karty" value={cards[i].image || ""} onChange={v => updateCard(i, "image", v)} />
           {cardInp(i, "Nadpis karty", "title")}
           {cardInp(i, "Text karty", "text")}
           {cardInp(i, "Text tlačítka", "btnText")}
@@ -555,7 +556,7 @@ function BlockEditorPanel({ block, onUpdate, onDelete, onUp, onDown, isFirst, is
             {sel("Zarovnání", "align", ["left", "center", "right"])}
           </>}
           {block.type === "image" && <>
-            {inp("URL obrázku", "src")}
+            <ImageField label="Obrázek" value={block.src || ""} onChange={v => onUpdate({ ...block, src: v })} />
             {inp("Alt text", "alt")}
             {sel("Šířka", "width", ["100%", "75%", "50%", "25%", "auto"])}
             {inp("Odkaz (href)", "href")}
@@ -589,7 +590,7 @@ function BlockEditorPanel({ block, onUpdate, onDelete, onUp, onDown, isFirst, is
           {block.type === "hero-section" && <>
             {inp("Nadpis", "content")}
             {inp("Podnapis", "subtitle")}
-            {inp("URL obrázku pozadí", "heroBgImage")}
+            <ImageField label="Obrázek pozadí" value={block.heroBgImage || ""} onChange={v => onUpdate({ ...block, heroBgImage: v })} />
             {inp("Barva překrytí (rgba(0,0,0,0.4))", "heroOverlay")}
             {inp("Barva pozadí (bez obrázku)", "bgColor")}
             {inp("Text CTA buttonu", "ctaText")}
@@ -606,7 +607,7 @@ function BlockEditorPanel({ block, onUpdate, onDelete, onUp, onDown, isFirst, is
               <textarea value={block.twoColText || ""} onChange={e => onUpdate({ ...block, twoColText: e.target.value })}
                 rows={3} style={{ width: "100%", padding: "5px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12, boxSizing: "border-box", resize: "vertical" }} />
             </div>
-            {inp("URL obrázku", "twoColImage")}
+            <ImageField label="Obrázek" value={block.twoColImage || ""} onChange={v => onUpdate({ ...block, twoColImage: v })} />
             {inp("Text tlačítka", "twoColBtnText")}
             {inp("Odkaz tlačítka", "twoColBtnHref")}
             <div style={{ marginBottom: 8 }}>

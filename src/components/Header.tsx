@@ -5,8 +5,10 @@ import { NavItem } from "@/lib/content-types";
 import EditableText from "./admin/EditableText";
 
 export default function Header() {
-  const { content } = useContent();
+  const { content, admin } = useContent();
   const { navItems, logoHref, signInHref } = content.header;
+  const logoUrl = content.siteSettings?.logoUrl || "/images/CBR-logo-black.png";
+  const adminBarH = admin.isAdmin ? 26 : 0;
 
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -24,9 +26,9 @@ export default function Header() {
         height: scrolled ? "80px" : "102px",
         backgroundColor: "#ffffff",
         boxShadow: scrolled ? "0 2px 10px rgba(0,0,0,0.08)" : "none",
-        transition: "height 0.3s ease, box-shadow 0.3s ease",
+        transition: "height 0.3s ease, box-shadow 0.3s ease, top 0.2s ease",
         position: "fixed",
-        top: 0,
+        top: adminBarH,
         left: 0,
         right: 0,
         zIndex: 1000,
@@ -40,7 +42,7 @@ export default function Header() {
         <a href={logoHref} style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/images/CBR-logo-black.png"
+            src={logoUrl}
             alt="Astera Light"
             style={{ height: scrolled ? "55px" : "70px", width: "auto", transition: "height 0.3s ease" }}
           />
