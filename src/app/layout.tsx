@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ContentProvider } from "@/context/ContentContext";
 import LiveEditor from "@/components/admin/LiveEditor";
+import CustomStyles from "@/components/CustomStyles";
 
 export const metadata: Metadata = {
   title: "Colette Baron-Reid — Experience Your Magic",
@@ -24,6 +25,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen">
         <ContentProvider>
+          <CustomStyles />
           {children}
           <LiveEditor />
         </ContentProvider>

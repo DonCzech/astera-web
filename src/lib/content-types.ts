@@ -55,6 +55,14 @@ export interface CustomPage {
   blocks: PageBlock[];
 }
 
+export interface SiteSettings {
+  accentColor: string;
+  logoUrl: string;
+  metaTitle: string;
+  metaDescription: string;
+  customCss: string;
+}
+
 export interface AboutPageSection {
   heroTitle: string;
   heroSubtitle: string;
@@ -124,6 +132,7 @@ export interface SiteContent {
   };
   aboutPage: AboutPageSection;
   pages: CustomPage[];
+  siteSettings: SiteSettings;
 }
 
 export const SITE = "https://www.asteralight.cz";
@@ -271,4 +280,11 @@ export const DEFAULT_CONTENT: SiteContent = {
     ],
   },
   pages: [],
+  siteSettings: {
+    accentColor: "#40accd",
+    logoUrl: "/images/CBR-logo-black.png",
+    metaTitle: "Astera Light",
+    metaDescription: "Experience Your Magic with Colette Baron-Reid",
+    customCss: "",
+  },
 };

@@ -1,7 +1,7 @@
 "use client";
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useContent } from "@/context/ContentContext";
-import { SiteContent, NavItem, ManifestCard, FooterLink, CustomPage, PageBlock, BlockType } from "@/lib/content-types";
+import { SiteContent, NavItem, ManifestCard, FooterLink, CustomPage, PageBlock, BlockType, SiteSettings } from "@/lib/content-types";
 import RichTextEditor from "./RichTextEditor";
 
 type Section = keyof SiteContent;
@@ -17,6 +17,7 @@ const SECTIONS: { key: Section; label: string }[] = [
   { key: "footer", label: "Footer" },
   { key: "aboutPage", label: "O nás" },
   { key: "pages", label: "📋 Stránky" },
+  { key: "siteSettings", label: "⚙️ Web" },
 ];
 
 const PANEL_W = 460; // panel width desktop
@@ -662,6 +663,44 @@ function PagesEditor() {
   );
 }
 
+// ── Site Settings editor ─────────────────────────────────────────────────────────
+
+function SiteSettingsEditor() {
+  const { content, updateSection } = useContent();
+  const s: SiteSettings = content.siteSettings || { accentColor: "#40accd", logoUrl: "", metaTitle: "", metaDescription: "", customCss: "" };
+  const upd = (data: SiteSettings) => updateSection("siteSettings", data);
+
+  return (
+    <div>
+      <Divider label="Design" />
+      <Field label="Hlavní barva (accent)">
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <input type="color" value={s.accentColor || "#40accd"} onChange={e => upd({ ...s, accentColor: e.target.value })}
+            style={{ width: 44, height: 36, border: "1px solid #e5e7eb", borderRadius: 6, cursor: "pointer", padding: 2 }} />
+          <input type="text" value={s.accentColor || ""} onChange={e => upd({ ...s, accentColor: e.target.value })}
+            style={{ flex: 1, padding: "6px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12 }} />
+        </div>
+      </Field>
+      <Field label="URL loga"><input value={s.logoUrl || ""} onChange={e => upd({ ...s, logoUrl: e.target.value })}
+        style={{ width: "100%", padding: "6px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12, boxSizing: "border-box" }} /></Field>
+
+      <Divider label="SEO & Meta" />
+      <Field label="Meta title (titulek stránky)"><input value={s.metaTitle || ""} onChange={e => upd({ ...s, metaTitle: e.target.value })}
+        style={{ width: "100%", padding: "6px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12, boxSizing: "border-box" }} /></Field>
+      <Field label="Meta description">
+        <textarea value={s.metaDescription || ""} onChange={e => upd({ ...s, metaDescription: e.target.value })}
+          rows={3} style={{ width: "100%", padding: "6px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12, boxSizing: "border-box", resize: "vertical" }} />
+      </Field>
+
+      <Divider label="Custom CSS" />
+      <p style={{ fontSize: 11, color: "#6b7280", marginTop: 0, marginBottom: 8 }}>CSS se aplikuje globálně na celý web. Lze přepsat libovolný styl.</p>
+      <textarea value={s.customCss || ""} onChange={e => upd({ ...s, customCss: e.target.value })}
+        rows={10} placeholder={`.btn-primary { background: #ff5500; }\nh1 { font-family: 'Georgia'; }`}
+        style={{ width: "100%", padding: "8px 10px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 11, fontFamily: "monospace", boxSizing: "border-box", resize: "vertical", lineHeight: 1.6 }} />
+    </div>
+  );
+}
+
 // ── Section editor map ──────────────────────────────────────────────────────────
 
 const EDITORS: Record<Section, React.ComponentType> = {
@@ -675,6 +714,7 @@ const EDITORS: Record<Section, React.ComponentType> = {
   footer: FooterEditor,
   aboutPage: AboutPageEditor,
   pages: PagesEditor,
+  siteSettings: SiteSettingsEditor,
 };
 
 // ── Main LiveEditor panel ──────────────────────────────────────────────────────
@@ -686,11 +726,26 @@ export default function LiveEditor() {
   const [editorKey, setEditorKey] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth <= 600);
+    const check = () => setIsMobile(window.innerWidth <= 700);
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, []);
+
+  // Lock body scroll on mobile when panel open
+  useEffect(() => {
+    if (isMobile && open) {
+      document.body.style.overflow = "hidden";
+      document.body.style.touchAction = "none";
+    } else {
+      document.body.style.overflow = "";
+      document.body.style.touchAction = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.touchAction = "";
+    };
+  }, [isMobile, open]);
 
   if (!admin.isAdmin) return null;
 
@@ -712,13 +767,13 @@ export default function LiveEditor() {
 
   return (
     <>
-      {/* Floating save button (always visible) */}
+      {/* Floating save button (hidden on mobile when panel open) */}
       <button
         onClick={saveAll}
         title="Uložit vše"
         style={{
           position: "fixed",
-          bottom: (open && isMobile) ? "92vh" : 28,
+          bottom: 28,
           right: (open && !isMobile) ? PANEL_W + 72 : 90,
           zIndex: 9999,
           width: 52,
@@ -731,7 +786,7 @@ export default function LiveEditor() {
           fontSize: 22,
           boxShadow: "0 4px 20px rgba(0,0,0,0.25)",
           transition: "right 0.3s ease, background 0.3s ease",
-          display: "flex",
+          display: (open && isMobile) ? "none" : "flex",
           alignItems: "center",
           justifyContent: "center",
         }}
@@ -739,13 +794,13 @@ export default function LiveEditor() {
         💾
       </button>
 
-      {/* Toggle (pencil) button */}
+      {/* Toggle (pencil) button — hidden on mobile when panel open (use in-panel close button) */}
       <button
         onClick={() => setOpen(o => !o)}
         title={open ? "Zavřít editor" : "Otevřít editor"}
         style={{
           position: "fixed",
-          bottom: (open && isMobile) ? "92vh" : 28,
+          bottom: 28,
           right: (open && !isMobile) ? PANEL_W + 12 : 28,
           zIndex: 9999,
           width: 52,
@@ -758,7 +813,7 @@ export default function LiveEditor() {
           fontSize: 22,
           boxShadow: "0 4px 20px rgba(64,172,205,0.55)",
           transition: "right 0.3s ease",
-          display: "flex",
+          display: (open && isMobile) ? "none" : "flex",
           alignItems: "center",
           justifyContent: "center",
         }}
@@ -770,17 +825,18 @@ export default function LiveEditor() {
       <div
         style={isMobile ? {
           position: "fixed",
-          bottom: open ? 0 : "-92vh",
+          top: 0,
           left: 0,
           right: 0,
-          height: "92vh",
+          bottom: 0,
           background: "#fff",
-          boxShadow: "0 -6px 30px rgba(0,0,0,0.18)",
-          zIndex: 9998,
+          boxShadow: "none",
+          zIndex: 100000,
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
-          transition: "bottom 0.3s ease",
+          transform: open ? "translateX(0)" : "translateX(105%)",
+          transition: "transform 0.3s ease",
           fontFamily: "'Poppins', sans-serif",
         } : {
           position: "fixed",
@@ -849,7 +905,7 @@ export default function LiveEditor() {
         </div>
 
         {/* Editor content — scrollable */}
-        <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "18px 20px" }}>
+        <div style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden", padding: "18px 20px", boxSizing: "border-box", WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
           <ActiveEditor key={`${activeSection}-${editorKey}`} />
         </div>
 
@@ -902,7 +958,7 @@ export default function LiveEditor() {
           top: 0,
           left: 0,
           right: (open && !isMobile) ? PANEL_W : 0,
-          zIndex: 9997,
+          zIndex: open && isMobile ? 99998 : 9997,
           background: "#40accd",
           color: "#fff",
           fontSize: 11,

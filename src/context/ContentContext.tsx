@@ -24,6 +24,7 @@ interface ContentContextValue {
   admin: AdminState;
   canUndo: boolean;
   saveStatus: SaveStatus;
+  contentLoaded: boolean;
   updateSection: <K extends keyof SiteContent>(section: K, data: SiteContent[K]) => void;
   saveSection: (section: keyof SiteContent) => Promise<void>;
   saveAll: () => Promise<void>;
@@ -50,6 +51,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
   const [admin, setAdmin] = useState<AdminState>({ isAdmin: false, email: null, setupRequired: false });
   const [canUndo, setCanUndo] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [contentLoaded, setContentLoaded] = useState(false);
 
   const historyRef = useRef<SiteContent[]>([]);
   const contentRef = useRef<SiteContent>(DEFAULT_CONTENT); // always up-to-date ref for closures
@@ -71,6 +73,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       historyRef.current = [];
       setCanUndo(false);
       setSaveStatus("idle");
+      setContentLoaded(true);
       setAdmin({
         isAdmin: meData.admin === true,
         email: meData.email || null,
@@ -179,7 +182,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
 
   return (
     <ContentContext.Provider value={{
-      content, savedContent, admin, canUndo, saveStatus,
+      content, savedContent, admin, canUndo, saveStatus, contentLoaded,
       updateSection, saveSection, saveAll, revertSection, undo, logout, refreshAdmin,
     }}>
       {children}
