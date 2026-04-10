@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useContent } from "@/context/ContentContext";
 import { SiteContent } from "@/lib/content-types";
 
@@ -30,8 +30,17 @@ export default function EditableImg({ section, field, alt, style, className }: P
   const [uploading, setUploading] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [localPreview, setLocalPreview] = useState<string | null>(null);
+  const [dims, setDims] = useState<{ w: number; h: number } | null>(null);
 
   const src = localPreview ?? getPath(content[section], field);
+
+  useEffect(() => {
+    if (!src) { setDims(null); return; }
+    const img = new window.Image();
+    img.onload = () => setDims({ w: img.naturalWidth, h: img.naturalHeight });
+    img.onerror = () => setDims(null);
+    img.src = src;
+  }, [src]);
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -121,6 +130,11 @@ export default function EditableImg({ section, field, alt, style, className }: P
                 <div style={{ fontSize: 32 }}>📷</div>
                 <div style={{ color: "#fff", fontSize: 13, fontFamily: "'Poppins', sans-serif", fontWeight: 600 }}>Změnit obrázek</div>
                 <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 11, fontFamily: "'Poppins', sans-serif" }}>klikni pro výběr souboru</div>
+                {dims && (
+                  <div style={{ color: "#fff", fontSize: 11, fontFamily: "monospace", fontWeight: 700, background: "rgba(0,0,0,0.45)", borderRadius: 4, padding: "2px 8px", marginTop: 4 }}>
+                    {dims.w} × {dims.h} px
+                  </div>
+                )}
               </>
             )}
           </>

@@ -60,6 +60,17 @@ function ImageField({ label, value, onChange }: { label: string; value: string; 
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
+  const [dims, setDims] = useState<{ w: number; h: number } | null>(null);
+
+  const displaySrc = preview ?? value;
+
+  useEffect(() => {
+    if (!displaySrc) { setDims(null); return; }
+    const img = new window.Image();
+    img.onload = () => setDims({ w: img.naturalWidth, h: img.naturalHeight });
+    img.onerror = () => setDims(null);
+    img.src = displaySrc;
+  }, [displaySrc]);
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -79,13 +90,18 @@ function ImageField({ label, value, onChange }: { label: string; value: string; 
     e.target.value = "";
   }
 
-  const displaySrc = preview ?? value;
-
   return (
     <Field label={label}>
       {displaySrc && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={displaySrc} alt="" style={{ width: "100%", maxHeight: 110, objectFit: "cover", borderRadius: 7, marginBottom: 7, border: "1px solid #e5e7eb" }} />
+        <div style={{ position: "relative", marginBottom: 7 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={displaySrc} alt="" style={{ width: "100%", maxHeight: 110, objectFit: "cover", borderRadius: 7, border: "1px solid #e5e7eb", display: "block" }} />
+          {dims && (
+            <div style={{ position: "absolute", bottom: 5, right: 6, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 10, fontWeight: 600, borderRadius: 4, padding: "2px 6px", fontFamily: "monospace", letterSpacing: "0.3px" }}>
+              {dims.w} × {dims.h} px
+            </div>
+          )}
+        </div>
       )}
       <div style={{ display: "flex", gap: 6 }}>
         <input
@@ -823,7 +839,7 @@ const EDITORS: Record<Section, React.ComponentType> = {
 // ── Main LiveEditor panel ──────────────────────────────────────────────────────
 
 export default function LiveEditor() {
-  const { admin, content, saveAll, revertSection, undo, canUndo, saveStatus, logout } = useContent();
+  const { admin, content, saveAll, undo, canUndo, saveStatus, logout } = useContent();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<Section>("hero");
