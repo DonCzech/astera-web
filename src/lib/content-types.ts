@@ -23,6 +23,22 @@ export interface SocialLink {
   href: string;
 }
 
+export interface AboutPageSection {
+  heroTitle: string;
+  heroSubtitle: string;
+  heroImage: string;
+  bio1: string;
+  bio2: string;
+  bio3: string;
+  quoteText: string;
+  quoteAuthor: string;
+  ctaTitle: string;
+  ctaText: string;
+  ctaButtonText: string;
+  ctaButtonHref: string;
+  statsItems: { number: string; label: string }[];
+}
+
 export interface SiteContent {
   header: {
     navItems: NavItem[];
@@ -74,6 +90,7 @@ export interface SiteContent {
     footerLinks: FooterLink[];
     socialLinks: SocialLink[];
   };
+  aboutPage: AboutPageSection;
 }
 
 export const SITE = "https://www.asteralight.cz";
@@ -198,6 +215,26 @@ export const DEFAULT_CONTENT: SiteContent = {
       { name: "Pinterest", href: "https://www.pinterest.com/colettebaronreid/" },
       { name: "TikTok", href: "https://www.tiktok.com/@colettebaronreid" },
       { name: "LinkedIn", href: "https://www.linkedin.com/in/colettebaronreid" },
+    ],
+  },
+  aboutPage: {
+    heroTitle: "About Colette Baron-Reid",
+    heroSubtitle: "Bestselling author, Oracle expert, spiritual intuitive, and personal transformation thought leader.",
+    heroImage: "/images/Collette-Home-Top.png",
+    bio1: "Colette Baron-Reid (she/her) is a bestselling author, internationally recognized Oracle expert, spiritual intuitive, and personal transformation thought leader. She is the founder of The Oracle School Experience®, OraclePalooza®, and the DreamQuest Platinum Mastermind.",
+    bio2: "With 19 best-selling Oracle card decks and over two million sold worldwide, along with seven books, at 38 plus years clean and sober, Colette's greatest joy is teaching people they can have a direct and personal dialogue with the Universe to help them create their most fulfilling lives.",
+    bio3: "Colette's work has been featured on Oprah, CNN, The Wall Street Journal, The New York Times, and countless media outlets worldwide. She lives in Ontario, Canada with her husband Marc and their beloved dogs.",
+    quoteText: "You are not a human being having a spiritual experience. You are a spiritual being having a human experience.",
+    quoteAuthor: "— Colette Baron-Reid",
+    ctaTitle: "Ready to Begin Your Journey?",
+    ctaText: "Join thousands of people who have transformed their lives with Oracle guidance. Start your journey today.",
+    ctaButtonText: "Explore Oracle School",
+    ctaButtonHref: `${SITE}/courses/`,
+    statsItems: [
+      { number: "2M+", label: "Oracle Decks Sold" },
+      { number: "19", label: "Bestselling Decks" },
+      { number: "7", label: "Books Published" },
+      { number: "38+", label: "Years Clean & Sober" },
     ],
   },
 };

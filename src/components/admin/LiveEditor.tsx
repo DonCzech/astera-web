@@ -15,6 +15,7 @@ const SECTIONS: { key: Section; label: string }[] = [
   { key: "pickacard", label: "Pick Card" },
   { key: "oracle", label: "Oracle" },
   { key: "footer", label: "Footer" },
+  { key: "aboutPage", label: "Stránka: O nás" },
 ];
 
 const PANEL_W = 460; // panel width desktop
@@ -379,6 +380,43 @@ function FooterEditor() {
   );
 }
 
+// ── AboutPage editor ─────────────────────────────────────────────────────────────
+
+function AboutPageEditor() {
+  const { content, updateSection } = useContent();
+  const p = content.aboutPage;
+  const upd = (data: typeof p) => updateSection("aboutPage", data);
+
+  return (
+    <div>
+      <Field label="Hero nadpis"><RichTextEditor value={p.heroTitle} onChange={v => upd({ ...p, heroTitle: v })} /></Field>
+      <Field label="Hero podnapis"><RichTextEditor value={p.heroSubtitle} onChange={v => upd({ ...p, heroSubtitle: v })} /></Field>
+      <Field label="Hero obrázek (URL)"><input value={p.heroImage} onChange={e => upd({ ...p, heroImage: e.target.value })} style={{ width: "100%", padding: "6px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12 }} /></Field>
+      <Divider label="Bio texty" />
+      <Field label="Bio odstavec 1"><RichTextEditor value={p.bio1} onChange={v => upd({ ...p, bio1: v })} /></Field>
+      <Field label="Bio odstavec 2"><RichTextEditor value={p.bio2} onChange={v => upd({ ...p, bio2: v })} /></Field>
+      <Field label="Bio odstavec 3"><RichTextEditor value={p.bio3} onChange={v => upd({ ...p, bio3: v })} /></Field>
+      <Divider label="Citát" />
+      <Field label="Text citátu"><RichTextEditor value={p.quoteText} onChange={v => upd({ ...p, quoteText: v })} /></Field>
+      <Field label="Autor citátu"><input value={p.quoteAuthor} onChange={e => upd({ ...p, quoteAuthor: e.target.value })} style={{ width: "100%", padding: "6px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12 }} /></Field>
+      <Divider label="CTA sekce" />
+      <Field label="CTA nadpis"><RichTextEditor value={p.ctaTitle} onChange={v => upd({ ...p, ctaTitle: v })} /></Field>
+      <Field label="CTA text"><RichTextEditor value={p.ctaText} onChange={v => upd({ ...p, ctaText: v })} /></Field>
+      <Field label="CTA button text"><input value={p.ctaButtonText} onChange={e => upd({ ...p, ctaButtonText: e.target.value })} style={{ width: "100%", padding: "6px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12 }} /></Field>
+      <Field label="CTA button href"><input value={p.ctaButtonHref} onChange={e => upd({ ...p, ctaButtonHref: e.target.value })} style={{ width: "100%", padding: "6px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12 }} /></Field>
+      <Divider label="Statistiky" />
+      {p.statsItems.map((item, i) => (
+        <div key={i} style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+          <input value={item.number} onChange={e => { const arr = [...p.statsItems]; arr[i] = { ...arr[i], number: e.target.value }; upd({ ...p, statsItems: arr }); }}
+            placeholder="2M+" style={{ flex: 1, padding: "6px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12 }} />
+          <input value={item.label} onChange={e => { const arr = [...p.statsItems]; arr[i] = { ...arr[i], label: e.target.value }; upd({ ...p, statsItems: arr }); }}
+            placeholder="Popis" style={{ flex: 2, padding: "6px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12 }} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ── Section editor map ──────────────────────────────────────────────────────────
 
 const EDITORS: Record<Section, React.ComponentType> = {
@@ -390,6 +428,7 @@ const EDITORS: Record<Section, React.ComponentType> = {
   pickacard: PickACardEditor,
   oracle: OracleEditor,
   footer: FooterEditor,
+  aboutPage: AboutPageEditor,
 };
 
 // ── Main LiveEditor panel ──────────────────────────────────────────────────────

@@ -1,7 +1,6 @@
 import { cookies } from "next/headers";
 import { verifyToken, COOKIE_NAME } from "@/lib/auth";
-import { writeFile } from "fs/promises";
-import path from "path";
+import { put } from "@vercel/blob";
 
 export async function POST(request: Request) {
   const cookieStore = await cookies();
@@ -28,12 +27,9 @@ export async function POST(request: Request) {
   }
 
   const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-  const filename = `upload-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-  const uploadDir = path.join(process.cwd(), "public", "uploads");
-  const filepath = path.join(uploadDir, filename);
+  const filename = `astera-upload-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-  await writeFile(filepath, buffer);
+  const blob = await put(filename, file, { access: "public" });
 
-  return Response.json({ url: `/uploads/${filename}` });
+  return Response.json({ url: blob.url });
 }
