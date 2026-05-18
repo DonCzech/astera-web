@@ -2,7 +2,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { useContent } from "@/context/ContentContext";
 import { usePathname } from "next/navigation";
-import { SiteContent, NavItem, ManifestCard, FooterLink, CustomPage, PageBlock, BlockType, SiteSettings, ServicesContent, ServiceItem, ServiceSection } from "@/lib/content-types";
+import { DEFAULT_CONTENT, SiteContent, NavItem, ManifestCard, FooterLink, CustomPage, PageBlock, BlockType, SiteSettings, ServicesContent, ServiceItem, ServiceSection, PickACardGameCard } from "@/lib/content-types";
 import RichTextEditor from "./RichTextEditor";
 
 type Section = keyof SiteContent;
@@ -374,11 +374,43 @@ function ManifestEditor() {
 
 function PickACardEditor() {
   const { content, updateSection } = useContent();
-  const p = content.pickacard;
-  const upd = (k: string, v: string) => updateSection("pickacard", { ...p, [k]: v });
+  const p = {
+    ...DEFAULT_CONTENT.pickacard,
+    ...content.pickacard,
+    cards: content.pickacard.cards?.length ? content.pickacard.cards : DEFAULT_CONTENT.pickacard.cards,
+  };
+  const save = (next: typeof p) => updateSection("pickacard", next);
+  const upd = (k: string, v: string) => save({ ...p, [k]: v });
+  const updateCard = (i: number, card: PickACardGameCard) => save({ ...p, cards: p.cards.map((c, idx) => idx === i ? card : c) });
+  const addCard = () => {
+    let nextNumber = p.cards.length + 1;
+    let nextId = `card-${nextNumber}`;
+    while (p.cards.some(card => card.id === nextId)) {
+      nextNumber += 1;
+      nextId = `card-${nextNumber}`;
+    }
+
+    save({
+      ...p,
+      cards: [
+        ...p.cards,
+        {
+          id: nextId,
+          title: "Nová karta",
+          concepts: "klíčová slova",
+          message: "Text vzkazu karty.",
+          gradient: "linear-gradient(135deg, #7c3bb2 0%, #c9a84c 100%)",
+          symbol: "✦",
+          image: "",
+        },
+      ],
+    });
+  };
+  const removeCard = (i: number) => save({ ...p, cards: p.cards.filter((_, idx) => idx !== i) });
 
   return (
     <div>
+      <Divider label="Homepage upoutávka" />
       <Field label="Nadpis">
         <RTE value={p.title} onChange={v => upd("title", v)} />
       </Field>
@@ -392,6 +424,57 @@ function PickACardEditor() {
         <PlainInput value={p.buttonHref} onChange={v => upd("buttonHref", v)} />
       </Field>
       <ImageField label="Obrázek" value={p.image} onChange={v => upd("image", v)} />
+
+      <Divider label="Stránka /pick-a-card" />
+      <Field label="Nadpis hry">
+        <PlainInput value={p.gameTitle} onChange={v => upd("gameTitle", v)} />
+      </Field>
+      <Field label="Úvodní text hry">
+        <SmallTextarea value={p.gameIntro} onChange={v => upd("gameIntro", v)} rows={4} />
+      </Field>
+      <Field label="Instrukce pod kartami">
+        <PlainInput value={p.gameInstructions} onChange={v => upd("gameInstructions", v)} />
+      </Field>
+      <Field label="Text po odhalení">
+        <PlainInput value={p.revealLabel} onChange={v => upd("revealLabel", v)} />
+      </Field>
+      <Field label="Gradient zadní strany karet">
+        <PlainInput value={p.cardBackGradient} onChange={v => upd("cardBackGradient", v)} placeholder="linear-gradient(...)" />
+      </Field>
+
+      <Divider label="Karty ve hře" />
+      {p.cards.map((card, i) => (
+        <details key={card.id || i} open={i === 0} style={{ border: "1px solid #e5e7eb", borderRadius: 9, padding: "10px 12px", marginBottom: 10, background: "#f9fafb" }}>
+          <summary style={{ cursor: "pointer", fontSize: 13, fontWeight: 800, color: "#374151" }}>{card.symbol} {card.title || `Karta ${i + 1}`}</summary>
+          <div style={{ marginTop: 12 }}>
+            <Field label="ID karty">
+              <PlainInput value={card.id} onChange={v => updateCard(i, { ...card, id: v })} />
+            </Field>
+            <Field label="Název karty">
+              <PlainInput value={card.title} onChange={v => updateCard(i, { ...card, title: v })} />
+            </Field>
+            <Field label="Koncepty / klíčová slova">
+              <PlainInput value={card.concepts} onChange={v => updateCard(i, { ...card, concepts: v })} />
+            </Field>
+            <Field label="Vzkaz karty">
+              <SmallTextarea value={card.message} onChange={v => updateCard(i, { ...card, message: v })} rows={4} />
+            </Field>
+            <Field label="Symbol na kartě">
+              <PlainInput value={card.symbol} onChange={v => updateCard(i, { ...card, symbol: v })} />
+            </Field>
+            <Field label="Gradient / barva karty">
+              <PlainInput value={card.gradient} onChange={v => updateCard(i, { ...card, gradient: v })} placeholder="linear-gradient(...)" />
+            </Field>
+            <ImageField label="Obrázek karty" value={card.image || ""} onChange={v => updateCard(i, { ...card, image: v })} />
+            <button type="button" onClick={() => removeCard(i)} style={{ padding: "7px 12px", border: "1px solid #fecaca", borderRadius: 7, background: "#fee2e2", color: "#b91c1c", cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
+              Smazat kartu
+            </button>
+          </div>
+        </details>
+      ))}
+      <button type="button" onClick={addCard} style={{ width: "100%", padding: "9px", background: "#7c3bb2", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
+        + Přidat kartu
+      </button>
     </div>
   );
 }

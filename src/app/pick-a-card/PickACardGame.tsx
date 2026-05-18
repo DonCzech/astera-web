@@ -2,142 +2,42 @@
 import { useRef, useState, useEffect } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-
-type Card = {
-  id: number;
-  title: string;
-  concepts: string;
-  message: string;
-  gradient: string;
-  symbol: string;
-};
-
-const cards: Card[] = [
-  {
-    id: 1,
-    title: "Milost v chaosu",
-    concepts: "milost, volba, přijetí složitostí",
-    message: "I uprostřed bouře je v tobě klidné místo. Dovol si tam vstoupit a naslouchat.",
-    gradient: "linear-gradient(135deg, #7c3bb2 0%, #c9a84c 100%)",
-    symbol: "✦",
-  },
-  {
-    id: 2,
-    title: "Nová cesta",
-    concepts: "začátek, odvaha, důvěra",
-    message: "Před tebou se otevírá nová stezka. Udělej první krok, i když nevidíš celou cestu.",
-    gradient: "linear-gradient(135deg, #c9a84c 0%, #f5e9c8 100%)",
-    symbol: "☽",
-  },
-  {
-    id: 3,
-    title: "Hluboké uzdravení",
-    concepts: "léčení, soucit, péče",
-    message: "Tvé tělo i duše vědí, jak se uzdravit. Dej jim čas a něžnou pozornost.",
-    gradient: "linear-gradient(135deg, #6ab7a8 0%, #c9e8df 100%)",
-    symbol: "❋",
-  },
-  {
-    id: 4,
-    title: "Strážce moudrosti",
-    concepts: "intuice, vedení, vnitřní hlas",
-    message: "Odpověď, kterou hledáš venku, již znáš uvnitř. Ztiš se a naslouchej.",
-    gradient: "linear-gradient(135deg, #2d4a6e 0%, #7c9bbf 100%)",
-    symbol: "✧",
-  },
-  {
-    id: 5,
-    title: "Tanec hojnosti",
-    concepts: "hojnost, vděčnost, otevření",
-    message: "Vesmír ti chce dát víc, než si dovedeš představit. Otevři dlaně k přijetí.",
-    gradient: "linear-gradient(135deg, #d4814a 0%, #f5d4a8 100%)",
-    symbol: "✺",
-  },
-  {
-    id: 6,
-    title: "Tichý hlas",
-    concepts: "ticho, kontemplace, vhled",
-    message: "Ne každá odpověď přichází slovy. Někdy je největší pravda v tichu.",
-    gradient: "linear-gradient(135deg, #4a4063 0%, #9b8fb5 100%)",
-    symbol: "◯",
-  },
-  {
-    id: 7,
-    title: "Plamen vášně",
-    concepts: "tvoření, oheň, akce",
-    message: "Tvá vášeň je posvátná. Nedovol nikomu, aby ji utlumil — naopak ji rozdmýchej.",
-    gradient: "linear-gradient(135deg, #b2384a 0%, #f5a89b 100%)",
-    symbol: "✸",
-  },
-  {
-    id: 8,
-    title: "Měsíční brána",
-    concepts: "cykly, ženská energie, plynutí",
-    message: "Vše má svůj čas — odliv i příliv. Důvěřuj rytmu, ve kterém právě jsi.",
-    gradient: "linear-gradient(135deg, #3a5f8a 0%, #c5d8e8 100%)",
-    symbol: "☾",
-  },
-  {
-    id: 9,
-    title: "Strom kořenů",
-    concepts: "stabilita, uzemnění, předkové",
-    message: "Tvé kořeny sahají hluboko. Stůj pevně a vítr tě jen posílí.",
-    gradient: "linear-gradient(135deg, #5a4a2e 0%, #c9a84c 100%)",
-    symbol: "⚘",
-  },
-  {
-    id: 10,
-    title: "Křídla svobody",
-    concepts: "svoboda, nadhled, odpoutání",
-    message: "To, co tě svazovalo, již nemá moc. Rozpřáhni křídla — patří ti celé nebe.",
-    gradient: "linear-gradient(135deg, #87a9c9 0%, #e8f1f8 100%)",
-    symbol: "✶",
-  },
-  {
-    id: 11,
-    title: "Setkání duší",
-    concepts: "spojení, láska, rezonance",
-    message: "Ten správný člověk přichází ve správný čas. Buď tím, kým jsi — to je tvůj magnet.",
-    gradient: "linear-gradient(135deg, #b35a8a 0%, #f5c5d8 100%)",
-    symbol: "♡",
-  },
-  {
-    id: 12,
-    title: "Hvězdná setba",
-    concepts: "vize, manifestace, sen",
-    message: "Sen, který nosíš v srdci, není náhoda. Zalévej ho denně malými činy.",
-    gradient: "linear-gradient(135deg, #1a1f4a 0%, #c9a84c 100%)",
-    symbol: "✦",
-  },
-];
-
-const CARD_BACK_GRADIENT = "linear-gradient(135deg, #f5b8c8 0%, #c9a4d4 50%, #f5d4a8 100%)";
+import OptimizedImage from "@/components/OptimizedImage";
+import { useContent } from "@/context/ContentContext";
+import { DEFAULT_CONTENT, PickACardGameCard } from "@/lib/content-types";
 
 const CARD_W = 200;
 const CARD_H = 290;
 const GAP = 20;
 
 export default function PickACardGame() {
+  const { content } = useContent();
+  const pickContent = {
+    ...DEFAULT_CONTENT.pickacard,
+    ...content.pickacard,
+    cards: content.pickacard.cards?.length ? content.pickacard.cards : DEFAULT_CONTENT.pickacard.cards,
+  };
+  const cards = pickContent.cards;
   const sliderRef = useRef<HTMLDivElement>(null);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [phase, setPhase] = useState<"idle" | "zoom" | "flip" | "shown">("idle");
-  const [shuffled, setShuffled] = useState<Card[]>(cards);
+  const [shuffled, setShuffled] = useState<PickACardGameCard[]>(cards);
 
   useEffect(() => {
-    setShuffled([...cards].sort(() => Math.random() - 0.5));
-  }, []);
+    setShuffled(cards);
+  }, [cards]);
 
   const scrollBy = (dir: 1 | -1) => {
     sliderRef.current?.scrollBy({ left: dir * (CARD_W + GAP) * 3, behavior: "smooth" });
   };
 
-  const [revealedCard, setRevealedCard] = useState<Card | null>(null);
+  const [revealedCard, setRevealedCard] = useState<PickACardGameCard | null>(null);
 
-  const pickCard = (id: number) => {
+  const pickCard = (id: string) => {
     if (phase !== "idle") return;
     setSelectedId(id);
-    const random = cards[Math.floor(Math.random() * cards.length)];
-    setRevealedCard(random);
+    const picked = cards.find(card => card.id === id) ?? cards[0];
+    setRevealedCard(picked);
     setPhase("zoom");
     setTimeout(() => setPhase("flip"), 700);
     setTimeout(() => setPhase("shown"), 1400);
@@ -158,11 +58,11 @@ export default function PickACardGame() {
       <main className="pick-card-main" style={{ background: "linear-gradient(180deg, #fffcf5 0%, #f5ede0 100%)", minHeight: "calc(100vh - 80px)", paddingTop: "146px", paddingBottom: "80px" }}>
         <div className="container-main" style={{ textAlign: "center" }}>
           <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "clamp(34px, 5vw, 52px)", lineHeight: 1.18, color: "#2d2540", margin: "0 0 18px", fontWeight: 500, overflow: "visible" }}>
-            Vyberte si svojí kartu
+            {pickContent.gameTitle}
           </h1>
           <div style={{ maxWidth: 720, margin: "0 auto 42px", padding: "0 18px" }}>
             <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: "16px", color: "#5a5566", margin: 0, lineHeight: 1.75, overflow: "visible" }}>
-              Karty jsou starodávným nástrojem duchovního vedení. Položte si v duchu otázku, projděte kartami a vyberte tu, která vás osloví. Karta vám poskytne vhled do dalšího kroku.
+              {pickContent.gameIntro}
             </p>
           </div>
 
@@ -201,7 +101,7 @@ export default function PickACardGame() {
                       flex: `0 0 ${CARD_W}px`,
                       height: `${CARD_H}px`,
                       borderRadius: "14px",
-                      background: CARD_BACK_GRADIENT,
+                      background: pickContent.cardBackGradient,
                       cursor: phase === "idle" ? "pointer" : "default",
                       position: "relative",
                       transition: "opacity 0.5s ease, transform 0.35s ease",
@@ -226,7 +126,7 @@ export default function PickACardGame() {
               ›
             </button>
             <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: "13px", color: "#8a8497", marginTop: "16px" }}>
-              Posuňte kartami nebo klikněte na šipky. Pak kliknutím vyberte svou kartu.
+              {pickContent.gameInstructions}
             </p>
           </div>
         </div>
@@ -298,7 +198,7 @@ export default function PickACardGame() {
                     position: "absolute",
                     inset: 0,
                     borderRadius: "20px",
-                    background: CARD_BACK_GRADIENT,
+                    background: pickContent.cardBackGradient,
                     backfaceVisibility: "hidden",
                     WebkitBackfaceVisibility: "hidden",
                     boxShadow: "0 30px 80px rgba(0, 0, 0, 0.5)",
@@ -329,6 +229,17 @@ export default function PickACardGame() {
                   }}
                 >
                   <div style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at 50% 30%, rgba(255,255,255,0.18) 0%, transparent 60%)" }} />
+                  {selected.image && (
+                    <div style={{ position: "absolute", inset: 0 }}>
+                      <OptimizedImage
+                        src={selected.image}
+                        alt={selected.title}
+                        sizes="340px"
+                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", opacity: 0.42 }}
+                      />
+                      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(20,14,40,0.15), rgba(20,14,40,0.62))" }} />
+                    </div>
+                  )}
                   <div style={{ position: "relative", fontFamily: "'Cormorant Garamond', serif", fontSize: "70px", lineHeight: 1, opacity: 0.9, marginBottom: "18px" }}>
                     {selected.symbol}
                   </div>
@@ -361,7 +272,7 @@ export default function PickACardGame() {
                   textTransform: "uppercase",
                 }}
               >
-                Vaše karta pro dnešek
+                {pickContent.revealLabel}
               </div>
             )}
           </div>

@@ -13,6 +13,16 @@ export interface ManifestCard {
   btnHref: string;
 }
 
+export interface PickACardGameCard {
+  id: string;
+  title: string;
+  concepts: string;
+  message: string;
+  gradient: string;
+  symbol: string;
+  image: string;
+}
+
 export interface FooterLink {
   label: string;
   href: string;
@@ -193,6 +203,12 @@ export interface SiteContent {
     buttonText: string;
     buttonHref: string;
     image: string;
+    gameTitle: string;
+    gameIntro: string;
+    gameInstructions: string;
+    revealLabel: string;
+    cardBackGradient: string;
+    cards: PickACardGameCard[];
   };
   oracle: {
     title: string;
@@ -291,6 +307,25 @@ export const DEFAULT_CONTENT: SiteContent = {
     buttonText: "Vybrat kartu",
     buttonHref: `${SITE}/pick-a-card/`,
     image: "/images/astera-pick-card.png",
+    gameTitle: "Vyberte si svojí kartu",
+    gameIntro: "Karty jsou starodávným nástrojem duchovního vedení. Položte si v duchu otázku, projděte kartami a vyberte tu, která vás osloví. Karta vám poskytne vhled do dalšího kroku.",
+    gameInstructions: "Posuňte kartami nebo klikněte na šipky. Pak kliknutím vyberte svou kartu.",
+    revealLabel: "Vaše karta pro dnešek",
+    cardBackGradient: "linear-gradient(135deg, #f5b8c8 0%, #c9a4d4 50%, #f5d4a8 100%)",
+    cards: [
+      { id: "1", title: "Milost v chaosu", concepts: "milost, volba, přijetí složitostí", message: "I uprostřed bouře je v tobě klidné místo. Dovol si tam vstoupit a naslouchat.", gradient: "linear-gradient(135deg, #7c3bb2 0%, #c9a84c 100%)", symbol: "✦", image: "" },
+      { id: "2", title: "Nová cesta", concepts: "začátek, odvaha, důvěra", message: "Před tebou se otevírá nová stezka. Udělej první krok, i když nevidíš celou cestu.", gradient: "linear-gradient(135deg, #c9a84c 0%, #f5e9c8 100%)", symbol: "☽", image: "" },
+      { id: "3", title: "Hluboké uzdravení", concepts: "léčení, soucit, péče", message: "Tvé tělo i duše vědí, jak se uzdravit. Dej jim čas a něžnou pozornost.", gradient: "linear-gradient(135deg, #6ab7a8 0%, #c9e8df 100%)", symbol: "❋", image: "" },
+      { id: "4", title: "Strážce moudrosti", concepts: "intuice, vedení, vnitřní hlas", message: "Odpověď, kterou hledáš venku, již znáš uvnitř. Ztiš se a naslouchej.", gradient: "linear-gradient(135deg, #2d4a6e 0%, #7c9bbf 100%)", symbol: "✧", image: "" },
+      { id: "5", title: "Tanec hojnosti", concepts: "hojnost, vděčnost, otevření", message: "Vesmír ti chce dát víc, než si dovedeš představit. Otevři dlaně k přijetí.", gradient: "linear-gradient(135deg, #d4814a 0%, #f5d4a8 100%)", symbol: "✺", image: "" },
+      { id: "6", title: "Tichý hlas", concepts: "ticho, kontemplace, vhled", message: "Ne každá odpověď přichází slovy. Někdy je největší pravda v tichu.", gradient: "linear-gradient(135deg, #4a4063 0%, #9b8fb5 100%)", symbol: "◯", image: "" },
+      { id: "7", title: "Plamen vášně", concepts: "tvoření, oheň, akce", message: "Tvá vášeň je posvátná. Nedovol nikomu, aby ji utlumil — naopak ji rozdmýchej.", gradient: "linear-gradient(135deg, #b2384a 0%, #f5a89b 100%)", symbol: "✸", image: "" },
+      { id: "8", title: "Měsíční brána", concepts: "cykly, ženská energie, plynutí", message: "Vše má svůj čas — odliv i příliv. Důvěřuj rytmu, ve kterém právě jsi.", gradient: "linear-gradient(135deg, #3a5f8a 0%, #c5d8e8 100%)", symbol: "☾", image: "" },
+      { id: "9", title: "Strom kořenů", concepts: "stabilita, uzemnění, předkové", message: "Tvé kořeny sahají hluboko. Stůj pevně a vítr tě jen posílí.", gradient: "linear-gradient(135deg, #5a4a2e 0%, #c9a84c 100%)", symbol: "⚘", image: "" },
+      { id: "10", title: "Křídla svobody", concepts: "svoboda, nadhled, odpoutání", message: "To, co tě svazovalo, již nemá moc. Rozpřáhni křídla — patří ti celé nebe.", gradient: "linear-gradient(135deg, #87a9c9 0%, #e8f1f8 100%)", symbol: "✶", image: "" },
+      { id: "11", title: "Setkání duší", concepts: "spojení, láska, rezonance", message: "Ten správný člověk přichází ve správný čas. Buď tím, kým jsi — to je tvůj magnet.", gradient: "linear-gradient(135deg, #b35a8a 0%, #f5c5d8 100%)", symbol: "♡", image: "" },
+      { id: "12", title: "Hvězdná setba", concepts: "vize, manifestace, sen", message: "Sen, který nosíš v srdci, není náhoda. Zalévej ho denně malými činy.", gradient: "linear-gradient(135deg, #1a1f4a 0%, #c9a84c 100%)", symbol: "✦", image: "" },
+    ],
   },
   oracle: {
     title: "Měsíční intuitivní vhled",
