@@ -49,11 +49,19 @@ export async function getAllContent(): Promise<SiteContent> {
   const result: Record<string, unknown> = { ...DEFAULT_CONTENT };
   for (const row of rows) {
     // pg returns JSONB as parsed object already
-    result[row.section] = typeof row.content === "string"
+    const stored = typeof row.content === "string"
       ? JSON.parse(row.content)
       : row.content;
+    const defaults = result[row.section];
+    result[row.section] = isPlainObject(defaults) && isPlainObject(stored)
+      ? { ...defaults, ...stored }
+      : stored;
   }
   return result as unknown as SiteContent;
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
 export async function saveSection(section: string, content: unknown): Promise<void> {
