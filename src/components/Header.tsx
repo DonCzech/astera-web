@@ -3,11 +3,12 @@ import { useState, useEffect } from "react";
 import { useContent } from "@/context/ContentContext";
 import { NavItem } from "@/lib/content-types";
 import EditableText from "./admin/EditableText";
+import OptimizedImage from "@/components/OptimizedImage";
 
 export default function Header() {
   const { content, admin } = useContent();
-  const { navItems, logoHref, signInHref } = content.header;
-  const logoUrl = content.siteSettings?.logoUrl || "/images/CBR-logo-black.png";
+  const { navItems, logoHref } = content.header;
+  const logoUrl = content.siteSettings?.logoUrl || "/images/astera-logo.png";
   const adminBarH = admin.isAdmin ? 26 : 0;
 
   const [scrolled, setScrolled] = useState(false);
@@ -22,6 +23,7 @@ export default function Header() {
 
   return (
     <header
+      className="site-header"
       style={{
         height: scrolled ? "80px" : "102px",
         backgroundColor: "#ffffff",
@@ -39,12 +41,13 @@ export default function Header() {
         style={{ display: "flex", alignItems: "center", height: "100%", justifyContent: "space-between" }}
       >
         {/* Logo */}
-        <a href={logoHref} style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+        <a href={logoHref} className="logo-link" style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
+          <OptimizedImage
+            className="site-logo"
             src={logoUrl}
             alt="Astera Light"
-            style={{ height: scrolled ? "55px" : "70px", width: "auto", transition: "height 0.3s ease" }}
+            sizes="92px"
+            style={{ height: scrolled ? "56px" : "72px", width: "auto", maxWidth: "92px", objectFit: "contain", transition: "height 0.3s ease" }}
           />
         </a>
 
@@ -73,7 +76,7 @@ export default function Header() {
                   transition: "color 0.2s",
                   gap: 3,
                 }}
-                onMouseEnter={e => (e.currentTarget.style.color = "#40accd")}
+                onMouseEnter={e => (e.currentTarget.style.color = "#7c3bb2")}
                 onMouseLeave={e => (e.currentTarget.style.color = "#1f1f1f")}
               >
                 <EditableText
@@ -111,7 +114,7 @@ export default function Header() {
                         textDecoration: "none",
                         whiteSpace: "nowrap",
                       }}
-                      onMouseEnter={e => { e.currentTarget.style.color = "#40accd"; e.currentTarget.style.backgroundColor = "#f9f7f7"; }}
+                      onMouseEnter={e => { e.currentTarget.style.color = "#7c3bb2"; e.currentTarget.style.backgroundColor = "#f9f7f7"; }}
                       onMouseLeave={e => { e.currentTarget.style.color = "#1f1f1f"; e.currentTarget.style.backgroundColor = "transparent"; }}
                     >
                       {item.label}
@@ -123,11 +126,8 @@ export default function Header() {
           ))}
         </nav>
 
-        {/* Sign In + Mobile toggle */}
+        {/* Mobile toggle */}
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <a href={signInHref} className="btn-primary" style={{ padding: "8px 24px", fontSize: "13px" }}>
-            Sign In
-          </a>
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             style={{ display: "none", background: "none", border: "none", cursor: "pointer", padding: "8px" }}
@@ -169,6 +169,28 @@ export default function Header() {
         @media (max-width: 992px) {
           .hidden-mobile-nav { display: none !important; }
           .mobile-toggle { display: block !important; }
+        }
+        @media (max-width: 640px) {
+          .site-header {
+            height: 76px !important;
+          }
+          .site-logo {
+            height: 48px !important;
+            max-width: 76px !important;
+          }
+          .site-header .container-main {
+            position: relative;
+            justify-content: center !important;
+          }
+          .site-header .logo-link {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+          }
+          .site-header .mobile-toggle {
+            position: absolute;
+            right: 16px;
+          }
         }
       `}</style>
     </header>

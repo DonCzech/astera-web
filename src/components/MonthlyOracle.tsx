@@ -1,6 +1,7 @@
 "use client";
 import { useContent } from "@/context/ContentContext";
 import EditableText from "./admin/EditableText";
+import { optimizedImageSet } from "@/components/OptimizedImage";
 
 export default function MonthlyOracle() {
   const { content } = useContent();
@@ -30,15 +31,14 @@ export default function MonthlyOracle() {
             />
           </div>
 
-          {/* Video */}
+          {/* Image */}
           <div>
             <div style={{ position: "relative", paddingBottom: "56.25%", height: 0, overflow: "hidden", borderRadius: "8px" }}>
-              <iframe
-                src={o.youtubeUrl}
-                title={o.title}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: 0 }}
+              <div
+                className="oracle-video-thumb"
+                role="img"
+                aria-label={o.title}
+                style={{ backgroundImage: optimizedImageSet("/images/oracle-video-thumb.jpg") }}
               />
             </div>
           </div>
@@ -46,6 +46,15 @@ export default function MonthlyOracle() {
       </div>
 
       <style>{`
+        .oracle-video-thumb {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          background-position: center;
+          background-size: cover;
+          background-repeat: no-repeat;
+        }
         @media (max-width: 768px) {
           .oracle-grid { grid-template-columns: 1fr !important; gap: 28px !important; }
         }

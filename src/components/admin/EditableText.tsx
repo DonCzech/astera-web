@@ -10,11 +10,39 @@ function getPath(obj: any, path: string): string {
 
 function setPath(obj: any, path: string, val: string): any {
   const parts = path.split(".");
-  if (parts.length === 1) return { ...obj, [path]: val };
-  const [k, i, p] = parts;
-  const arr = [...(obj[k] as any[])];
-  arr[+i] = { ...arr[+i], [p]: val };
-  return { ...obj, [k]: arr };
+  const root = Array.isArray(obj) ? [...obj] : { ...obj };
+  let current: any = root;
+
+  parts.forEach((part, index) => {
+    const key = Array.isArray(current) ? Number(part) : part;
+    if (index === parts.length - 1) {
+      current[key] = val;
+      return;
+    }
+
+    const next = current[key];
+    current[key] = Array.isArray(next) ? [...next] : { ...next };
+    current = current[key];
+  });
+
+  return root;
+}
+
+function htmlToText(html: string): string {
+  if (typeof window === "undefined") {
+    return html
+      .replace(/<br\s*\/?>/gi, "")
+      .replace(/<[^>]*>/g, "")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, "\"")
+      .replace(/&#39;/g, "'");
+  }
+  const el = document.createElement("div");
+  el.innerHTML = html;
+  return el.textContent || "";
 }
 
 const FONTS = ["Poppins", "Playfair Display", "Arial", "Georgia", "Verdana", "Times New Roman"];
@@ -51,9 +79,10 @@ export default function EditableText({
   // Skips update while user is actively typing (editing.current = true).
   useLayoutEffect(() => {
     if (isAdmin && !editing.current && ref.current) {
-      ref.current.innerHTML = value;
+      if (richText) ref.current.innerHTML = value;
+      else ref.current.textContent = htmlToText(value);
     }
-  }, [value, isAdmin]);
+  }, [value, isAdmin, richText]);
 
   // ── Toolbar position ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -110,7 +139,7 @@ export default function EditableText({
     if (richText) {
       return <El style={style} className={className} dangerouslySetInnerHTML={{ __html: value }} />;
     }
-    return <El style={style} className={className}>{value}</El>;
+    return <El style={style} className={className}>{htmlToText(value)}</El>;
   }
 
   // ── Admin: floating toolbar ────────────────────────────────────────────────
@@ -195,7 +224,7 @@ export default function EditableText({
         ref={ref}
         style={{
           ...style,
-          outline: focused ? "2px solid #40accd" : hovered ? "1px dashed rgba(64,172,205,0.55)" : "none",
+          outline: focused ? "2px solid #7c3bb2" : hovered ? "1px dashed rgba(124,59,178,0.55)" : "none",
           outlineOffset: 3,
           borderRadius: 3,
           cursor: "text",
@@ -206,10 +235,10 @@ export default function EditableText({
         suppressContentEditableWarning
         onFocus={() => { editing.current = true; setFocused(true); }}
         onBlur={(e: React.FocusEvent<HTMLElement>) => {
-          const html = e.currentTarget.innerHTML;
+          const nextValue = richText ? e.currentTarget.innerHTML : e.currentTarget.textContent || "";
           editing.current = false;
           setFocused(false);
-          updateSection(section, setPath(content[section], field, html));
+          updateSection(section, setPath(content[section], field, nextValue));
         }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}

@@ -1,8 +1,8 @@
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
+import HomeServices from "@/components/HomeServices";
 import Newsletter from "@/components/Newsletter";
-import AboutColette from "@/components/AboutColette";
-import FeaturedIn from "@/components/FeaturedIn";
+import AboutAstera from "@/components/AboutAstera";
 import ManifestCards from "@/components/ManifestCards";
 import PickACard from "@/components/PickACard";
 import MonthlyOracle from "@/components/MonthlyOracle";
@@ -14,9 +14,9 @@ export default function Home() {
       <Header />
       <main>
         <Hero />
+        <HomeServices />
+        <AboutAstera />
         <Newsletter />
-        <AboutColette />
-        <FeaturedIn />
         <ManifestCards />
         <PickACard />
         <MonthlyOracle />

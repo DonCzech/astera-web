@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-accent: #40accd;
-  --color-accent-hover: #298ead;
+  --color-accent: #7c3bb2;
+  --color-accent-hover: #5f2a8d;
   --color-text-dark: #1f1f1f;
   --color-bg-gray: #f9f7f7;
   --color-bg-blue: #f2f6fc;
@@ -37,7 +37,7 @@ h4 { font-size: 20px; line-height: 30px; font-weight: 500; }
 
 .btn-primary {
   display: inline-block;
-  background-color: #40accd;
+  background-color: #7c3bb2;
   color: #ffffff !important;
   border-radius: 20px;
   font-family: 'Poppins', sans-serif;
@@ -50,7 +50,7 @@ h4 { font-size: 20px; line-height: 30px; font-weight: 500; }
   cursor: pointer;
   white-space: nowrap;
 }
-.btn-primary:hover { background-color: #298ead; }
+.btn-primary:hover { background-color: #5f2a8d; }
 
 .input-round {
   background-color: #f1f6fc;
@@ -62,7 +62,7 @@ h4 { font-size: 20px; line-height: 30px; font-weight: 500; }
   color: #1f1f1f;
   outline: none;
 }
-.input-round:focus { border-color: #40accd; }
+.input-round:focus { border-color: #7c3bb2; }
 
 .roundit { border-radius: 12px; overflow: hidden; }
 

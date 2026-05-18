@@ -8,7 +8,7 @@ export default function PickACard() {
   const p = content.pickacard;
 
   return (
-    <section style={{ backgroundColor: "#f9f7f7", padding: "70px 0 0" }}>
+    <section style={{ backgroundColor: "#f9f7f7", padding: "70px 0" }}>
       <div className="container-main">
         <div
           style={{ display: "grid", gridTemplateColumns: "5fr 1fr 4fr", gap: "0", alignItems: "center" }}
@@ -19,8 +19,9 @@ export default function PickACard() {
             <EditableImg
               section="pickacard"
               field="image"
-              alt="Colette Baron-Reid"
-              style={{ width: "100%", height: "auto", display: "block", position: "relative", bottom: "-70px", zIndex: 1 }}
+              alt="Astera"
+              sizes="(max-width: 768px) calc(100vw - 40px), 430px"
+              style={{ width: "min(100%, 430px)", maxHeight: "620px", height: "auto", objectFit: "contain", display: "block", margin: "0 auto", position: "relative", zIndex: 1 }}
             />
           </div>
 

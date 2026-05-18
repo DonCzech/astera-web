@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import OptimizedImage from "@/components/OptimizedImage";
 import { useContent } from "@/context/ContentContext";
 
 export default function AdminLoginPage() {
@@ -51,7 +52,7 @@ export default function AdminLoginPage() {
         maxWidth: 380,
         boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
       }}>
-        <img src="/images/CBR-logo-black.png" alt="Logo" style={{ height: 48, marginBottom: 28 }} />
+        <OptimizedImage src="/images/CBR-logo-black.png" alt="Logo" sizes="102px" style={{ height: 48, marginBottom: 28 }} />
         <h1 style={{ fontSize: 22, fontFamily: "'Playfair Display', serif", marginTop: 0, marginBottom: 8 }}>
           Admin Login
         </h1>
@@ -99,7 +100,7 @@ export default function AdminLoginPage() {
         </form>
 
         <p style={{ textAlign: "center", fontSize: 12, color: "#aaa", marginTop: 24 }}>
-          <a href="/" style={{ color: "#40accd", textDecoration: "none" }}>← Back to site</a>
+          <a href="/" style={{ color: "#7c3bb2", textDecoration: "none" }}>← Back to site</a>
         </p>
       </div>
     </div>

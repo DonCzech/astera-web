@@ -1,39 +1,49 @@
-"use client";
-import { use } from "react";
-import { notFound } from "next/navigation";
-import { useContent } from "@/context/ContentContext";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import BlockRenderer from "@/components/BlockRenderer";
+import type { Metadata } from "next";
+import { getAllContent } from "@/lib/db";
+import DynamicPageClient from "./DynamicPageClient";
 
-export default function DynamicPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = use(params);
-  const { content, contentLoaded, admin } = useContent();
+const BASE = "https://asteralight.cz";
 
-  // Wait for content to load from API before deciding 404
-  // (server-side render has DEFAULT_CONTENT with empty pages)
-  if (!contentLoaded) {
-    return (
-      <>
-        <Header />
-        <main style={{ paddingTop: "102px", minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ color: "#9ca3af", fontFamily: "'Poppins',sans-serif", fontSize: 16 }}>Načítám…</div>
-        </main>
-        <Footer />
-      </>
-    );
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+
+  try {
+    const content = await getAllContent();
+    const pages = (content.pages ?? []) as Array<{ slug: string; title?: string; description?: string }>;
+    const page = pages.find((p) => p.slug === slug);
+
+    if (!page) return {};
+
+    const title = page.title || "Astera-Light";
+    const description = page.description || "Astera-Light — Oracle expert, author and spiritual intuitive.";
+    const url = `${BASE}/${slug}`;
+
+    return {
+      title,
+      description,
+      alternates: { canonical: url },
+      openGraph: {
+        title,
+        description,
+        type: "website",
+        url,
+        siteName: "Astera-Light",
+      },
+      twitter: { card: "summary_large_image", title, description },
+    };
+  } catch {
+    return {};
   }
+}
 
-  const page = (content.pages || []).find(p => p.slug === slug);
-  if (!page) return notFound();
-
-  return (
-    <>
-      <Header />
-      <main style={{ paddingTop: admin.isAdmin ? "128px" : "102px", minHeight: "60vh" }}>
-        <BlockRenderer blocks={page.blocks} />
-      </main>
-      <Footer />
-    </>
-  );
+export default async function DynamicPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  return <DynamicPageClient params={params} />;
 }

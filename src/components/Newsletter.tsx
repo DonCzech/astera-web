@@ -1,12 +1,9 @@
 "use client";
 import { useState } from "react";
-import { useContent } from "@/context/ContentContext";
 import EditableText from "./admin/EditableText";
 import EditableImg from "./admin/EditableImg";
 
 export default function Newsletter() {
-  const { content } = useContent();
-  const n = content.newsletter;
   const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
 
@@ -27,7 +24,8 @@ export default function Newsletter() {
             <EditableImg
               section="newsletter"
               field="image"
-              alt="Colette Baron-Reid"
+              alt="Astera"
+              sizes="(max-width: 768px) calc(100vw - 40px), 430px"
               style={{ width: "100%", height: "auto", borderRadius: "8px", display: "block" }}
             />
           </div>
@@ -50,8 +48,8 @@ export default function Newsletter() {
 
             <form onSubmit={handleSubmit}>
               <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-                <input type="text" placeholder="First Name" value={firstName} onChange={e => setFirstName(e.target.value)} className="input-round" style={{ flex: "1 1 140px", minWidth: "120px" }} />
-                <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="input-round" style={{ flex: "2 1 200px", minWidth: "160px" }} />
+                <input type="text" placeholder="Jméno" value={firstName} onChange={e => setFirstName(e.target.value)} className="input-round" style={{ flex: "1 1 140px", minWidth: "120px" }} />
+                <input type="email" placeholder="E-mail" value={email} onChange={e => setEmail(e.target.value)} className="input-round" style={{ flex: "2 1 200px", minWidth: "160px" }} />
               </div>
               <div style={{ marginTop: "16px" }}>
                 <button type="submit" className="btn-primary" style={{ padding: "12px 50px" }}>

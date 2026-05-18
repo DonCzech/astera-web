@@ -2,7 +2,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { useContent } from "@/context/ContentContext";
 import { usePathname } from "next/navigation";
-import { SiteContent, NavItem, ManifestCard, FooterLink, CustomPage, PageBlock, BlockType, SiteSettings } from "@/lib/content-types";
+import { SiteContent, NavItem, ManifestCard, FooterLink, CustomPage, PageBlock, BlockType, SiteSettings, ServicesContent, ServiceItem, ServiceSection } from "@/lib/content-types";
 import RichTextEditor from "./RichTextEditor";
 
 type Section = keyof SiteContent;
@@ -15,14 +15,14 @@ const ALL_SECTIONS: { key: Section; label: string }[] = [
   { key: "manifest", label: "Cards" },
   { key: "pickacard", label: "Pick Card" },
   { key: "oracle", label: "Oracle" },
+  { key: "servicesContent", label: "Služby" },
   { key: "footer", label: "Footer" },
   { key: "aboutPage", label: "O nás" },
   { key: "pages", label: "📋 Stránky" },
   { key: "siteSettings", label: "⚙️ Web" },
 ];
 
-const HOMEPAGE_KEYS: Section[] = ["header", "hero", "newsletter", "about", "manifest", "pickacard", "oracle", "footer", "siteSettings"];
-const ABOUT_KEYS: Section[] = ["aboutPage", "siteSettings"];
+const HOMEPAGE_KEYS: Section[] = ["header", "hero", "servicesContent", "newsletter", "about", "manifest", "pickacard", "oracle", "footer", "siteSettings"];
 const CUSTOM_PAGE_KEYS: Section[] = ["pages", "siteSettings"];
 
 const PANEL_W = 460; // panel width desktop
@@ -49,6 +49,62 @@ function PlainInput({ value, onChange, placeholder }: { value: string; onChange:
       placeholder={placeholder}
       style={{ width: "100%", boxSizing: "border-box", padding: "8px 12px", border: "1px solid #e5e7eb", borderRadius: 7, fontSize: 13, outline: "none", fontFamily: "inherit", background: "#fafafa" }}
     />
+  );
+}
+
+const COLOR_SWATCHES = [
+  "#1f1f1f",
+  "#ffffff",
+  "#7c3bb2",
+  "#5f2a8d",
+  "#3b1d55",
+  "#b88a35",
+  "#f7f0fb",
+  "#f9f7f7",
+  "#2d2530",
+  "#6b7280",
+];
+
+function ColorField({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
+  const inputColor = /^#[0-9a-f]{6}$/i.test(value) ? value : "#7c3bb2";
+
+  return (
+    <Field label={label}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
+        {COLOR_SWATCHES.map(color => (
+          <button
+            key={color}
+            type="button"
+            title={color}
+            onClick={() => onChange(color)}
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: "50%",
+              border: value === color ? "2px solid #111827" : "1px solid #d1d5db",
+              background: color,
+              cursor: "pointer",
+              boxShadow: color === "#ffffff" ? "inset 0 0 0 1px #e5e7eb" : "none",
+            }}
+          />
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <input
+          type="color"
+          value={inputColor}
+          onChange={e => onChange(e.target.value)}
+          style={{ width: 42, height: 34, border: "1px solid #e5e7eb", borderRadius: 7, cursor: "pointer", padding: 2, background: "#fff" }}
+        />
+        <input
+          type="text"
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder={placeholder || "#7c3bb2"}
+          style={{ flex: 1, padding: "7px 10px", border: "1px solid #e5e7eb", borderRadius: 7, fontSize: 12, outline: "none", background: "#fafafa", fontFamily: "monospace" }}
+        />
+      </div>
+    </Field>
   );
 }
 
@@ -115,7 +171,7 @@ function ImageField({ label, value, onChange }: { label: string; value: string; 
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          style={{ padding: "7px 12px", background: "#40accd", color: "#fff", border: "none", borderRadius: 7, fontSize: 12, cursor: "pointer", whiteSpace: "nowrap", fontWeight: 600 }}
+          style={{ padding: "7px 12px", background: "#7c3bb2", color: "#fff", border: "none", borderRadius: 7, fontSize: 12, cursor: "pointer", whiteSpace: "nowrap", fontWeight: 600 }}
         >
           {uploading ? "…" : "📂 Upload"}
         </button>
@@ -190,7 +246,7 @@ function HeaderEditor() {
           )}
         </div>
       ))}
-      <button type="button" onClick={addItem} style={{ padding: "7px 14px", background: "#eff6ff", border: "1px solid #40accd", borderRadius: 7, fontSize: 12, cursor: "pointer", color: "#40accd", fontWeight: 600 }}>
+      <button type="button" onClick={addItem} style={{ padding: "7px 14px", background: "#eff6ff", border: "1px solid #7c3bb2", borderRadius: 7, fontSize: 12, cursor: "pointer", color: "#7c3bb2", fontWeight: 600 }}>
         + Přidat položku menu
       </button>
     </div>
@@ -216,8 +272,14 @@ function HeroEditor() {
       <Field label="URL tlačítka">
         <PlainInput value={h.ctaHref} onChange={v => upd("ctaHref", v)} />
       </Field>
-      <ImageField label="Pozadí (desktop)" value={h.backgroundImage} onChange={v => upd("backgroundImage", v)} />
-      <ImageField label="Obrázek (mobil)" value={h.mobileImage} onChange={v => upd("mobileImage", v)} />
+      <Divider label="Barvy hero sekce" />
+      <ColorField label="Barva nadpisu" value={h.titleColor || "#1f1f1f"} onChange={v => upd("titleColor", v)} />
+      <ColorField label="Barva podnadpisu" value={h.subtitleColor || "#2d2530"} onChange={v => upd("subtitleColor", v)} />
+      <ColorField label="Pozadí textového panelu" value={h.panelBackground || "rgba(255, 255, 255, 0.52)"} onChange={v => upd("panelBackground", v)} placeholder="rgba(255, 255, 255, 0.52)" />
+      <ColorField label="Barva hlavního tlačítka" value={h.primaryButtonBg || "#7c3bb2"} onChange={v => upd("primaryButtonBg", v)} />
+      <ColorField label="Barva textu tlačítka" value={h.primaryButtonColor || "#ffffff"} onChange={v => upd("primaryButtonColor", v)} />
+      <Divider label="Obrázky" />
+      <ImageField label="Pozadí hero (desktop i mobil)" value={h.backgroundImage} onChange={v => upd("backgroundImage", v)} />
     </div>
   );
 }
@@ -287,7 +349,7 @@ function ManifestEditor() {
       </Field>
       {m.cards.map((card: ManifestCard, i: number) => (
         <div key={i} style={{ borderTop: "1px solid #e5e7eb", paddingTop: 16, marginTop: 16 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#40accd", marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#7c3bb2", marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.5px" }}>
             Karta {i + 1}: {card.title}
           </div>
           <Field label="Nadpis karty">
@@ -389,7 +451,7 @@ function FooterEditor() {
           <button type="button" onClick={() => removeFooterLink(i)} style={{ padding: "6px 9px", background: "#fee2e2", border: "none", borderRadius: 6, fontSize: 12, cursor: "pointer", color: "#c00" }}>✕</button>
         </div>
       ))}
-      <button type="button" onClick={addFooterLink} style={{ padding: "6px 12px", background: "#eff6ff", border: "1px solid #40accd", borderRadius: 7, fontSize: 12, cursor: "pointer", color: "#40accd", fontWeight: 600, marginBottom: 16 }}>
+      <button type="button" onClick={addFooterLink} style={{ padding: "6px 12px", background: "#eff6ff", border: "1px solid #7c3bb2", borderRadius: 7, fontSize: 12, cursor: "pointer", color: "#7c3bb2", fontWeight: 600, marginBottom: 16 }}>
         + Přidat odkaz
       </button>
 
@@ -437,6 +499,154 @@ function AboutPageEditor() {
             placeholder="Popis" style={{ flex: 2, padding: "6px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12 }} />
         </div>
       ))}
+    </div>
+  );
+}
+
+function SmallTextarea({ value, onChange, rows = 3 }: { value: string; onChange: (v: string) => void; rows?: number }) {
+  return (
+    <textarea
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      rows={rows}
+      style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", border: "1px solid #e5e7eb", borderRadius: 7, fontSize: 12, outline: "none", fontFamily: "inherit", background: "#fafafa", resize: "vertical", lineHeight: 1.5 }}
+    />
+  );
+}
+
+function ArrayTextField({ label, values, onChange }: { label: string; values: string[]; onChange: (values: string[]) => void }) {
+  return (
+    <Field label={label}>
+      <SmallTextarea value={(values || []).join("\n")} onChange={v => onChange(v.split("\n").filter(Boolean))} rows={4} />
+    </Field>
+  );
+}
+
+function ServiceSectionEditor({
+  section,
+  onChange,
+  onDelete,
+}: {
+  section: ServiceSection;
+  onChange: (section: ServiceSection) => void;
+  onDelete: () => void;
+}) {
+  const rows = section.rows || [];
+  const twoCol = section.twoCol || [];
+
+  return (
+    <div style={{ border: "1px solid #e5e7eb", borderRadius: 8, padding: 10, marginBottom: 10, background: "#fff" }}>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
+        <strong style={{ flex: 1, fontSize: 12, color: "#374151" }}>Blok detailu služby</strong>
+        <button type="button" onClick={onDelete} style={{ padding: "4px 8px", border: "1px solid #fecaca", borderRadius: 6, background: "#fee2e2", color: "#b91c1c", cursor: "pointer", fontSize: 11 }}>Smazat</button>
+      </div>
+      <Field label="Nadpis bloku"><PlainInput value={section.heading || ""} onChange={v => onChange({ ...section, heading: v })} /></Field>
+      <ArrayTextField label="Odstavce (každý na nový řádek)" values={section.paragraphs || []} onChange={v => onChange({ ...section, paragraphs: v })} />
+      <ArrayTextField label="Seznam (každá položka na nový řádek)" values={section.list || []} onChange={v => onChange({ ...section, list: v })} />
+
+      <Divider label="Ceníkové řádky" />
+      {rows.map((row, i) => (
+        <div key={i} style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+          <input value={row.label} onChange={e => onChange({ ...section, rows: rows.map((r, idx) => idx === i ? { ...r, label: e.target.value } : r) })} placeholder="Popis" style={{ flex: 2, padding: "6px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12 }} />
+          <input value={row.price} onChange={e => onChange({ ...section, rows: rows.map((r, idx) => idx === i ? { ...r, price: e.target.value } : r) })} placeholder="Cena" style={{ flex: 1, padding: "6px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12 }} />
+          <button type="button" onClick={() => onChange({ ...section, rows: rows.filter((_, idx) => idx !== i) })} style={{ padding: "6px 8px", border: "none", borderRadius: 6, background: "#fee2e2", color: "#b91c1c", cursor: "pointer" }}>x</button>
+        </div>
+      ))}
+      <button type="button" onClick={() => onChange({ ...section, rows: [...rows, { label: "Nový řádek", price: "" }] })} style={{ padding: "6px 10px", border: "1px solid #d8b4fe", borderRadius: 6, background: "#faf5ff", color: "#7c3bb2", cursor: "pointer", fontSize: 12 }}>+ Ceníkový řádek</button>
+
+      <Divider label="Dva sloupce" />
+      {twoCol.map((col, i) => (
+        <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr", gap: 6, marginBottom: 8 }}>
+          <input value={col.label} onChange={e => onChange({ ...section, twoCol: twoCol.map((c, idx) => idx === i ? { ...c, label: e.target.value } : c) })} placeholder="Nadpis sloupce" style={{ padding: "6px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12 }} />
+          <SmallTextarea value={col.text} onChange={v => onChange({ ...section, twoCol: twoCol.map((c, idx) => idx === i ? { ...c, text: v } : c) })} rows={2} />
+          <button type="button" onClick={() => onChange({ ...section, twoCol: twoCol.filter((_, idx) => idx !== i) })} style={{ justifySelf: "start", padding: "5px 8px", border: "none", borderRadius: 6, background: "#fee2e2", color: "#b91c1c", cursor: "pointer", fontSize: 11 }}>Smazat sloupec</button>
+        </div>
+      ))}
+      <button type="button" onClick={() => onChange({ ...section, twoCol: [...twoCol, { label: "Nadpis", text: "Text" }] })} style={{ padding: "6px 10px", border: "1px solid #d8b4fe", borderRadius: 6, background: "#faf5ff", color: "#7c3bb2", cursor: "pointer", fontSize: 12 }}>+ Sloupec</button>
+    </div>
+  );
+}
+
+function ServicesEditor() {
+  const { content, updateSection } = useContent();
+  const s = content.servicesContent;
+  const upd = (data: ServicesContent) => updateSection("servicesContent", data);
+  const updateField = (key: Exclude<keyof ServicesContent, "items">, value: string) => upd({ ...s, [key]: value });
+  const updateItem = (i: number, item: ServiceItem) => upd({ ...s, items: s.items.map((service, idx) => idx === i ? item : service) });
+  const addItem = () => upd({ ...s, items: [...s.items, { id: `sluzba-${Date.now()}`, symbol: "✦", emoji: "✨", color: "#7c3bb2", title: "Nová služba", teaser: "Krátký popis služby.", lead: "Detailní úvod služby.", body: "", sections: [], cta: { label: s.pageHeroButtonText || "Rezervovat termín", href: s.pageHeroButtonHref || "#" } }] });
+  const removeItem = (i: number) => upd({ ...s, items: s.items.filter((_, idx) => idx !== i) });
+
+  return (
+    <div>
+      <Divider label="Homepage sekce služeb" />
+      <Field label="Dekorace / eyebrow"><PlainInput value={s.homeEyebrow} onChange={v => updateField("homeEyebrow", v)} /></Field>
+      <Field label="Nadpis homepage"><RTE value={s.homeTitle} onChange={v => updateField("homeTitle", v)} /></Field>
+      <Field label="Podnadpis homepage"><PlainInput value={s.homeSubtitle} onChange={v => updateField("homeSubtitle", v)} /></Field>
+      <Field label="Text odkazu na kartě"><PlainInput value={s.homeCardLinkText} onChange={v => updateField("homeCardLinkText", v)} /></Field>
+
+      <Divider label="Stránka /sluzby - hero" />
+      <Field label="Hero eyebrow"><PlainInput value={s.pageHeroEyebrow} onChange={v => updateField("pageHeroEyebrow", v)} /></Field>
+      <Field label="Hero nadpis"><RTE value={s.pageHeroTitle} onChange={v => updateField("pageHeroTitle", v)} /></Field>
+      <Field label="Hero text"><SmallTextarea value={s.pageHeroText} onChange={v => updateField("pageHeroText", v)} /></Field>
+      <Field label="Hero tlačítko text"><PlainInput value={s.pageHeroButtonText} onChange={v => updateField("pageHeroButtonText", v)} /></Field>
+      <Field label="Hero tlačítko URL"><PlainInput value={s.pageHeroButtonHref} onChange={v => updateField("pageHeroButtonHref", v)} /></Field>
+
+      <Divider label="Stránka /sluzby - úvod a grid" />
+      <Field label="Úvodní ikonka"><PlainInput value={s.pageIntroIcon} onChange={v => updateField("pageIntroIcon", v)} /></Field>
+      <Field label="Úvodní nadpis"><RTE value={s.pageIntroTitle} onChange={v => updateField("pageIntroTitle", v)} /></Field>
+      <Field label="Úvodní text"><SmallTextarea value={s.pageIntroText} onChange={v => updateField("pageIntroText", v)} rows={5} /></Field>
+      <Field label="Nadpis gridu"><RTE value={s.pageGridTitle} onChange={v => updateField("pageGridTitle", v)} /></Field>
+      <Field label="Podnadpis gridu"><PlainInput value={s.pageGridSubtitle} onChange={v => updateField("pageGridSubtitle", v)} /></Field>
+      <Field label="Text odkazu ve službě"><PlainInput value={s.pageTileLinkText} onChange={v => updateField("pageTileLinkText", v)} /></Field>
+
+      <Divider label="Stránka /sluzby - proč a spodní boxy" />
+      <Field label="Proč nadpis"><RTE value={s.pageWhyTitle} onChange={v => updateField("pageWhyTitle", v)} /></Field>
+      <Field label="Proč text 1"><SmallTextarea value={s.pageWhyText1} onChange={v => updateField("pageWhyText1", v)} /></Field>
+      <Field label="Proč text 2"><SmallTextarea value={s.pageWhyText2} onChange={v => updateField("pageWhyText2", v)} /></Field>
+      <Field label="Proč tlačítko text"><PlainInput value={s.pageWhyButtonText} onChange={v => updateField("pageWhyButtonText", v)} /></Field>
+      <Field label="Proč tlačítko URL"><PlainInput value={s.pageWhyButtonHref} onChange={v => updateField("pageWhyButtonHref", v)} /></Field>
+      <Field label="Specifické případy ikonka"><PlainInput value={s.pageSpecificIcon} onChange={v => updateField("pageSpecificIcon", v)} /></Field>
+      <Field label="Specifické případy nadpis"><PlainInput value={s.pageSpecificTitle} onChange={v => updateField("pageSpecificTitle", v)} /></Field>
+      <Field label="Specifické případy text 1"><SmallTextarea value={s.pageSpecificText1} onChange={v => updateField("pageSpecificText1", v)} /></Field>
+      <Field label="Specifické případy text 2"><SmallTextarea value={s.pageSpecificText2} onChange={v => updateField("pageSpecificText2", v)} /></Field>
+      <Field label="Konzultace ikonka"><PlainInput value={s.pageConsultIcon} onChange={v => updateField("pageConsultIcon", v)} /></Field>
+      <Field label="Konzultace nadpis"><PlainInput value={s.pageConsultTitle} onChange={v => updateField("pageConsultTitle", v)} /></Field>
+      <Field label="Konzultace text"><SmallTextarea value={s.pageConsultText} onChange={v => updateField("pageConsultText", v)} rows={4} /></Field>
+      <Field label="Konzultace tlačítko text"><PlainInput value={s.pageConsultButtonText} onChange={v => updateField("pageConsultButtonText", v)} /></Field>
+      <Field label="Konzultace tlačítko URL"><PlainInput value={s.pageConsultButtonHref} onChange={v => updateField("pageConsultButtonHref", v)} /></Field>
+
+      <Divider label="Jednotlivé služby" />
+      {s.items.map((service, i) => (
+        <details key={service.id || i} open={i === 0} style={{ border: "1px solid #e5e7eb", borderRadius: 9, padding: "10px 12px", marginBottom: 10, background: "#f9fafb" }}>
+          <summary style={{ cursor: "pointer", fontSize: 13, fontWeight: 800, color: "#374151" }}>{service.emoji} {service.title}</summary>
+          <div style={{ marginTop: 12 }}>
+            <Field label="ID"><PlainInput value={service.id} onChange={v => updateItem(i, { ...service, id: v })} /></Field>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <Field label="Ikonka / emoji"><PlainInput value={service.emoji} onChange={v => updateItem(i, { ...service, emoji: v })} /></Field>
+              <Field label="Symbol pozadí"><PlainInput value={service.symbol} onChange={v => updateItem(i, { ...service, symbol: v })} /></Field>
+            </div>
+            <ColorField label="Barva služby" value={service.color} onChange={v => updateItem(i, { ...service, color: v })} />
+            <Field label="Název služby"><RTE value={service.title} onChange={v => updateItem(i, { ...service, title: v })} /></Field>
+            <Field label="Krátký text na kartě"><SmallTextarea value={service.teaser} onChange={v => updateItem(i, { ...service, teaser: v })} /></Field>
+            <Field label="Úvod v popupu"><SmallTextarea value={service.lead} onChange={v => updateItem(i, { ...service, lead: v })} rows={4} /></Field>
+            <Field label="Doplňkový text v popupu"><SmallTextarea value={service.body || ""} onChange={v => updateItem(i, { ...service, body: v })} /></Field>
+            <Field label="CTA text"><PlainInput value={service.cta.label} onChange={v => updateItem(i, { ...service, cta: { ...service.cta, label: v } })} /></Field>
+            <Field label="CTA URL"><PlainInput value={service.cta.href} onChange={v => updateItem(i, { ...service, cta: { ...service.cta, href: v } })} /></Field>
+            <Divider label="Obsah popupu služby" />
+            {(service.sections || []).map((section, sectionIndex) => (
+              <ServiceSectionEditor
+                key={sectionIndex}
+                section={section}
+                onChange={next => updateItem(i, { ...service, sections: service.sections.map((sec, idx) => idx === sectionIndex ? next : sec) })}
+                onDelete={() => updateItem(i, { ...service, sections: service.sections.filter((_, idx) => idx !== sectionIndex) })}
+              />
+            ))}
+            <button type="button" onClick={() => updateItem(i, { ...service, sections: [...service.sections, { heading: "Nový blok", paragraphs: ["Text bloku"] }] })} style={{ padding: "7px 12px", border: "1px solid #d8b4fe", borderRadius: 7, background: "#faf5ff", color: "#7c3bb2", cursor: "pointer", fontSize: 12, fontWeight: 700 }}>+ Přidat blok do popupu</button>
+            <button type="button" onClick={() => removeItem(i)} style={{ marginLeft: 8, padding: "7px 12px", border: "1px solid #fecaca", borderRadius: 7, background: "#fee2e2", color: "#b91c1c", cursor: "pointer", fontSize: 12, fontWeight: 700 }}>Smazat službu</button>
+          </div>
+        </details>
+      ))}
+      <button type="button" onClick={addItem} style={{ width: "100%", padding: "9px", background: "#7c3bb2", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 800, cursor: "pointer" }}>+ Přidat službu</button>
     </div>
   );
 }
@@ -503,7 +713,7 @@ function CardsGridBlockEditor({ block, onUpdate }: { block: PageBlock; onUpdate:
           {cardInp(i, "URL tlačítka", "btnHref")}
         </div>
       ))}
-      <button onClick={addCard} style={{ width: "100%", padding: "7px", fontSize: 12, fontWeight: 600, background: "#f0f9ff", border: "1px dashed #40accd", borderRadius: 6, cursor: "pointer", color: "#40accd" }}>
+      <button onClick={addCard} style={{ width: "100%", padding: "7px", fontSize: 12, fontWeight: 600, background: "#f0f9ff", border: "1px dashed #7c3bb2", borderRadius: 6, cursor: "pointer", color: "#7c3bb2" }}>
         + Přidat kartu
       </button>
     </div>
@@ -652,6 +862,12 @@ function PagesEditor({ autoSlug }: { autoSlug?: string } = {}) {
 
   const selected = pages.find(p => p.id === selectedId) || null;
 
+  useEffect(() => {
+    if (autoPage && selectedId !== autoPage.id) {
+      setSelectedId(autoPage.id);
+    }
+  }, [autoPage, selectedId]);
+
   function addPage() {
     if (!newSlug.trim() || !newTitle.trim()) return;
     const slug = newSlug.toLowerCase().replace(/[^a-z0-9-]/g, "-");
@@ -677,11 +893,11 @@ function PagesEditor({ autoSlug }: { autoSlug?: string } = {}) {
       heading: { content: "Nový nadpis", level: "h2", align: "left" },
       text: { content: "<p>Nový text...</p>", align: "left" },
       image: { src: "", alt: "", width: "100%", align: "center" },
-      button: { content: "Klikni zde", href: "#", bgColor: "#40accd", textColor: "#fff", size: "md", align: "center" },
-      banner: { content: "Banner nadpis", subtitle: "Podnapis", bgColor: "linear-gradient(135deg,#40accd,#2e8fa8)", ctaText: "Zjistit více", ctaHref: "#", align: "center" },
+      button: { content: "Klikni zde", href: "#", bgColor: "#7c3bb2", textColor: "#fff", size: "md", align: "center" },
+      banner: { content: "Banner nadpis", subtitle: "Podnapis", bgColor: "linear-gradient(135deg,#7c3bb2,#5f2a8d)", ctaText: "Zjistit více", ctaHref: "#", align: "center" },
       newsletter: { content: "Přihlás se k odběru", body: "Dostávej novinky přímo na email.", align: "center" },
       spacer: { height: 40 },
-      "hero-section": { content: "Váš Hero Nadpis", subtitle: "Podnapis sekce", bgColor: "linear-gradient(135deg,#40accd,#2e8fa8)", ctaText: "Zjistit více", ctaHref: "#", align: "center" },
+      "hero-section": { content: "Váš Hero Nadpis", subtitle: "Podnapis sekce", bgColor: "linear-gradient(135deg,#7c3bb2,#5f2a8d)", ctaText: "Zjistit více", ctaHref: "#", align: "center" },
       "cards-grid": { sectionTitle: "Naše služby", cards: [
         { image: "", title: "Karta 1", text: "Popis karty 1.", btnText: "Zjistit více", btnHref: "#" },
         { image: "", title: "Karta 2", text: "Popis karty 2.", btnText: "Zjistit více", btnHref: "#" },
@@ -721,8 +937,8 @@ function PagesEditor({ autoSlug }: { autoSlug?: string } = {}) {
             <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer" }} onClick={() => setSelectedId(p.id)}>
               {p.title} <span style={{ color: "#9ca3af", fontWeight: 400 }}>/{p.slug}</span>
             </span>
-            <a href={`/${p.slug}`} target="_blank" style={{ fontSize: 11, color: "#40accd" }}>↗</a>
-            <button onClick={() => setSelectedId(p.id)} style={{ padding: "3px 10px", fontSize: 11, background: "#40accd", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer" }}>Upravit</button>
+            <a href={`/${p.slug}`} target="_blank" style={{ fontSize: 11, color: "#7c3bb2" }}>↗</a>
+            <button onClick={() => setSelectedId(p.id)} style={{ padding: "3px 10px", fontSize: 11, background: "#7c3bb2", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer" }}>Upravit</button>
             <button onClick={() => deletePage(p.id)} style={{ padding: "3px 8px", fontSize: 11, background: "#fff", color: "#ef4444", border: "1px solid #fca5a5", borderRadius: 6, cursor: "pointer" }}>✕</button>
           </div>
         ))}
@@ -730,7 +946,7 @@ function PagesEditor({ autoSlug }: { autoSlug?: string } = {}) {
           <p style={{ fontSize: 11, fontWeight: 700, color: "#374151", margin: "0 0 8px", textTransform: "uppercase" }}>Nová stránka</p>
           <input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Název stránky" style={{ width: "100%", padding: "6px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12, marginBottom: 6, boxSizing: "border-box" }} />
           <input value={newSlug} onChange={e => setNewSlug(e.target.value)} placeholder="URL (napr. o-nas)" style={{ width: "100%", padding: "6px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12, marginBottom: 8, boxSizing: "border-box" }} />
-          <button onClick={addPage} style={{ width: "100%", padding: "8px", background: "#40accd", color: "#fff", border: "none", borderRadius: 6, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>+ Vytvořit stránku</button>
+          <button onClick={addPage} style={{ width: "100%", padding: "8px", background: "#7c3bb2", color: "#fff", border: "none", borderRadius: 6, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>+ Vytvořit stránku</button>
         </div>
       </div>
     );
@@ -742,7 +958,7 @@ function PagesEditor({ autoSlug }: { autoSlug?: string } = {}) {
         <button onClick={() => setSelectedId(null)} style={{ padding: "5px 10px", fontSize: 12, background: "#f3f4f6", border: "1px solid #e5e7eb", borderRadius: 6, cursor: "pointer" }}>← Zpět</button>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: "#374151" }}>{selected.title}</div>
-          <a href={`/${selected.slug}`} target="_blank" style={{ fontSize: 11, color: "#40accd" }}>/{selected.slug} ↗</a>
+          <a href={`/${selected.slug}`} target="_blank" style={{ fontSize: 11, color: "#7c3bb2" }}>/{selected.slug} ↗</a>
         </div>
       </div>
 
@@ -774,7 +990,7 @@ function PagesEditor({ autoSlug }: { autoSlug?: string } = {}) {
         </div>
       ) : (
         <button onClick={() => setAddingBlock(true)}
-          style={{ width: "100%", padding: "10px", marginTop: 8, background: "#f9fafb", border: "1px dashed #d1d5db", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#40accd" }}>
+          style={{ width: "100%", padding: "10px", marginTop: 8, background: "#f9fafb", border: "1px dashed #d1d5db", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#7c3bb2" }}>
           + Přidat blok
         </button>
       )}
@@ -786,7 +1002,7 @@ function PagesEditor({ autoSlug }: { autoSlug?: string } = {}) {
 
 function SiteSettingsEditor() {
   const { content, updateSection } = useContent();
-  const s: SiteSettings = content.siteSettings || { accentColor: "#40accd", logoUrl: "", metaTitle: "", metaDescription: "", customCss: "" };
+  const s: SiteSettings = content.siteSettings || { accentColor: "#7c3bb2", logoUrl: "", metaTitle: "", metaDescription: "", customCss: "" };
   const upd = (data: SiteSettings) => updateSection("siteSettings", data);
 
   return (
@@ -794,7 +1010,7 @@ function SiteSettingsEditor() {
       <Divider label="Design" />
       <Field label="Hlavní barva (accent)">
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <input type="color" value={s.accentColor || "#40accd"} onChange={e => upd({ ...s, accentColor: e.target.value })}
+          <input type="color" value={s.accentColor || "#7c3bb2"} onChange={e => upd({ ...s, accentColor: e.target.value })}
             style={{ width: 44, height: 36, border: "1px solid #e5e7eb", borderRadius: 6, cursor: "pointer", padding: 2 }} />
           <input type="text" value={s.accentColor || ""} onChange={e => upd({ ...s, accentColor: e.target.value })}
             style={{ flex: 1, padding: "6px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12 }} />
@@ -830,6 +1046,7 @@ const EDITORS: Record<Section, React.ComponentType> = {
   manifest: ManifestEditor,
   pickacard: PickACardEditor,
   oracle: OracleEditor,
+  servicesContent: ServicesEditor,
   footer: FooterEditor,
   aboutPage: AboutPageEditor,
   pages: PagesEditor,
@@ -877,7 +1094,6 @@ export default function LiveEditor() {
   // Filter sections based on current route
   const visibleSections = useMemo(() => {
     if (pathname === "/") return ALL_SECTIONS.filter(s => HOMEPAGE_KEYS.includes(s.key));
-    if (pathname === "/about") return ALL_SECTIONS.filter(s => ABOUT_KEYS.includes(s.key));
     if (currentCustomPage) return ALL_SECTIONS.filter(s => CUSTOM_PAGE_KEYS.includes(s.key));
     return ALL_SECTIONS;
   }, [pathname, currentCustomPage]);
@@ -948,12 +1164,12 @@ export default function LiveEditor() {
           width: 52,
           height: 52,
           borderRadius: "50%",
-          background: "#40accd",
+          background: "#7c3bb2",
           color: "#fff",
           border: "none",
           cursor: "pointer",
           fontSize: 22,
-          boxShadow: "0 4px 20px rgba(64,172,205,0.55)",
+          boxShadow: "0 4px 20px rgba(124,59,178,0.55)",
           transition: "right 0.3s ease",
           display: (open && isMobile) ? "none" : "flex",
           alignItems: "center",
@@ -997,7 +1213,7 @@ export default function LiveEditor() {
         }}
       >
         {/* Panel header */}
-        <div style={{ flexShrink: 0, padding: "14px 18px", borderBottom: "1px solid #e5e7eb", background: "linear-gradient(135deg,#40accd,#2e8fa8)", color: "#fff" }}>
+        <div style={{ flexShrink: 0, padding: "14px 18px", borderBottom: "1px solid #e5e7eb", background: "linear-gradient(135deg,#7c3bb2,#5f2a8d)", color: "#fff" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
               <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: "0.2px" }}>✏️ {currentCustomPage ? currentCustomPage.title : "Site Editor"}</div>
@@ -1031,9 +1247,9 @@ export default function LiveEditor() {
                 fontSize: 11,
                 fontWeight: 600,
                 border: "none",
-                borderBottom: activeSection === s.key ? "2px solid #40accd" : "2px solid transparent",
-                background: activeSection === s.key ? "rgba(64,172,205,0.08)" : "none",
-                color: activeSection === s.key ? "#40accd" : "#6b7280",
+                borderBottom: activeSection === s.key ? "2px solid #7c3bb2" : "2px solid transparent",
+                background: activeSection === s.key ? "rgba(124,59,178,0.08)" : "none",
+                color: activeSection === s.key ? "#7c3bb2" : "#6b7280",
                 cursor: "pointer",
                 whiteSpace: "nowrap",
                 transition: "color 0.15s, background 0.15s",
@@ -1080,7 +1296,7 @@ export default function LiveEditor() {
             style={{
               flex: 1,
               padding: "9px 14px",
-              background: saveStatus === "saving" ? "#9ca3af" : "#40accd",
+              background: saveStatus === "saving" ? "#9ca3af" : "#7c3bb2",
               border: "none",
               borderRadius: 8,
               fontSize: 13,
@@ -1105,7 +1321,7 @@ export default function LiveEditor() {
           left: 0,
           right: (open && !isMobile) ? PANEL_W : 0,
           zIndex: open && isMobile ? 99998 : 9997,
-          background: "#40accd",
+          background: "#7c3bb2",
           color: "#fff",
           fontSize: 11,
           display: "flex",

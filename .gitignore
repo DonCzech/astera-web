@@ -48,3 +48,7 @@ astera-content.db-wal
 # Uploaded images
 /public/uploads/*
 !/public/uploads/.gitkeep
+!/public/uploads/astera-upload-1777542736772-d2souok25x7.png
+!/public/uploads/astera-upload-1777542744600-mjff29y2d1k.png
+!/public/uploads/astera-upload-1777543712527-v1mmzjakq5.png
+!/public/uploads/astera-upload-1777543812845-9puk6rdon7f.png

@@ -32,16 +32,8 @@ export default function ManifestCards() {
                   section="manifest"
                   field={`cards.${i}.image`}
                   alt={card.title}
+                  sizes="(max-width: 600px) calc(100vw - 40px), (max-width: 900px) calc((100vw - 64px) / 2), 331px"
                   style={{ width: "100%", height: "auto", display: "block" }}
-                />
-              </div>
-
-              <div style={{ padding: "20px 24px 12px", textAlign: "center" }}>
-                <EditableImg
-                  section="manifest"
-                  field={`cards.${i}.badge`}
-                  alt=""
-                  style={{ height: "40px", width: "auto", marginBottom: "12px", display: "inline-block" }}
                 />
               </div>
 
@@ -49,7 +41,7 @@ export default function ManifestCards() {
                 section="manifest"
                 field={`cards.${i}.title`}
                 tag="h2"
-                style={{ fontSize: "22px", fontWeight: 700, textAlign: "center", marginTop: 0, marginBottom: "14px", padding: "0 24px", display: "block" }}
+                style={{ fontSize: "22px", fontWeight: 700, textAlign: "center", marginTop: 0, marginBottom: "14px", padding: "28px 24px 0", display: "block" }}
               />
 
               <EditableText

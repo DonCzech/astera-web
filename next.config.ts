@@ -1,6 +1,20 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      {
+        source: "/e-shop",
+        destination: "https://shop.asteralight.cz",
+        permanent: true,
+      },
+      {
+        source: "/shop",
+        destination: "https://shop.asteralight.cz",
+        permanent: true,
+      },
+    ];
+  },
   turbopack: {
     root: process.cwd(),
   },
@@ -8,7 +22,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "www.colettebaronreid.com",
+        hostname: "www.asteralight.com",
       },
     ],
   },

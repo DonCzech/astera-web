@@ -58,8 +58,10 @@ export function ContentProvider({ children }: { children: ReactNode }) {
   const pendingSectionsRef = useRef<Set<string>>(new Set());
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Keep contentRef in sync
-  contentRef.current = content;
+  // Keep contentRef in sync for delayed autosave callbacks.
+  useEffect(() => {
+    contentRef.current = content;
+  }, [content]);
 
   // ── Load on mount ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -180,11 +182,13 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     setCanUndo(false);
   }, []);
 
-  return (
-    <ContentContext.Provider value={{
+  const value = {
       content, savedContent, admin, canUndo, saveStatus, contentLoaded,
       updateSection, saveSection, saveAll, revertSection, undo, logout, refreshAdmin,
-    }}>
+    };
+
+  return (
+    <ContentContext.Provider value={value}>
       {children}
     </ContentContext.Provider>
   );

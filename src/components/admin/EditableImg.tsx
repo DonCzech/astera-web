@@ -2,6 +2,7 @@
 import { useRef, useState, useEffect } from "react";
 import { useContent } from "@/context/ContentContext";
 import { SiteContent } from "@/lib/content-types";
+import OptimizedImage from "@/components/OptimizedImage";
 
 function getPath(obj: any, path: string): string {
   return String(path.split(".").reduce((o: any, k: string) => o?.[k], obj) ?? "");
@@ -9,11 +10,22 @@ function getPath(obj: any, path: string): string {
 
 function setPath(obj: any, path: string, val: string): any {
   const parts = path.split(".");
-  if (parts.length === 1) return { ...obj, [path]: val };
-  const [k, i, p] = parts;
-  const arr = [...(obj[k] as any[])];
-  arr[+i] = { ...arr[+i], [p]: val };
-  return { ...obj, [k]: arr };
+  const root = Array.isArray(obj) ? [...obj] : { ...obj };
+  let current: any = root;
+
+  parts.forEach((part, index) => {
+    const key = Array.isArray(current) ? Number(part) : part;
+    if (index === parts.length - 1) {
+      current[key] = val;
+      return;
+    }
+
+    const next = current[key];
+    current[key] = Array.isArray(next) ? [...next] : { ...next };
+    current = current[key];
+  });
+
+  return root;
 }
 
 interface Props {
@@ -22,9 +34,10 @@ interface Props {
   alt?: string;
   style?: React.CSSProperties;
   className?: string;
+  sizes?: string;
 }
 
-export default function EditableImg({ section, field, alt, style, className }: Props) {
+export default function EditableImg({ section, field, alt, style, className, sizes }: Props) {
   const { content, admin, updateSection } = useContent();
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -68,8 +81,7 @@ export default function EditableImg({ section, field, alt, style, className }: P
 
   // Non-admin: render plain img
   if (!admin.isAdmin) {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img src={src} alt={alt} style={style} className={className} />;
+    return <OptimizedImage src={src} alt={alt} style={style} className={className} sizes={sizes} />;
   }
 
   // Admin mode: wrap with hover overlay
@@ -90,10 +102,10 @@ export default function EditableImg({ section, field, alt, style, className }: P
       onMouseLeave={() => setHovered(false)}
       onClick={() => fileRef.current?.click()}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <OptimizedImage
         src={src}
         alt={alt}
+        sizes={sizes}
         style={{
           display: "block",
           width: "100%",
