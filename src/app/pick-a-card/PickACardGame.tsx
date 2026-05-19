@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useContent } from "@/context/ContentContext";
@@ -41,35 +41,28 @@ export default function PickACardGame() {
     cards: content.pickacard.cards?.length ? content.pickacard.cards : DEFAULT_CONTENT.pickacard.cards,
   };
   const cards = pickContent.cards;
-  const sliderRef = useRef<HTMLDivElement>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [phase, setPhase] = useState<"idle" | "zoom" | "flip" | "shown">("idle");
   const [shuffled, setShuffled] = useState<PickACardGameCard[]>(cards);
   const [dailyPick, setDailyPick] = useState<DailyPick | null>(null);
   const [alreadyPicked, setAlreadyPicked] = useState(false);
   const [resetText, setResetText] = useState("");
+  const [sliderIndex, setSliderIndex] = useState(cards.length);
+  const [sliderTransition, setSliderTransition] = useState(true);
   const loopedCards = [...shuffled, ...shuffled, ...shuffled];
-  const loopWidth = shuffled.length * (CARD_W + GAP);
+  const cardStep = CARD_W + GAP;
 
   useEffect(() => {
     setShuffled(cards);
   }, [cards]);
 
   useEffect(() => {
-    const slider = sliderRef.current;
-    if (!slider || !shuffled.length) return;
-    slider.scrollLeft = loopWidth;
-  }, [loopWidth, shuffled.length]);
-
-  const keepSliderInfinite = () => {
-    const slider = sliderRef.current;
-    if (!slider || !loopWidth) return;
-    if (slider.scrollLeft < loopWidth * 0.5) {
-      slider.scrollLeft += loopWidth;
-    } else if (slider.scrollLeft > loopWidth * 1.5) {
-      slider.scrollLeft -= loopWidth;
-    }
-  };
+    if (!shuffled.length) return;
+    setSliderTransition(false);
+    setSliderIndex(shuffled.length);
+    const frame = window.requestAnimationFrame(() => setSliderTransition(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, [shuffled.length]);
 
   useEffect(() => {
     try {
@@ -87,8 +80,23 @@ export default function PickACardGame() {
     }
   }, []);
 
-  const scrollBy = (dir: 1 | -1) => {
-    sliderRef.current?.scrollBy({ left: dir * (CARD_W + GAP) * 3, behavior: "smooth" });
+  const moveSlider = (dir: 1 | -1) => {
+    if (phase !== "idle") return;
+    setSliderTransition(true);
+    setSliderIndex((current) => current + dir);
+  };
+
+  const handleSliderTransitionEnd = (event: React.TransitionEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget || !shuffled.length) return;
+    if (sliderIndex >= shuffled.length * 2) {
+      setSliderTransition(false);
+      setSliderIndex(sliderIndex - shuffled.length);
+      window.requestAnimationFrame(() => setSliderTransition(true));
+    } else if (sliderIndex < shuffled.length) {
+      setSliderTransition(false);
+      setSliderIndex(sliderIndex + shuffled.length);
+      window.requestAnimationFrame(() => setSliderTransition(true));
+    }
   };
 
   const [revealedCard, setRevealedCard] = useState<PickACardGameCard | null>(null);
@@ -149,57 +157,61 @@ export default function PickACardGame() {
           <div style={{ position: "relative", maxWidth: 1100, margin: "0 auto" }}>
             <button
               aria-label="Posunout vlevo"
-              onClick={() => scrollBy(-1)}
+              onClick={() => moveSlider(-1)}
               style={arrowStyle("left")}
               disabled={phase !== "idle"}
             >
               ‹
             </button>
             <div
-              ref={sliderRef}
-              onScroll={keepSliderInfinite}
               style={{
-                display: "flex",
-                gap: `${GAP}px`,
-                overflowX: "auto",
-                scrollBehavior: "smooth",
+                overflow: "hidden",
                 padding: "30px 60px",
-                scrollbarWidth: "none",
-                msOverflowStyle: "none",
               }}
               className="card-slider"
             >
-              {loopedCards.map((card, index) => {
-                const isSelected = card.id === selectedId;
-                const hidden = selectedId !== null && !isSelected;
-                return (
-                  <div
-                    key={`${card.id}-${index}`}
-                    onClick={() => pickCard(card.id)}
-                    className="card-back"
-                    style={{
-                      flex: `0 0 ${CARD_W}px`,
-                      height: `${CARD_H}px`,
-                      borderRadius: "14px",
-                      background: pickContent.cardBackGradient,
-                      cursor: phase === "idle" ? "pointer" : "default",
-                      position: "relative",
-                      transition: "opacity 0.5s ease, transform 0.35s ease",
-                      opacity: hidden ? 0 : isSelected && phase !== "idle" ? 0 : 1,
-                      transform: isSelected && phase !== "idle" ? "scale(0.85)" : "scale(1)",
-                      boxShadow: "0 8px 24px rgba(45, 37, 64, 0.18)",
-                      pointerEvents: phase === "idle" ? "auto" : "none",
-                      overflow: "hidden",
-                    }}
-                  >
-                    <CardBackPattern />
-                  </div>
-                );
-              })}
+              <div
+                onTransitionEnd={handleSliderTransitionEnd}
+                style={{
+                  display: "flex",
+                  gap: `${GAP}px`,
+                  transform: `translateX(-${sliderIndex * cardStep}px)`,
+                  transition: sliderTransition ? "transform 0.42s ease" : "none",
+                  willChange: "transform",
+                }}
+              >
+                {loopedCards.map((card, index) => {
+                  const isSelected = card.id === selectedId;
+                  const hidden = selectedId !== null && !isSelected;
+                  return (
+                    <div
+                      key={`${card.id}-${index}`}
+                      onClick={() => pickCard(card.id)}
+                      className="card-back"
+                      style={{
+                        flex: `0 0 ${CARD_W}px`,
+                        height: `${CARD_H}px`,
+                        borderRadius: "14px",
+                        background: pickContent.cardBackGradient,
+                        cursor: phase === "idle" ? "pointer" : "default",
+                        position: "relative",
+                        transition: "opacity 0.5s ease, transform 0.35s ease",
+                        opacity: hidden ? 0 : isSelected && phase !== "idle" ? 0 : 1,
+                        transform: isSelected && phase !== "idle" ? "scale(0.85)" : "scale(1)",
+                        boxShadow: "0 8px 24px rgba(45, 37, 64, 0.18)",
+                        pointerEvents: phase === "idle" ? "auto" : "none",
+                        overflow: "hidden",
+                      }}
+                    >
+                      <CardBackPattern />
+                    </div>
+                  );
+                })}
+              </div>
             </div>
             <button
               aria-label="Posunout vpravo"
-              onClick={() => scrollBy(1)}
+              onClick={() => moveSlider(1)}
               style={arrowStyle("right")}
               disabled={phase !== "idle"}
             >

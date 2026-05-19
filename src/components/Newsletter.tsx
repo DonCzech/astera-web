@@ -64,6 +64,7 @@ export default function Newsletter() {
       <style>{`
         @media (max-width: 768px) {
           .newsletter-grid { grid-template-columns: 1fr !important; }
+          .newsletter-grid > :first-child { display: none; }
         }
       `}</style>
     </section>
