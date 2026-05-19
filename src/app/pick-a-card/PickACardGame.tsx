@@ -122,7 +122,9 @@ export default function PickACardGame() {
       setRevealedCard(storedCard);
       setAlreadyPicked(true);
       setResetText(timeUntilReset());
-      setPhase("shown");
+      setPhase("zoom");
+      setTimeout(() => setPhase("flip"), 700);
+      setTimeout(() => setPhase("shown"), 1400);
       return;
     }
 
