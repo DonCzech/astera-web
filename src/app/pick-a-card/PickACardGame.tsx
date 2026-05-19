@@ -43,6 +43,10 @@ function uniqueDailyDeck(cards: PickACardGameCard[]) {
   return shuffled.slice(0, 12);
 }
 
+function randomCard(cards: PickACardGameCard[]) {
+  return cards[Math.floor(Math.random() * cards.length)] ?? cards[0];
+}
+
 export default function PickACardGame() {
   const { content } = useContent();
   const pickContent = {
@@ -112,11 +116,11 @@ export default function PickACardGame() {
 
   const [revealedCard, setRevealedCard] = useState<PickACardGameCard | null>(null);
 
-  const pickCard = (id: string, loopIndex: number) => {
+  const pickCard = (loopIndex: number) => {
     if (phase !== "idle") return;
     const activeDailyPick = dailyPick?.dateKey === todayKey() ? dailyPick : null;
     if (activeDailyPick) {
-      const storedCard = cards.find(card => card.id === activeDailyPick.cardId) ?? cards[0];
+      const storedCard = shuffled.find(card => card.id === activeDailyPick.cardId) ?? cards.find(card => card.id === activeDailyPick.cardId) ?? shuffled[0] ?? cards[0];
       setSelectedId(storedCard.id);
       setSelectedLoopIndex(loopIndex);
       setRevealedCard(storedCard);
@@ -128,7 +132,7 @@ export default function PickACardGame() {
       return;
     }
 
-    const picked = cards.find(card => card.id === id) ?? cards[0];
+    const picked = randomCard(shuffled);
     const nextPick = { dateKey: todayKey(), cardId: picked.id };
     try {
       window.localStorage.setItem(DAILY_PICK_STORAGE_KEY, JSON.stringify(nextPick));
@@ -136,7 +140,7 @@ export default function PickACardGame() {
     setDailyPick(nextPick);
     setAlreadyPicked(false);
     setResetText(timeUntilReset());
-    setSelectedId(id);
+    setSelectedId(picked.id);
     setSelectedLoopIndex(loopIndex);
     setRevealedCard(picked);
     setPhase("zoom");
@@ -202,7 +206,7 @@ export default function PickACardGame() {
                   return (
                     <div
                       key={`${card.id}-${index}`}
-                      onClick={() => pickCard(card.id, index)}
+                      onClick={() => pickCard(index)}
                       className="card-back"
                       style={{
                         flex: `0 0 ${CARD_W}px`,
