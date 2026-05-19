@@ -276,9 +276,9 @@ export const DEFAULT_CONTENT: SiteContent = {
     sectionTitle: "Vyber si, co právě potřebuješ",
     cards: [
       {
-        image: "/images/astera-pick-card.png",
+        image: "/images/vyber-si-kartu.png",
         badge: "",
-        title: "Pick a Card",
+        title: "Vyber si kartu",
         text: "Zastav se, nadechni se a vyber si intuitivní kartu dne. Krátký vzkaz ti pomůže naladit se na další krok a vlastní vnitřní hlas.",
         btnText: "Vybrat kartu",
         btnHref: "/pick-a-card",

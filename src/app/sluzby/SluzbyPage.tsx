@@ -251,9 +251,21 @@ function ScrollDownControl() {
         boxShadow: `0 10px 24px ${gold}22`,
       }}
     >
-      <span aria-hidden style={{ fontSize: 28, lineHeight: 1, transform: "translateY(-1px)" }}>
-        ↓
-      </span>
+      <svg
+        aria-hidden
+        className="scroll-motif"
+        width="28"
+        height="34"
+        viewBox="0 0 28 34"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        style={{ display: "block" }}
+      >
+        <rect x="7" y="2" width="14" height="19" rx="3" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M14 7.2c-2.2 1.4-2.2 4.8 0 6.2 2.2-1.4 2.2-4.8 0-6.2Z" fill="currentColor" opacity="0.72" />
+        <path d="M14 23v7.2M10.5 27.1 14 30.6l3.5-3.5" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M6.2 5.8 3.5 8.5M21.8 5.8l2.7 2.7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" opacity="0.6" />
+      </svg>
     </button>
   );
 }
@@ -712,7 +724,7 @@ export default function SluzbyPage() {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(7px); }
         }
-        .services-scroll-down span {
+        .services-scroll-down .scroll-motif {
           animation: servicesArrowBounce 1.35s ease-in-out infinite;
         }
         .services-scroll-down:hover,

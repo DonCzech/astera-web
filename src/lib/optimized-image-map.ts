@@ -320,6 +320,14 @@ export const OPTIMIZED_IMAGE_MAP: Record<string, OptimizedImageEntry> = {
     "width": 1280,
     "height": 720
   },
+  "/images/vyber-si-kartu.png": {
+    "webp": "/optimized/images/vyber-si-kartu.webp",
+    "fallback": "/optimized/images/vyber-si-kartu.jpg",
+    "webpSrcSet": "/optimized/images/vyber-si-kartu-331w.webp 331w, /optimized/images/vyber-si-kartu-480w.webp 480w, /optimized/images/vyber-si-kartu-662w.webp 662w, /optimized/images/vyber-si-kartu-702w.webp 702w",
+    "fallbackSrcSet": "/optimized/images/vyber-si-kartu-331w.jpg 331w, /optimized/images/vyber-si-kartu-480w.jpg 480w, /optimized/images/vyber-si-kartu-662w.jpg 662w, /optimized/images/vyber-si-kartu-702w.jpg 702w",
+    "width": 702,
+    "height": 702
+  },
   "/uploads/astera-upload-1777542736772-d2souok25x7.png": {
     "webp": "/optimized/uploads/astera-upload-1777542736772-d2souok25x7.webp",
     "fallback": "/optimized/uploads/astera-upload-1777542736772-d2souok25x7.jpg",

@@ -18,6 +18,7 @@ const exactTargets = new Map([
   ["/uploads/astera-upload-1777542744600-mjff29y2d1k.png", { width: 866, height: 670 }],
 
   ["/images/kniha-astera.png", { width: 702, height: 702 }],
+  ["/images/vyber-si-kartu.png", { width: 702, height: 702 }],
   ["/images/art-of-manifesting.jpg", { width: 702, height: 702 }],
   ["/images/Oracle-Circle.png", { width: 408, height: 410 }],
   ["/images/408x410-OracleSecretsWebinar-Event-Promo.jpg", { width: 408, height: 410 }],
