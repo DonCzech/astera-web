@@ -276,6 +276,14 @@ export const DEFAULT_CONTENT: SiteContent = {
     sectionTitle: "Vyber si, co právě potřebuješ",
     cards: [
       {
+        image: "/images/astera-pick-card.png",
+        badge: "",
+        title: "Pick a Card",
+        text: "Zastav se, nadechni se a vyber si intuitivní kartu dne. Krátký vzkaz ti pomůže naladit se na další krok a vlastní vnitřní hlas.",
+        btnText: "Vybrat kartu",
+        btnHref: "/pick-a-card",
+      },
+      {
         image: "/images/kniha-astera.png",
         badge: "/images/new-book-icon.png",
         title: "Kniha a inspirace",
@@ -289,15 +297,7 @@ export const DEFAULT_CONTENT: SiteContent = {
         title: "Akce a setkání",
         text: "Živé i online akce pro ty, kdo chtějí zažít jasnější vedení, zklidnění a podporu v bezpečném prostoru.",
         btnText: "Rezervovat místo",
-        btnHref: `${SITE}/oracle-secrets/`,
-      },
-      {
-        image: "/images/Oracle-Circle.png",
-        badge: "/images/Membership.png",
-        title: "Členství Oracle Circle",
-        text: "Členský prostor pro práci s kartami, intuicí a pravidelnou inspirací. Vhodné pro každého, kdo chce svou praxi rozvíjet s lehkostí.",
-        btnText: "Vstoupit",
-        btnHref: `${SITE}/membership/`,
+        btnHref: `${SITE}/events/`,
       },
     ],
   },

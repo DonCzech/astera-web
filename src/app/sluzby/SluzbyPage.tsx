@@ -173,6 +173,58 @@ function OrnamentDivider({ tight = false }: { tight?: boolean }) {
   );
 }
 
+const inlineLinkStyle: React.CSSProperties = {
+  color: purple,
+  fontWeight: 700,
+  textDecoration: "underline",
+  textUnderlineOffset: 3,
+};
+
+function LinkedConsultText() {
+  return (
+    <>
+      Pokud si nejste jistí, jakou službu zvolit, projděte si{" "}
+      <a href="https://www.asteralight.cz/sluzby" style={inlineLinkStyle}>
+        přehled služeb
+      </a>
+      , rezervujte si{" "}
+      <a href="https://app.rezora.cz/book/astera" style={inlineLinkStyle}>
+        konzultaci
+      </a>
+      , nebo si vyberte praktické návody v{" "}
+      <a href="https://shop.asteralight.cz" style={inlineLinkStyle}>
+        e-shopu
+      </a>
+      .
+    </>
+  );
+}
+
+function LinkedPhrase({ text }: { text: string }) {
+  if (text.includes("e-shop")) {
+    const [before, after = ""] = text.split("e-shop");
+    return (
+      <>
+        {before}
+        <a href="https://shop.asteralight.cz" style={{ color: "inherit", textDecoration: "underline", textUnderlineOffset: 2 }}>
+          e-shop
+        </a>
+        {after}
+      </>
+    );
+  }
+
+  if (text.toLowerCase().includes("konzultace")) {
+    return (
+      <a href="https://app.rezora.cz/book/astera" style={{ color: "inherit", textDecoration: "underline", textUnderlineOffset: 2 }}>
+        {text}
+      </a>
+    );
+  }
+
+  return <>{text}</>;
+}
+
 // ─── Modal ──────────────────────────────────────────────────────────────────
 
 function Modal({ service, onClose }: { service: ServiceItem; onClose: () => void }) {
@@ -333,7 +385,7 @@ function Modal({ service, onClose }: { service: ServiceItem; onClose: () => void
                       background: j % 2 === 0 ? `linear-gradient(90deg, ${cream}, ${goldLight}44)` : "#fff",
                       border: `1px solid ${gold}33`, marginBottom: 6,
                     }}>
-                      <span style={{ fontSize: 12, color: "#4a3728", fontFamily: "'Poppins',sans-serif" }}>{row.label}</span>
+                      <span style={{ fontSize: 12, color: "#4a3728", fontFamily: "'Poppins',sans-serif" }}><LinkedPhrase text={row.label} /></span>
                       <span style={{ fontSize: 13, fontWeight: 700, color: "#5a3a00", fontFamily: "'Playfair Display',serif", whiteSpace: "nowrap" }}>{row.price}</span>
                     </div>
                   ))}
@@ -606,7 +658,7 @@ export default function SluzbyPage() {
                   </h3>
                 </div>
                 <p style={{ fontSize: 13, lineHeight: 1.78, color: "#374151", margin: "0 0 20px", fontFamily: "'Poppins',sans-serif", flex: 1 }}>
-                  {serviceContent.pageConsultText}
+                  <LinkedConsultText />
                 </p>
                 <a href={serviceContent.pageConsultButtonHref} style={{
                   display: "inline-block", alignSelf: "flex-start",
