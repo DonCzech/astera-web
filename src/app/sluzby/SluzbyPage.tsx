@@ -200,26 +200,6 @@ function LinkedConsultText() {
   );
 }
 
-function ServiceInlineLinksText() {
-  return (
-    <>
-      Více o službách najdete{" "}
-      <a href="https://www.asteralight.cz/sluzby" style={inlineLinkStyle}>
-        zde
-      </a>
-      ,{" "}
-      <a href="https://app.rezora.cz/book/astera" style={inlineLinkStyle}>
-        konzultaci
-      </a>{" "}
-      si můžete rezervovat online a praktické návody najdete v{" "}
-      <a href="https://shop.asteralight.cz" style={inlineLinkStyle}>
-        e-shopu
-      </a>
-      .
-    </>
-  );
-}
-
 function LinkedPhrase({ text }: { text: string }) {
   if (text.includes("e-shop")) {
     const [before, after = ""] = text.split("e-shop");
@@ -608,9 +588,6 @@ export default function SluzbyPage() {
               <OrnamentDivider tight />
               <p style={{ fontSize: 14, color: "#4a3728", margin: 0, lineHeight: 1.78, fontFamily: "'Poppins',sans-serif" }}>
                 {serviceContent.pageIntroText}
-              </p>
-              <p style={{ fontSize: 14, color: "#4a3728", margin: "18px 0 0", lineHeight: 1.78, fontFamily: "'Poppins',sans-serif" }}>
-                <ServiceInlineLinksText />
               </p>
             </div>
           </div>
