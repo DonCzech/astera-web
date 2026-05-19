@@ -40,7 +40,7 @@ function uniqueDailyDeck(cards: PickACardGameCard[]) {
     const j = Math.floor(Math.random() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
-  return shuffled.slice(0, 12);
+  return shuffled.slice(0, 30);
 }
 
 function randomCard(cards: PickACardGameCard[]) {
@@ -58,7 +58,7 @@ export default function PickACardGame() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedLoopIndex, setSelectedLoopIndex] = useState<number | null>(null);
   const [phase, setPhase] = useState<"idle" | "zoom" | "flip" | "shown">("idle");
-  const [shuffled, setShuffled] = useState<PickACardGameCard[]>(() => [...new Map(cards.map((card) => [card.id, card])).values()].slice(0, 12));
+  const [shuffled, setShuffled] = useState<PickACardGameCard[]>(() => [...new Map(cards.map((card) => [card.id, card])).values()].slice(0, 30));
   const [dailyPick, setDailyPick] = useState<DailyPick | null>(null);
   const [alreadyPicked, setAlreadyPicked] = useState(false);
   const [resetText, setResetText] = useState("");
