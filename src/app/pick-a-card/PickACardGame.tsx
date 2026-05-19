@@ -33,6 +33,16 @@ function timeUntilReset() {
   return hours > 0 ? `${hours} h ${minutes} min` : `${minutes} min`;
 }
 
+function uniqueDailyDeck(cards: PickACardGameCard[]) {
+  const uniqueCards = [...new Map(cards.map((card) => [card.id, card])).values()];
+  const shuffled = [...uniqueCards];
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled.slice(0, 12);
+}
+
 export default function PickACardGame() {
   const { content } = useContent();
   const pickContent = {
@@ -44,7 +54,7 @@ export default function PickACardGame() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedLoopIndex, setSelectedLoopIndex] = useState<number | null>(null);
   const [phase, setPhase] = useState<"idle" | "zoom" | "flip" | "shown">("idle");
-  const [shuffled, setShuffled] = useState<PickACardGameCard[]>(cards);
+  const [shuffled, setShuffled] = useState<PickACardGameCard[]>(() => [...new Map(cards.map((card) => [card.id, card])).values()].slice(0, 12));
   const [dailyPick, setDailyPick] = useState<DailyPick | null>(null);
   const [alreadyPicked, setAlreadyPicked] = useState(false);
   const [resetText, setResetText] = useState("");
@@ -54,7 +64,7 @@ export default function PickACardGame() {
   const cardStep = CARD_W + GAP;
 
   useEffect(() => {
-    setShuffled(cards);
+    setShuffled(uniqueDailyDeck(cards));
   }, [cards]);
 
   useEffect(() => {
