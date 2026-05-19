@@ -152,6 +152,26 @@ function ImageField({ label, value, onChange }: { label: string; value: string; 
         <div style={{ position: "relative", marginBottom: 7 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={displaySrc} alt="" style={{ width: "100%", maxHeight: 110, objectFit: "cover", borderRadius: 7, border: "1px solid #e5e7eb", display: "block" }} />
+          <button
+            type="button"
+            onClick={() => { setPreview(null); onChange(""); }}
+            style={{
+              position: "absolute",
+              top: 6,
+              left: 6,
+              background: "rgba(127, 29, 29, 0.88)",
+              color: "#fff",
+              border: "none",
+              borderRadius: 999,
+              padding: "4px 9px",
+              fontSize: 11,
+              fontWeight: 700,
+              cursor: "pointer",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.22)",
+            }}
+          >
+            Odebrat
+          </button>
           {dims && (
             <div style={{ position: "absolute", bottom: 5, right: 6, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 10, fontWeight: 600, borderRadius: 4, padding: "2px 6px", fontFamily: "monospace", letterSpacing: "0.3px" }}>
               {dims.w} × {dims.h} px

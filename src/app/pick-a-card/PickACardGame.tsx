@@ -2,13 +2,36 @@
 import { useRef, useState, useEffect } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import OptimizedImage from "@/components/OptimizedImage";
 import { useContent } from "@/context/ContentContext";
 import { DEFAULT_CONTENT, PickACardGameCard } from "@/lib/content-types";
 
 const CARD_W = 200;
 const CARD_H = 290;
 const GAP = 20;
+const DAILY_PICK_STORAGE_KEY = "astera-pick-card-daily";
+
+type DailyPick = {
+  dateKey: string;
+  cardId: string;
+};
+
+function todayKey() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function timeUntilReset() {
+  const now = new Date();
+  const reset = new Date(now);
+  reset.setHours(23, 59, 59, 999);
+  const diff = Math.max(0, reset.getTime() - now.getTime());
+  const hours = Math.floor(diff / 3_600_000);
+  const minutes = Math.max(1, Math.ceil((diff % 3_600_000) / 60_000));
+  return hours > 0 ? `${hours} h ${minutes} min` : `${minutes} min`;
+}
 
 export default function PickACardGame() {
   const { content } = useContent();
@@ -22,10 +45,29 @@ export default function PickACardGame() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [phase, setPhase] = useState<"idle" | "zoom" | "flip" | "shown">("idle");
   const [shuffled, setShuffled] = useState<PickACardGameCard[]>(cards);
+  const [dailyPick, setDailyPick] = useState<DailyPick | null>(null);
+  const [alreadyPicked, setAlreadyPicked] = useState(false);
+  const [resetText, setResetText] = useState("");
 
   useEffect(() => {
     setShuffled(cards);
   }, [cards]);
+
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(DAILY_PICK_STORAGE_KEY);
+      if (!stored) return;
+      const parsed = JSON.parse(stored) as DailyPick;
+      if (parsed.dateKey === todayKey() && parsed.cardId) {
+        setDailyPick(parsed);
+        setResetText(timeUntilReset());
+      } else {
+        window.localStorage.removeItem(DAILY_PICK_STORAGE_KEY);
+      }
+    } catch {
+      window.localStorage.removeItem(DAILY_PICK_STORAGE_KEY);
+    }
+  }, []);
 
   const scrollBy = (dir: 1 | -1) => {
     sliderRef.current?.scrollBy({ left: dir * (CARD_W + GAP) * 3, behavior: "smooth" });
@@ -35,8 +77,26 @@ export default function PickACardGame() {
 
   const pickCard = (id: string) => {
     if (phase !== "idle") return;
-    setSelectedId(id);
+    const activeDailyPick = dailyPick?.dateKey === todayKey() ? dailyPick : null;
+    if (activeDailyPick) {
+      const storedCard = cards.find(card => card.id === activeDailyPick.cardId) ?? cards[0];
+      setSelectedId(storedCard.id);
+      setRevealedCard(storedCard);
+      setAlreadyPicked(true);
+      setResetText(timeUntilReset());
+      setPhase("shown");
+      return;
+    }
+
     const picked = cards.find(card => card.id === id) ?? cards[0];
+    const nextPick = { dateKey: todayKey(), cardId: picked.id };
+    try {
+      window.localStorage.setItem(DAILY_PICK_STORAGE_KEY, JSON.stringify(nextPick));
+    } catch {}
+    setDailyPick(nextPick);
+    setAlreadyPicked(false);
+    setResetText(timeUntilReset());
+    setSelectedId(id);
     setRevealedCard(picked);
     setPhase("zoom");
     setTimeout(() => setPhase("flip"), 700);
@@ -47,6 +107,7 @@ export default function PickACardGame() {
     if (phase !== "shown") return;
     setSelectedId(null);
     setRevealedCard(null);
+    setAlreadyPicked(false);
     setPhase("idle");
   };
 
@@ -126,7 +187,9 @@ export default function PickACardGame() {
               ›
             </button>
             <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: "13px", color: "#8a8497", marginTop: "16px" }}>
-              {pickContent.gameInstructions}
+              {dailyPick?.dateKey === todayKey()
+                ? `Karta dne již byla vybrána. Její poselství zůstává otevřené do 23:59.`
+                : pickContent.gameInstructions}
             </p>
           </div>
         </div>
@@ -231,13 +294,14 @@ export default function PickACardGame() {
                   <div style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at 50% 30%, rgba(255,255,255,0.18) 0%, transparent 60%)" }} />
                   {selected.image && (
                     <div style={{ position: "absolute", inset: 0 }}>
-                      <OptimizedImage
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
                         src={selected.image}
                         alt={selected.title}
-                        sizes="340px"
-                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", opacity: 0.42 }}
+                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", opacity: 0.78 }}
                       />
-                      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(20,14,40,0.15), rgba(20,14,40,0.62))" }} />
+                      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(20,14,40,0.18), rgba(20,14,40,0.70))" }} />
+                      <div style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at 50% 28%, rgba(255,255,255,0.16) 0%, transparent 54%)" }} />
                     </div>
                   )}
                   <div style={{ position: "relative", fontFamily: "'Cormorant Garamond', serif", fontSize: "70px", lineHeight: 1, opacity: 0.9, marginBottom: "18px" }}>
@@ -246,6 +310,11 @@ export default function PickACardGame() {
                   <h2 style={{ position: "relative", fontFamily: "'Cormorant Garamond', serif", fontSize: "32px", fontWeight: 500, margin: "0 0 14px", letterSpacing: "0.5px" }}>
                     {selected.title}
                   </h2>
+                  {alreadyPicked && (
+                    <div style={{ position: "relative", fontFamily: "'Poppins', sans-serif", fontSize: "10px", textTransform: "uppercase", letterSpacing: "2.4px", border: "1px solid rgba(255,255,255,0.42)", borderRadius: 999, padding: "7px 12px", marginBottom: "16px", background: "rgba(255,255,255,0.12)", backdropFilter: "blur(6px)" }}>
+                      Karta dne již byla vybrána
+                    </div>
+                  )}
                   <div style={{ position: "relative", fontFamily: "'Poppins', sans-serif", fontSize: "12px", textTransform: "uppercase", letterSpacing: "2px", opacity: 0.85, marginBottom: "22px" }}>
                     {selected.concepts}
                   </div>
@@ -261,18 +330,21 @@ export default function PickACardGame() {
               <div
                 style={{
                   position: "absolute",
-                  bottom: "40px",
+                  bottom: alreadyPicked ? "30px" : "40px",
                   left: "50%",
                   transform: "translateX(-50%)",
                   textAlign: "center",
                   color: "rgba(255,255,255,0.85)",
                   fontFamily: "'Poppins', sans-serif",
-                  fontSize: "13px",
+                  fontSize: alreadyPicked ? "12px" : "13px",
                   letterSpacing: "1px",
                   textTransform: "uppercase",
+                  width: "min(92vw, 520px)",
                 }}
               >
-                {pickContent.revealLabel}
+                {alreadyPicked
+                  ? `Dnešní poselství už máte. Nová karta se otevře po 23:59, přibližně za ${resetText}.`
+                  : pickContent.revealLabel}
               </div>
             )}
           </div>

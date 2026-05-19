@@ -4,16 +4,22 @@ import "./globals.css";
 import { ContentProvider } from "@/context/ContentContext";
 import LiveEditor from "@/components/admin/LiveEditor";
 import CustomStyles from "@/components/CustomStyles";
-
-const BASE = "https://asteralight.cz";
+import { SITE_LANGUAGE, SITE_LOCALE, SITE_NAME, SITE_URL } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(BASE),
-  title: "Astera-Light — Experience Your Magic",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "Astera Light | výklad karet, očista prostoru a intuitivní vedení",
+    template: "%s | Astera Light",
+  },
   description:
-    "Astera-Light is a bestselling author, Oracle expert, spiritual intuitive, and personal transformation thought leader.",
+    "Astera Light nabízí výklady karet, očistu prostor, energetickou práci a jemné intuitivní vedení pro klidnější domov i život.",
   alternates: {
-    canonical: BASE,
+    canonical: SITE_URL,
+    languages: {
+      "cs-CZ": SITE_URL,
+      "x-default": SITE_URL,
+    },
   },
   robots: {
     index: true,
@@ -22,18 +28,18 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "website",
-    url: BASE,
-    siteName: "Astera-Light",
-    title: "Astera-Light — Experience Your Magic",
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    title: "Astera Light | výklad karet, očista prostoru a intuitivní vedení",
     description:
-      "Astera-Light is a bestselling author, Oracle expert, spiritual intuitive, and personal transformation thought leader.",
-    locale: "en_US",
+      "Výklady karet, očista prostor, energetická práce a intuitivní vedení pro klidnější domov i život.",
+    locale: SITE_LOCALE,
   },
   twitter: {
     card: "summary_large_image",
-    title: "Astera-Light — Experience Your Magic",
+    title: "Astera Light | výklad karet a intuitivní vedení",
     description:
-      "Astera-Light is a bestselling author, Oracle expert, spiritual intuitive, and personal transformation thought leader.",
+      "Jemné intuitivní vedení, výklad karet, očista prostoru a práce s energií.",
   },
 };
 
@@ -42,18 +48,18 @@ const schemaOrg = {
   "@graph": [
     {
       "@type": "WebSite",
-      "@id": `${BASE}/#website`,
-      url: BASE,
-      name: "Astera-Light",
-      description: "Oracle expert, author and spiritual intuitive.",
-      inLanguage: "en",
+      "@id": `${SITE_URL}/#website`,
+      url: SITE_URL,
+      name: SITE_NAME,
+      description: "Výklad karet, očista prostoru, energetická práce a intuitivní vedení.",
+      inLanguage: SITE_LANGUAGE,
     },
     {
       "@type": "Person",
-      "@id": `${BASE}/#person`,
-      name: "Astera-Light",
-      url: BASE,
-      jobTitle: "Author, Oracle Expert & Spiritual Intuitive",
+      "@id": `${SITE_URL}/#person`,
+      name: SITE_NAME,
+      url: SITE_URL,
+      jobTitle: "Intuitivní průvodkyně, autorka a lektorka práce s kartami",
       sameAs: [
         "https://www.facebook.com/asteralight",
         "https://www.instagram.com/asteralight",
@@ -67,7 +73,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="cs">
       <head>
         <script
           type="application/ld+json"
