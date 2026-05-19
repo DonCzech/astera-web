@@ -79,7 +79,6 @@ export default function AboutAstera() {
         @media (max-width: 768px) {
           .about-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
           .about-grid > :nth-child(2) { display: none; }
-          .about-grid > :nth-child(3) { order: -1; }
           .about-grid > :nth-child(3) img:first-child { margin-top: 0 !important; }
         }
       `}</style>

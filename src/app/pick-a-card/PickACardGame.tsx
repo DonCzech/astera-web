@@ -48,10 +48,28 @@ export default function PickACardGame() {
   const [dailyPick, setDailyPick] = useState<DailyPick | null>(null);
   const [alreadyPicked, setAlreadyPicked] = useState(false);
   const [resetText, setResetText] = useState("");
+  const loopedCards = [...shuffled, ...shuffled, ...shuffled];
+  const loopWidth = shuffled.length * (CARD_W + GAP);
 
   useEffect(() => {
     setShuffled(cards);
   }, [cards]);
+
+  useEffect(() => {
+    const slider = sliderRef.current;
+    if (!slider || !shuffled.length) return;
+    slider.scrollLeft = loopWidth;
+  }, [loopWidth, shuffled.length]);
+
+  const keepSliderInfinite = () => {
+    const slider = sliderRef.current;
+    if (!slider || !loopWidth) return;
+    if (slider.scrollLeft < loopWidth * 0.5) {
+      slider.scrollLeft += loopWidth;
+    } else if (slider.scrollLeft > loopWidth * 1.5) {
+      slider.scrollLeft -= loopWidth;
+    }
+  };
 
   useEffect(() => {
     try {
@@ -139,6 +157,7 @@ export default function PickACardGame() {
             </button>
             <div
               ref={sliderRef}
+              onScroll={keepSliderInfinite}
               style={{
                 display: "flex",
                 gap: `${GAP}px`,
@@ -150,12 +169,12 @@ export default function PickACardGame() {
               }}
               className="card-slider"
             >
-              {shuffled.map((card) => {
+              {loopedCards.map((card, index) => {
                 const isSelected = card.id === selectedId;
                 const hidden = selectedId !== null && !isSelected;
                 return (
                   <div
-                    key={card.id}
+                    key={`${card.id}-${index}`}
                     onClick={() => pickCard(card.id)}
                     className="card-back"
                     style={{
