@@ -225,6 +225,39 @@ function LinkedPhrase({ text }: { text: string }) {
   return <>{text}</>;
 }
 
+function ScrollDownControl() {
+  const scrollToServices = () => {
+    document.getElementById("sluzby-karty")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={scrollToServices}
+      aria-label="Posunout na výběr služeb"
+      className="services-scroll-down"
+      style={{
+        width: 52,
+        height: 52,
+        borderRadius: "50%",
+        margin: "0 auto 16px",
+        background: `linear-gradient(135deg, ${goldLight} 0%, ${gold}55 100%)`,
+        border: `1px solid ${gold}77`,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "#5a3a00",
+        cursor: "pointer",
+        boxShadow: `0 10px 24px ${gold}22`,
+      }}
+    >
+      <span aria-hidden style={{ fontSize: 28, lineHeight: 1, transform: "translateY(-1px)" }}>
+        ↓
+      </span>
+    </button>
+  );
+}
+
 // ─── Modal ──────────────────────────────────────────────────────────────────
 
 function Modal({ service, onClose }: { service: ServiceItem; onClose: () => void }) {
@@ -536,12 +569,7 @@ export default function SluzbyPage() {
         <CreamSection>
           <div className="container-main" style={{ padding: "44px 30px" }}>
             <div style={{ maxWidth: 780, margin: "0 auto", textAlign: "center" }}>
-              <div style={{
-                width: 52, height: 52, borderRadius: "50%", margin: "0 auto 16px",
-                background: `linear-gradient(135deg, ${goldLight} 0%, ${gold}55 100%)`,
-                border: `1px solid ${gold}77`,
-                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22,
-              }}>{serviceContent.pageIntroIcon}</div>
+              <ScrollDownControl />
               <h2 style={{
                 fontFamily: "'Playfair Display',serif",
                 fontSize: "clamp(18px, 2.5vw, 24px)", fontWeight: 700,
@@ -556,9 +584,10 @@ export default function SluzbyPage() {
         </CreamSection>
 
         {/* ── CARDS GRID ───────────────────────────────────────── */}
-        <section style={{
+        <section id="sluzby-karty" style={{
           background: "linear-gradient(160deg, #0f0520 0%, #1e0840 40%, #2d1654 80%, #1a0a2e 100%)",
           padding: "70px 30px 80px", position: "relative", overflow: "hidden",
+          scrollMarginTop: 102,
         }}>
           {[
             { top: "10%", left: "5%", size: 300, c: "#7c3bb2" },
@@ -679,6 +708,22 @@ export default function SluzbyPage() {
       {activeService && <Modal service={activeService} onClose={() => setActive(null)} />}
 
       <style>{`
+        @keyframes servicesArrowBounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(7px); }
+        }
+        .services-scroll-down span {
+          animation: servicesArrowBounce 1.35s ease-in-out infinite;
+        }
+        .services-scroll-down:hover,
+        .services-scroll-down:focus-visible {
+          transform: translateY(2px);
+          box-shadow: 0 12px 26px ${gold}33 !important;
+          outline: none;
+        }
+        .services-scroll-down:focus-visible {
+          box-shadow: 0 0 0 4px ${gold}44, 0 12px 26px ${gold}33 !important;
+        }
         @keyframes modalIn {
           from { opacity: 0; transform: translateY(18px) scale(0.97); }
           to   { opacity: 1; transform: translateY(0)  scale(1); }
