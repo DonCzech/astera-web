@@ -42,6 +42,7 @@ export default function PickACardGame() {
   };
   const cards = pickContent.cards;
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedLoopIndex, setSelectedLoopIndex] = useState<number | null>(null);
   const [phase, setPhase] = useState<"idle" | "zoom" | "flip" | "shown">("idle");
   const [shuffled, setShuffled] = useState<PickACardGameCard[]>(cards);
   const [dailyPick, setDailyPick] = useState<DailyPick | null>(null);
@@ -101,12 +102,13 @@ export default function PickACardGame() {
 
   const [revealedCard, setRevealedCard] = useState<PickACardGameCard | null>(null);
 
-  const pickCard = (id: string) => {
+  const pickCard = (id: string, loopIndex: number) => {
     if (phase !== "idle") return;
     const activeDailyPick = dailyPick?.dateKey === todayKey() ? dailyPick : null;
     if (activeDailyPick) {
       const storedCard = cards.find(card => card.id === activeDailyPick.cardId) ?? cards[0];
       setSelectedId(storedCard.id);
+      setSelectedLoopIndex(loopIndex);
       setRevealedCard(storedCard);
       setAlreadyPicked(true);
       setResetText(timeUntilReset());
@@ -123,6 +125,7 @@ export default function PickACardGame() {
     setAlreadyPicked(false);
     setResetText(timeUntilReset());
     setSelectedId(id);
+    setSelectedLoopIndex(loopIndex);
     setRevealedCard(picked);
     setPhase("zoom");
     setTimeout(() => setPhase("flip"), 700);
@@ -132,6 +135,7 @@ export default function PickACardGame() {
   const closeReveal = () => {
     if (phase !== "shown") return;
     setSelectedId(null);
+    setSelectedLoopIndex(null);
     setRevealedCard(null);
     setAlreadyPicked(false);
     setPhase("idle");
@@ -181,12 +185,12 @@ export default function PickACardGame() {
                 }}
               >
                 {loopedCards.map((card, index) => {
-                  const isSelected = card.id === selectedId;
+                  const isSelected = index === selectedLoopIndex;
                   const hidden = selectedId !== null && !isSelected;
                   return (
                     <div
                       key={`${card.id}-${index}`}
-                      onClick={() => pickCard(card.id)}
+                      onClick={() => pickCard(card.id, index)}
                       className="card-back"
                       style={{
                         flex: `0 0 ${CARD_W}px`,
