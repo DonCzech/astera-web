@@ -200,6 +200,26 @@ function LinkedConsultText() {
   );
 }
 
+function ServiceInlineLinksText() {
+  return (
+    <>
+      Více o službách najdete{" "}
+      <a href="https://www.asteralight.cz/sluzby" style={inlineLinkStyle}>
+        zde
+      </a>
+      ,{" "}
+      <a href="https://app.rezora.cz/book/astera" style={inlineLinkStyle}>
+        konzultaci
+      </a>{" "}
+      si můžete rezervovat online a praktické návody najdete v{" "}
+      <a href="https://shop.asteralight.cz" style={inlineLinkStyle}>
+        e-shopu
+      </a>
+      .
+    </>
+  );
+}
+
 function LinkedPhrase({ text }: { text: string }) {
   if (text.includes("e-shop")) {
     const [before, after = ""] = text.split("e-shop");
@@ -254,17 +274,15 @@ function ScrollDownControl() {
       <svg
         aria-hidden
         className="scroll-motif"
-        width="28"
-        height="34"
-        viewBox="0 0 28 34"
+        width="30"
+        height="30"
+        viewBox="0 0 24 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         style={{ display: "block" }}
       >
-        <rect x="7" y="2" width="14" height="19" rx="3" stroke="currentColor" strokeWidth="1.6" />
-        <path d="M14 7.2c-2.2 1.4-2.2 4.8 0 6.2 2.2-1.4 2.2-4.8 0-6.2Z" fill="currentColor" opacity="0.72" />
-        <path d="M14 23v7.2M10.5 27.1 14 30.6l3.5-3.5" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M6.2 5.8 3.5 8.5M21.8 5.8l2.7 2.7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" opacity="0.6" />
+        <path d="M5 6.5 12 13.5 19 6.5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M5 12.5 12 19.5 19 12.5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </button>
   );
@@ -590,6 +608,9 @@ export default function SluzbyPage() {
               <OrnamentDivider tight />
               <p style={{ fontSize: 14, color: "#4a3728", margin: 0, lineHeight: 1.78, fontFamily: "'Poppins',sans-serif" }}>
                 {serviceContent.pageIntroText}
+              </p>
+              <p style={{ fontSize: 14, color: "#4a3728", margin: "18px 0 0", lineHeight: 1.78, fontFamily: "'Poppins',sans-serif" }}>
+                <ServiceInlineLinksText />
               </p>
             </div>
           </div>
