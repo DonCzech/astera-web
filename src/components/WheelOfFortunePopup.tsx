@@ -273,6 +273,7 @@ export default function WheelOfFortunePopup() {
       if (audioCtxRef.current) audioCtxRef.current.close();
       const ctx = new AC();
       audioCtxRef.current = ctx;
+      ctx.resume();
 
       const spinDuration = 5.2;
       // Schedule ticks: start fast (~18/s), decelerate to ~1.5/s using easeOut curve
