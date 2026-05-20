@@ -393,8 +393,7 @@ export default function WheelOfFortunePopup() {
     return segs[segs.length - 1];
   }, [cfg?.segments]);
 
-  const handleSpin = useCallback(() => {
-    if (phase !== "idle") return;
+  const doSpin = useCallback(() => {
     const won = selectWinner();
     setWinner(won);
     setPhase("spinning");
@@ -406,10 +405,10 @@ export default function WheelOfFortunePopup() {
     for (const seg of segs) {
       const segDeg = (seg.weight / totalW) * 360;
       if (seg.id === won.id) {
-        const midDeg  = cumDeg + segDeg / 2;
-        const R_base  = ((270 - midDeg) % 360 + 360) % 360;
-        const jitter  = (Math.random() - 0.5) * segDeg * 0.35;
-        const target  = R_base + 5 * 360 + jitter;
+        const midDeg = cumDeg + segDeg / 2;
+        const R_base = ((270 - midDeg) % 360 + 360) % 360;
+        const jitter = (Math.random() - 0.5) * segDeg * 0.35;
+        const target = R_base + 5 * 360 + jitter;
 
         if (wheelWrapRef.current) {
           wheelWrapRef.current.style.transition = "none";
@@ -427,7 +426,12 @@ export default function WheelOfFortunePopup() {
       }
       cumDeg += segDeg;
     }
-  }, [phase, selectWinner, cfg?.segments]);
+  }, [selectWinner, cfg?.segments, playSpinSound]);
+
+  const handleSpin = useCallback(() => {
+    if (phase !== "idle") return;
+    doSpin();
+  }, [phase, doSpin]);
 
   // Submit email after win
   const handleEmailSubmit = useCallback(async () => {
@@ -814,12 +818,8 @@ export default function WheelOfFortunePopup() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   <button
                     onClick={() => {
-                      if (wheelWrapRef.current) {
-                        wheelWrapRef.current.style.transition = "none";
-                        wheelWrapRef.current.style.transform = "rotate(0deg)";
-                      }
-                      setPhase("idle");
                       setWinner(null);
+                      doSpin();
                     }}
                     style={{
                       padding: "13px 30px",
