@@ -28,6 +28,15 @@ async function initDb(): Promise<void> {
       content JSONB NOT NULL,
       updated_at TIMESTAMPTZ DEFAULT now()
     );
+
+    CREATE TABLE IF NOT EXISTS wheel_leads (
+      id SERIAL PRIMARY KEY,
+      email TEXT NOT NULL,
+      segment_label TEXT NOT NULL,
+      coupon TEXT DEFAULT '',
+      is_win BOOLEAN NOT NULL DEFAULT false,
+      created_at TIMESTAMPTZ DEFAULT now()
+    );
   `);
   // Seed default content for any missing sections
   for (const [section, data] of Object.entries(DEFAULT_CONTENT)) {
@@ -100,4 +109,22 @@ export async function createAdmin(email: string, passwordHash: string): Promise<
     "INSERT INTO admin_users (email, password_hash) VALUES ($1, $2)",
     [email, passwordHash]
   );
+}
+
+// ── Wheel of fortune ──────────────────────────────────────────────────────────
+
+export async function saveWheelLead(email: string, segmentLabel: string, coupon: string, isWin: boolean): Promise<void> {
+  await initDb();
+  await pool.query(
+    "INSERT INTO wheel_leads (email, segment_label, coupon, is_win) VALUES ($1, $2, $3, $4)",
+    [email, segmentLabel, coupon, isWin]
+  );
+}
+
+export async function getWheelLeads(): Promise<{ id: number; email: string; segment_label: string; coupon: string; is_win: boolean; created_at: string }[]> {
+  await initDb();
+  const { rows } = await pool.query(
+    "SELECT id, email, segment_label, coupon, is_win, created_at FROM wheel_leads ORDER BY created_at DESC LIMIT 500"
+  );
+  return rows;
 }

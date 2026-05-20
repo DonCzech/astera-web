@@ -86,6 +86,29 @@ export interface SiteSettings {
   customCss: string;
 }
 
+export interface WheelSegment {
+  id: string;
+  label: string;
+  color: string;
+  weight: number;
+  isLoss: boolean;
+  coupon: string;
+}
+
+export interface WheelOfFortuneConfig {
+  enabled: boolean;
+  title: string;
+  subtitle: string;
+  emailPlaceholder: string;
+  spinButtonText: string;
+  privacyText: string;
+  winTitle: string;
+  winText: string;
+  lossTitle: string;
+  lossText: string;
+  segments: WheelSegment[];
+}
+
 export interface AboutPageSection {
   heroTitle: string;
   heroSubtitle: string;
@@ -225,6 +248,7 @@ export interface SiteContent {
   servicesContent: ServicesContent;
   pages: CustomPage[];
   siteSettings: SiteSettings;
+  wheelOfFortune: WheelOfFortuneConfig;
 }
 
 export const SITE = "https://www.asteralight.cz";
@@ -496,5 +520,27 @@ export const DEFAULT_CONTENT: SiteContent = {
     metaTitle: "Astera Light",
     metaDescription: "Experience Your Magic with Astera-Light",
     customCss: "",
+  },
+  wheelOfFortune: {
+    enabled: true,
+    title: "Otočte kolem štěstí!",
+    subtitle: "Zadejte e-mail a zkuste štěstí – třeba právě dnes vyhrajete!",
+    emailPlaceholder: "vas@email.cz",
+    spinButtonText: "Točit kolem!",
+    privacyText: "Váš e-mail bude použit pouze pro zaslání výhry.",
+    winTitle: "Gratulujeme!",
+    winText: "Vaše výhra byla odeslána na zadaný e-mail.",
+    lossTitle: "Hvězdy se ještě nesrovnaly…",
+    lossText: "Ale dáváme vám ještě jednu šanci. Třeba právě teď je váš okamžik.",
+    segments: [
+      { id: "1", label: "10% sleva", color: "#7c3bb2", weight: 2, isLoss: false, coupon: "SLEVA10" },
+      { id: "2", label: "Výklad zdarma", color: "#c9a84c", weight: 1, isLoss: false, coupon: "VYKLAD" },
+      { id: "3", label: "Příště štěstí", color: "#4a2880", weight: 3, isLoss: true, coupon: "" },
+      { id: "4", label: "15% sleva", color: "#a84a80", weight: 2, isLoss: false, coupon: "SLEVA15" },
+      { id: "5", label: "E-book zdarma", color: "#5878c0", weight: 1, isLoss: false, coupon: "EBOOK" },
+      { id: "6", label: "Příště štěstí", color: "#3d2060", weight: 3, isLoss: true, coupon: "" },
+      { id: "7", label: "20% sleva", color: "#c08040", weight: 1, isLoss: false, coupon: "SLEVA20" },
+      { id: "8", label: "Konzultace -50%", color: "#7c6ad4", weight: 1, isLoss: false, coupon: "KONZULTACE50" },
+    ],
   },
 };

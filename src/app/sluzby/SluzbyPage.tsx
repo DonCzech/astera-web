@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useContent } from "@/context/ContentContext";
 import { ServiceItem } from "@/lib/content-types";
+import WheelOfFortunePopup from "@/components/WheelOfFortunePopup";
 
 const purple = "#7c3bb2";
 const gold   = "#c9a84c";
@@ -716,6 +717,7 @@ export default function SluzbyPage() {
       <Footer />
 
       {activeService && <Modal service={activeService} onClose={() => setActive(null)} />}
+      <WheelOfFortunePopup />
 
       <style>{`
         @keyframes servicesArrowBounce {

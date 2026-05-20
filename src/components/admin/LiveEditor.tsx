@@ -2,7 +2,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { useContent } from "@/context/ContentContext";
 import { usePathname } from "next/navigation";
-import { DEFAULT_CONTENT, SiteContent, NavItem, ManifestCard, FooterLink, CustomPage, PageBlock, BlockType, SiteSettings, ServicesContent, ServiceItem, ServiceSection, PickACardGameCard } from "@/lib/content-types";
+import { DEFAULT_CONTENT, SiteContent, NavItem, ManifestCard, FooterLink, CustomPage, PageBlock, BlockType, SiteSettings, ServicesContent, ServiceItem, ServiceSection, PickACardGameCard, WheelOfFortuneConfig, WheelSegment } from "@/lib/content-types";
 import RichTextEditor from "./RichTextEditor";
 
 type Section = keyof SiteContent;
@@ -16,6 +16,7 @@ const ALL_SECTIONS: { key: Section; label: string }[] = [
   { key: "pickacard", label: "Pick Card" },
   { key: "oracle", label: "Oracle" },
   { key: "servicesContent", label: "Služby" },
+  { key: "wheelOfFortune", label: "🎡 Kolo štěstí" },
   { key: "footer", label: "Footer" },
   { key: "aboutPage", label: "O nás" },
   { key: "pages", label: "📋 Stránky" },
@@ -24,6 +25,9 @@ const ALL_SECTIONS: { key: Section; label: string }[] = [
 
 const HOMEPAGE_KEYS: Section[] = ["header", "hero", "servicesContent", "newsletter", "about", "manifest", "pickacard", "oracle", "footer", "siteSettings"];
 const CUSTOM_PAGE_KEYS: Section[] = ["pages", "siteSettings"];
+const SLUZBY_KEYS: Section[] = ["servicesContent", "wheelOfFortune", "siteSettings"];
+// Static Next.js routes that must never be treated as custom pages
+const STATIC_ROUTES = ["/", "/sluzby", "/about", "/pick-a-card"];
 
 const PANEL_W = 460; // panel width desktop
 
@@ -1139,6 +1143,196 @@ function SiteSettingsEditor() {
   );
 }
 
+// ── Wheel of Fortune editor ──────────────────────────────────────────────────────
+
+const WHEEL_COLORS = ["#7c3bb2", "#c9a84c", "#a84a80", "#5878c0", "#5a9e7c", "#c08040", "#7c6ad4", "#3d2060", "#4a2880"];
+
+function WheelEditor() {
+  const { content, updateSection } = useContent();
+  const cfg: WheelOfFortuneConfig = content.wheelOfFortune;
+  const upd = (data: WheelOfFortuneConfig) => updateSection("wheelOfFortune", data);
+  const updField = (key: keyof Omit<WheelOfFortuneConfig, "segments" | "enabled">, val: string) =>
+    upd({ ...cfg, [key]: val });
+  const updSeg = (i: number, seg: WheelSegment) =>
+    upd({ ...cfg, segments: cfg.segments.map((s, idx) => idx === i ? seg : s) });
+  const removeSeg = (i: number) =>
+    upd({ ...cfg, segments: cfg.segments.filter((_, idx) => idx !== i) });
+  const addSeg = () =>
+    upd({
+      ...cfg, segments: [...cfg.segments, {
+        id: `seg-${Date.now()}`, label: "Nová výhra",
+        color: WHEEL_COLORS[cfg.segments.length % WHEEL_COLORS.length],
+        weight: 1, isLoss: false, coupon: "KOD",
+      }],
+    });
+
+  const [leadsOpen, setLeadsOpen] = useState(false);
+  const [leads, setLeads] = useState<{ id: number; email: string; segment_label: string; coupon: string; is_win: boolean; created_at: string }[]>([]);
+  const [leadsLoading, setLeadsLoading] = useState(false);
+
+  const loadLeads = async () => {
+    setLeadsLoading(true);
+    try {
+      const res = await fetch("/api/wheel");
+      const data = await res.json();
+      setLeads(data.leads || []);
+    } catch {
+      setLeads([]);
+    } finally {
+      setLeadsLoading(false);
+    }
+  };
+
+  return (
+    <div>
+      {/* Toggle enabled */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18, padding: "10px 12px", background: cfg.enabled ? "#f0fdf4" : "#fef2f2", borderRadius: 9, border: `1px solid ${cfg.enabled ? "#86efac" : "#fca5a5"}` }}>
+        <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: cfg.enabled ? "#166534" : "#991b1b" }}>
+          {cfg.enabled ? "✅ Kolo je aktivní" : "⛔ Kolo je vypnuté"}
+        </span>
+        <button
+          type="button"
+          onClick={() => upd({ ...cfg, enabled: !cfg.enabled })}
+          style={{ padding: "6px 14px", borderRadius: 8, border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer", background: cfg.enabled ? "#fca5a5" : "#86efac", color: cfg.enabled ? "#991b1b" : "#166534" }}
+        >
+          {cfg.enabled ? "Vypnout" : "Zapnout"}
+        </button>
+      </div>
+
+      <Divider label="Texty popupu" />
+      <Field label="Nadpis"><PlainInput value={cfg.title} onChange={v => updField("title", v)} /></Field>
+      <Field label="Podnadpis"><PlainInput value={cfg.subtitle} onChange={v => updField("subtitle", v)} /></Field>
+      <Field label="Placeholder e-mailu"><PlainInput value={cfg.emailPlaceholder} onChange={v => updField("emailPlaceholder", v)} /></Field>
+      <Field label="Text tlačítka"><PlainInput value={cfg.spinButtonText} onChange={v => updField("spinButtonText", v)} /></Field>
+      <Field label="Text soukromí (pod tlačítkem)"><PlainInput value={cfg.privacyText} onChange={v => updField("privacyText", v)} /></Field>
+
+      <Divider label="Výsledky" />
+      <Field label="Nadpis při výhře"><PlainInput value={cfg.winTitle} onChange={v => updField("winTitle", v)} /></Field>
+      <Field label="Text při výhře"><SmallTextarea value={cfg.winText} onChange={v => updField("winText", v)} /></Field>
+      <Field label="Nadpis při prohře"><PlainInput value={cfg.lossTitle} onChange={v => updField("lossTitle", v)} /></Field>
+      <Field label="Text při prohře"><SmallTextarea value={cfg.lossText} onChange={v => updField("lossText", v)} /></Field>
+
+      <Divider label={`Segmenty kola (${cfg.segments.length})`} />
+      {cfg.segments.map((seg, i) => (
+        <div key={seg.id} style={{ border: "1px solid #e5e7eb", borderRadius: 9, padding: "10px 12px", marginBottom: 8, background: "#fafafa", borderLeft: `4px solid ${seg.color}` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+            <div style={{ width: 16, height: 16, borderRadius: "50%", background: seg.color, border: "1px solid rgba(0,0,0,0.15)", flexShrink: 0 }} />
+            <strong style={{ flex: 1, fontSize: 12, color: "#374151" }}>{seg.label || "segment"}</strong>
+            <button type="button" onClick={() => removeSeg(i)} style={{ padding: "3px 8px", border: "1px solid #fecaca", borderRadius: 6, background: "#fee2e2", color: "#b91c1c", cursor: "pointer", fontSize: 11 }}>✕</button>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+            <Field label="Label (text na kole)">
+              <input value={seg.label} onChange={e => updSeg(i, { ...seg, label: e.target.value })}
+                style={{ width: "100%", boxSizing: "border-box", padding: "6px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12 }} />
+            </Field>
+            <Field label="Kupon / kód výhry">
+              <input value={seg.coupon} onChange={e => updSeg(i, { ...seg, coupon: e.target.value })}
+                placeholder="napr. SLEVA10"
+                style={{ width: "100%", boxSizing: "border-box", padding: "6px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12, fontFamily: "monospace" }} />
+            </Field>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, alignItems: "end" }}>
+            <Field label="Váha (pravděpodobnost)">
+              <input type="number" min={1} max={20} value={seg.weight}
+                onChange={e => updSeg(i, { ...seg, weight: Math.max(1, Number(e.target.value)) })}
+                style={{ width: "100%", boxSizing: "border-box", padding: "6px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12 }} />
+            </Field>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.6px" }}>Typ segmentu</label>
+              <select value={seg.isLoss ? "loss" : "win"} onChange={e => updSeg(i, { ...seg, isLoss: e.target.value === "loss" })}
+                style={{ padding: "6px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12 }}>
+                <option value="win">🎁 Výhra</option>
+                <option value="loss">😅 Příště štěstí</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Color picker */}
+          <div style={{ marginTop: 8 }}>
+            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.6px", marginBottom: 5 }}>Barva segmentu</label>
+            <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 5 }}>
+              {WHEEL_COLORS.map(c => (
+                <button key={c} type="button" onClick={() => updSeg(i, { ...seg, color: c })}
+                  style={{ width: 22, height: 22, borderRadius: "50%", background: c, border: seg.color === c ? "2px solid #111" : "1px solid #d1d5db", cursor: "pointer" }} />
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+              <input type="color" value={/^#[0-9a-f]{6}$/i.test(seg.color) ? seg.color : "#7c3bb2"}
+                onChange={e => updSeg(i, { ...seg, color: e.target.value })}
+                style={{ width: 38, height: 30, border: "1px solid #e5e7eb", borderRadius: 5, cursor: "pointer", padding: 2 }} />
+              <input type="text" value={seg.color} onChange={e => updSeg(i, { ...seg, color: e.target.value })}
+                style={{ flex: 1, padding: "5px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 11, fontFamily: "monospace" }} />
+            </div>
+          </div>
+        </div>
+      ))}
+      <button type="button" onClick={addSeg}
+        style={{ width: "100%", padding: "9px", background: "#7c3bb2", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 800, cursor: "pointer", marginBottom: 6 }}>
+        + Přidat segment
+      </button>
+
+      {/* Leads section */}
+      <Divider label="Sesbírané e-maily (leads)" />
+      <button type="button"
+        onClick={() => { setLeadsOpen(o => !o); if (!leadsOpen) loadLeads(); }}
+        style={{ width: "100%", padding: "8px", background: "#f0f9ff", border: "1px solid #7c3bb2", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#7c3bb2", marginBottom: 8 }}>
+        {leadsOpen ? "▲ Skrýt leads" : "▼ Zobrazit leads"}
+      </button>
+      {leadsOpen && (
+        <div>
+          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 6 }}>
+            <button type="button" onClick={loadLeads} style={{ padding: "5px 10px", fontSize: 11, border: "1px solid #e5e7eb", borderRadius: 6, background: "#fff", cursor: "pointer" }}>
+              ↺ Obnovit
+            </button>
+          </div>
+          {leadsLoading ? (
+            <p style={{ fontSize: 12, color: "#6b7280", textAlign: "center", padding: "12px 0" }}>Načítám…</p>
+          ) : leads.length === 0 ? (
+            <p style={{ fontSize: 12, color: "#6b7280", textAlign: "center", padding: "12px 0" }}>Zatím žádné e-maily.</p>
+          ) : (
+            <div style={{ maxHeight: 280, overflowY: "auto", border: "1px solid #e5e7eb", borderRadius: 8 }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
+                <thead>
+                  <tr style={{ background: "#f9fafb", position: "sticky", top: 0 }}>
+                    <th style={{ padding: "6px 8px", textAlign: "left", borderBottom: "1px solid #e5e7eb", color: "#374151" }}>E-mail</th>
+                    <th style={{ padding: "6px 8px", textAlign: "left", borderBottom: "1px solid #e5e7eb", color: "#374151" }}>Výhra</th>
+                    <th style={{ padding: "6px 8px", textAlign: "left", borderBottom: "1px solid #e5e7eb", color: "#374151" }}>Datum</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {leads.map(l => (
+                    <tr key={l.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                      <td style={{ padding: "5px 8px", color: "#374151" }}>{l.email}</td>
+                      <td style={{ padding: "5px 8px" }}>
+                        <span style={{
+                          display: "inline-flex", alignItems: "center", gap: 3,
+                          padding: "2px 6px", borderRadius: 5, fontSize: 10,
+                          background: l.is_win ? "#f0fdf4" : "#fef2f2",
+                          color: l.is_win ? "#166534" : "#991b1b",
+                          border: `1px solid ${l.is_win ? "#86efac" : "#fca5a5"}`,
+                        }}>
+                          {l.is_win ? "🎁" : "😅"} {l.segment_label}
+                          {l.coupon && <span style={{ fontFamily: "monospace", fontWeight: 700 }}> · {l.coupon}</span>}
+                        </span>
+                      </td>
+                      <td style={{ padding: "5px 8px", color: "#9ca3af" }}>
+                        {new Date(l.created_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p style={{ fontSize: 10, color: "#9ca3af", padding: "5px 8px", margin: 0, textAlign: "right" }}>{leads.length} záznamů</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Section editor map ──────────────────────────────────────────────────────────
 
 const EDITORS: Record<Section, React.ComponentType> = {
@@ -1150,6 +1344,7 @@ const EDITORS: Record<Section, React.ComponentType> = {
   pickacard: PickACardEditor,
   oracle: OracleEditor,
   servicesContent: ServicesEditor,
+  wheelOfFortune: WheelEditor,
   footer: FooterEditor,
   aboutPage: AboutPageEditor,
   pages: PagesEditor,
@@ -1190,13 +1385,16 @@ export default function LiveEditor() {
 
   // Context-aware: detect current custom page
   const currentCustomPage = useMemo(
-    () => (content.pages || []).find(p => `/${p.slug}` === pathname) ?? null,
+    () => STATIC_ROUTES.includes(pathname)
+      ? null
+      : (content.pages || []).find(p => `/${p.slug}` === pathname) ?? null,
     [content.pages, pathname]
   );
 
   // Filter sections based on current route
   const visibleSections = useMemo(() => {
     if (pathname === "/") return ALL_SECTIONS.filter(s => HOMEPAGE_KEYS.includes(s.key));
+    if (pathname === "/sluzby") return ALL_SECTIONS.filter(s => SLUZBY_KEYS.includes(s.key));
     if (currentCustomPage) return ALL_SECTIONS.filter(s => CUSTOM_PAGE_KEYS.includes(s.key));
     return ALL_SECTIONS;
   }, [pathname, currentCustomPage]);
