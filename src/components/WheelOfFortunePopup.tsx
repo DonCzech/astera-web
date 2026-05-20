@@ -219,6 +219,35 @@ export default function WheelOfFortunePopup() {
   const wheelWrapRef = useRef<HTMLDivElement>(null);
   const spinTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const audioCtxRef  = useRef<AudioContext | null>(null);
+  const audioReadyRef = useRef(false);
+
+  // Unlock AudioContext on first touch — required by iOS Safari
+  useEffect(() => {
+    if (!visible) return;
+    const unlock = () => {
+      if (audioReadyRef.current) return;
+      try {
+        const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        if (!AC) return;
+        const ctx = new AC();
+        // Play a silent buffer — this "unlocks" audio on iOS
+        const silentBuf = ctx.createBuffer(1, 1, 22050);
+        const src = ctx.createBufferSource();
+        src.buffer = silentBuf;
+        src.connect(ctx.destination);
+        src.start(0);
+        ctx.resume().catch(() => {});
+        audioCtxRef.current = ctx;
+        audioReadyRef.current = true;
+      } catch { /* ignore */ }
+    };
+    document.addEventListener("touchstart", unlock, { once: true, passive: true });
+    document.addEventListener("mousedown",  unlock, { once: true });
+    return () => {
+      document.removeEventListener("touchstart", unlock);
+      document.removeEventListener("mousedown",  unlock);
+    };
+  }, [visible]);
 
   // Detect mobile
   useEffect(() => {
@@ -268,12 +297,15 @@ export default function WheelOfFortunePopup() {
 
   const playSpinSound = useCallback(() => {
     try {
+      // Reuse the pre-unlocked context (iOS Safari requires it was created in a touch handler)
       const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (!AC) return;
-      if (audioCtxRef.current) audioCtxRef.current.close();
-      const ctx = new AC();
-      audioCtxRef.current = ctx;
-      ctx.resume();
+      if (!audioCtxRef.current) {
+        audioCtxRef.current = new AC();
+      }
+      const ctx = audioCtxRef.current;
+      ctx.resume().catch(() => {});
+      if (ctx.state === "closed") return;
 
       const spinDuration = 5.2;
       // Schedule ticks: start fast (~18/s), decelerate to ~1.5/s using easeOut curve
