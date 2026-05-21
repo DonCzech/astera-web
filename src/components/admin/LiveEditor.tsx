@@ -1199,7 +1199,69 @@ function WheelEditor() {
         </button>
       </div>
 
-      <Divider label="Texty popupu" />
+      <Divider label="Zobrazení" />
+
+      {/* Display style */}
+      <Field label="Styl zobrazení">
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
+          {([
+            { val: "popup",    icon: "🪟", label: "Popup", desc: "Překryje stránku při scrollu dolů" },
+            { val: "side_tab", icon: "📌", label: "Záložka", desc: "Záložka na okraji stránky, otevře panel" },
+            { val: "embedded", icon: "📄", label: "Vložené", desc: "Kolo přímo na stránce jako sekce" },
+          ] as const).map(({ val, icon, label, desc }) => {
+            const active = (cfg.displayStyle || "popup") === val;
+            return (
+              <button
+                key={val} type="button"
+                onClick={() => upd({ ...cfg, displayStyle: val })}
+                title={desc}
+                style={{
+                  padding: "10px 6px", borderRadius: 9, border: `2px solid ${active ? "#7c3bb2" : "#e5e7eb"}`,
+                  background: active ? "#f3e8ff" : "#fff", cursor: "pointer",
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+                  transition: "all 0.15s",
+                }}
+              >
+                <span style={{ fontSize: 20 }}>{icon}</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: active ? "#7c3bb2" : "#374151" }}>{label}</span>
+                <span style={{ fontSize: 9, color: "#6b7280", lineHeight: 1.3, textAlign: "center" }}>{desc}</span>
+              </button>
+            );
+          })}
+        </div>
+      </Field>
+
+      {/* Show frequency */}
+      <Field label="Jak často zobrazit návštěvníkovi">
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
+          {([
+            { val: "once_per_day",     icon: "📅", label: "1× za den",    desc: "Jednou za 24 hodin" },
+            { val: "once_per_session", icon: "🔁", label: "1× za relaci", desc: "Jednou za otevření prohlížeče" },
+            { val: "every_visit",      icon: "👁", label: "Vždy",         desc: "Každému návštěvníkovi pokaždé" },
+          ] as const).map(({ val, icon, label, desc }) => {
+            const active = (cfg.showFrequency || "once_per_day") === val;
+            return (
+              <button
+                key={val} type="button"
+                onClick={() => upd({ ...cfg, showFrequency: val })}
+                title={desc}
+                style={{
+                  padding: "10px 6px", borderRadius: 9, border: `2px solid ${active ? "#7c3bb2" : "#e5e7eb"}`,
+                  background: active ? "#f3e8ff" : "#fff", cursor: "pointer",
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+                  transition: "all 0.15s",
+                }}
+              >
+                <span style={{ fontSize: 20 }}>{icon}</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: active ? "#7c3bb2" : "#374151" }}>{label}</span>
+                <span style={{ fontSize: 9, color: "#6b7280", lineHeight: 1.3, textAlign: "center" }}>{desc}</span>
+              </button>
+            );
+          })}
+        </div>
+      </Field>
+
+      <Divider label="Texty" />
       <Field label="Nadpis"><PlainInput value={cfg.title} onChange={v => updField("title", v)} /></Field>
       <Field label="Podnadpis"><PlainInput value={cfg.subtitle} onChange={v => updField("subtitle", v)} /></Field>
       <Field label="Placeholder e-mailu"><PlainInput value={cfg.emailPlaceholder} onChange={v => updField("emailPlaceholder", v)} /></Field>

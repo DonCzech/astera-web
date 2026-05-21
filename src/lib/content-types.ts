@@ -95,8 +95,13 @@ export interface WheelSegment {
   coupon: string;
 }
 
+export type WheelShowFrequency = "once_per_day" | "every_visit" | "once_per_session";
+export type WheelDisplayStyle = "popup" | "side_tab" | "embedded";
+
 export interface WheelOfFortuneConfig {
   enabled: boolean;
+  showFrequency: WheelShowFrequency;
+  displayStyle: WheelDisplayStyle;
   title: string;
   subtitle: string;
   emailPlaceholder: string;
@@ -523,6 +528,8 @@ export const DEFAULT_CONTENT: SiteContent = {
   },
   wheelOfFortune: {
     enabled: true,
+    showFrequency: "once_per_day" as WheelShowFrequency,
+    displayStyle: "popup" as WheelDisplayStyle,
     title: "Otočte kolem štěstí!",
     subtitle: "Zadejte e-mail a zkuste štěstí – třeba právě dnes vyhrajete!",
     emailPlaceholder: "vas@email.cz",
