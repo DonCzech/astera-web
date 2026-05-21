@@ -565,10 +565,10 @@ export default function WheelOfFortunePopup() {
 
   const selectWinner = useCallback((): WheelSegment => {
     const segs = cfg.segments;
-    const totalW = segs.reduce((s, seg) => s + seg.weight, 0);
+    const totalW = segs.reduce((s, seg) => s + Number(seg.weight), 0);
     let r = Math.random() * totalW;
     for (const seg of segs) {
-      r -= seg.weight;
+      r -= Number(seg.weight);
       if (r <= 0) return seg;
     }
     return segs[segs.length - 1];
