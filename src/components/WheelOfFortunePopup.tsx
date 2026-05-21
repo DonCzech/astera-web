@@ -3,6 +3,125 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useContent } from "@/context/ContentContext";
 import type { WheelSegment } from "@/lib/content-types";
 
+// ── Confetti ────────────────────────────────────────────────────────────────
+
+const CONFETTI_COLORS = ["#7c3bb2", "#c9a84c", "#f5e9c8", "#e74c3c", "#2ecc71", "#3498db", "#ff6b9d", "#fff"];
+const CONFETTI_COUNT_DESKTOP = 180;
+const CONFETTI_COUNT_MOBILE  = 80;
+
+type Particle = {
+  x: number; y: number;
+  vx: number; vy: number;
+  rot: number; rotV: number;
+  color: string;
+  w: number; h: number;
+  shape: "rect" | "circle" | "strip";
+  alpha: number;
+};
+
+function Confetti({ active }: { active: boolean }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const rafRef    = useRef<number | null>(null);
+  const particles = useRef<Particle[]>([]);
+
+  useEffect(() => {
+    if (!active) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const isMobileDevice = window.innerWidth <= 620;
+    // Na mobilu: canvas 1:1 pixelů (bez DPR scaling) pro výkon
+    const dpr = isMobileDevice ? 1 : Math.min(window.devicePixelRatio || 1, 2);
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+
+    canvas.width  = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width  = `${W}px`;
+    canvas.style.height = `${H}px`;
+
+    const ctx = canvas.getContext("2d")!;
+    ctx.scale(dpr, dpr);
+
+    const count = isMobileDevice ? CONFETTI_COUNT_MOBILE : CONFETTI_COUNT_DESKTOP;
+
+    // Výbuch ze středu obrazovky (na mobilu trochu výš — popup zabírá víc)
+    const ox = W * 0.5;
+    const oy = isMobileDevice ? H * 0.55 : H * 0.65;
+
+    particles.current = Array.from({ length: count }, () => {
+      const angle = (-130 + Math.random() * 80) * (Math.PI / 180);
+      const speed = isMobileDevice ? 10 + Math.random() * 16 : 14 + Math.random() * 22;
+      return {
+        x:     ox + (Math.random() - 0.5) * 40,
+        y:     oy,
+        vx:    Math.cos(angle) * speed,
+        vy:    Math.sin(angle) * speed,
+        rot:   Math.random() * 360,
+        rotV:  (Math.random() - 0.5) * 14,
+        color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+        w:     7 + Math.random() * 9,
+        h:     3 + Math.random() * 5,
+        shape: (["rect", "rect", "circle", "strip"] as const)[Math.floor(Math.random() * 4)],
+        alpha: 1,
+      };
+    });
+
+    const startTime = performance.now();
+    const TOTAL_MS  = 5000;
+
+    const tick = (now: number) => {
+      const elapsed  = now - startTime;
+      const progress = Math.min(elapsed / TOTAL_MS, 1);
+      ctx.clearRect(0, 0, W, H);
+
+      for (const p of particles.current) {
+        p.x   += p.vx;
+        p.y   += p.vy;
+        p.vy  += 0.55;        // gravitace
+        p.vx  *= 0.97;        // vzdušný odpor
+        p.vy  *= 0.99;
+        p.rot += p.rotV;
+        p.rotV *= 0.98;
+        p.alpha = progress > 0.65 ? 1 - (progress - 0.65) / 0.35 : 1;
+
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.alpha);
+        ctx.translate(p.x, p.y);
+        ctx.rotate((p.rot * Math.PI) / 180);
+        ctx.fillStyle = p.color;
+        if (p.shape === "circle") {
+          ctx.beginPath();
+          ctx.arc(0, 0, p.w / 2, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (p.shape === "strip") {
+          ctx.fillRect(-p.w / 2, -1, p.w * 1.8, 2);
+        } else {
+          ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        }
+        ctx.restore();
+      }
+
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(tick);
+      } else {
+        ctx.clearRect(0, 0, W, H);
+      }
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [active]);
+
+  if (!active) return null;
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 1200 }}
+    />
+  );
+}
+
 const purple = "#7c3bb2";
 const gold   = "#c9a84c";
 const goldLight = "#f5e9c8";
@@ -225,6 +344,7 @@ export default function WheelOfFortunePopup() {
 
   const [visible,    setVisible]    = useState(false);
   const [sparks,     setSparks]     = useState(false);
+  const [confetti,   setConfetti]   = useState(false);
   const [phase,      setPhase]      = useState<Phase>("idle");
   const [email,      setEmail]      = useState("");
   const [sending,    setSending]    = useState(false);
@@ -238,7 +358,7 @@ export default function WheelOfFortunePopup() {
   const audioCtxRef  = useRef<AudioContext | null>(null);
   const audioReadyRef = useRef(false);
 
-  // Unlock AudioContext on first touch
+  // iOS Safari: vytvoř a odemkni AudioContext při prvním dotyku (ještě před spinem)
   useEffect(() => {
     if (!visible) return;
     const unlock = () => {
@@ -246,14 +366,15 @@ export default function WheelOfFortunePopup() {
       try {
         const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
         if (!AC) return;
-        const ctx = new AC();
+        const ctx = audioCtxRef.current ?? new AC();
+        audioCtxRef.current = ctx;
+        // Tiché přehrání odemkne kontext pro budoucí plánování
         const silentBuf = ctx.createBuffer(1, 1, 22050);
         const src = ctx.createBufferSource();
         src.buffer = silentBuf;
         src.connect(ctx.destination);
         src.start(0);
         ctx.resume().catch(() => {});
-        audioCtxRef.current = ctx;
         audioReadyRef.current = true;
       } catch { /* ignore */ }
     };
@@ -324,27 +445,43 @@ export default function WheelOfFortunePopup() {
     return () => { document.body.style.overflow = ""; };
   }, [visible, displayStyle]);
 
-  const playSpinSound = useCallback(() => {
-    try {
-      const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (!AC) return;
-      if (!audioCtxRef.current) {
-        audioCtxRef.current = new AC();
-      }
-      const ctx = audioCtxRef.current;
-      ctx.resume().catch(() => {});
-      if (ctx.state === "closed") return;
+  // Vrátí AudioContext připravený k použití (obnoví i po Safari suspend)
+  const getAudioCtx = useCallback((): Promise<AudioContext | null> => {
+    return new Promise(resolve => {
+      try {
+        const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        if (!AC) return resolve(null);
+        let ctx = audioCtxRef.current;
+        if (!ctx || ctx.state === "closed") {
+          ctx = new AC();
+          audioCtxRef.current = ctx;
+        }
+        if (ctx.state === "suspended") {
+          ctx.resume().then(() => resolve(ctx!)).catch(() => resolve(null));
+        } else {
+          resolve(ctx);
+        }
+      } catch { resolve(null); }
+    });
+  }, []);
 
-      const spinDuration = 5.2;
+  // Naplánuje spin ticky + thud + výherní nebo proherní zvuk — vše z user gesture
+  const playAllSounds = useCallback((isLoss: boolean) => {
+    getAudioCtx().then(ctx => {
+      if (!ctx) return;
+      const sr = ctx.sampleRate;
+      const now = ctx.currentTime;
+      const SPIN = 5.2;
+
+      // ── Ticky ────────────────────────────────────────────────────────────
       let t = 0;
-      while (t < spinDuration) {
-        const progress = t / spinDuration;
+      while (t < SPIN) {
+        const progress = t / SPIN;
         const interval = 0.055 + Math.pow(progress, 1.8) * 0.595;
-        const now = ctx.currentTime + t;
-        const buf = ctx.createBuffer(1, ctx.sampleRate * 0.04, ctx.sampleRate);
-        const data = buf.getChannelData(0);
-        for (let i = 0; i < data.length; i++) {
-          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.008));
+        const buf = ctx.createBuffer(1, sr * 0.04, sr);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < d.length; i++) {
+          d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (sr * 0.008));
         }
         const src = ctx.createBufferSource();
         src.buffer = buf;
@@ -354,32 +491,54 @@ export default function WheelOfFortunePopup() {
         bpf.Q.value = 3;
         const gain = ctx.createGain();
         gain.gain.value = 0.18 + progress * 0.14;
-        src.connect(bpf);
-        bpf.connect(gain);
-        gain.connect(ctx.destination);
-        src.start(now);
-        src.stop(now + 0.04);
+        src.connect(bpf); bpf.connect(gain); gain.connect(ctx.destination);
+        src.start(now + t);
+        src.stop(now + t + 0.04);
         t += interval;
       }
 
-      const thudTime = ctx.currentTime + spinDuration + 0.05;
-      const thudBuf = ctx.createBuffer(1, ctx.sampleRate * 0.12, ctx.sampleRate);
-      const thudData = thudBuf.getChannelData(0);
-      for (let i = 0; i < thudData.length; i++) {
-        thudData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.03));
+      // ── Thud (zastavení) ──────────────────────────────────────────────────
+      const thudAt = now + SPIN + 0.05;
+      const thudBuf = ctx.createBuffer(1, sr * 0.12, sr);
+      const thudD = thudBuf.getChannelData(0);
+      for (let i = 0; i < thudD.length; i++) {
+        thudD[i] = (Math.random() * 2 - 1) * Math.exp(-i / (sr * 0.03));
       }
       const thudSrc = ctx.createBufferSource();
       thudSrc.buffer = thudBuf;
-      const thudGain = ctx.createGain();
-      thudGain.gain.value = 0.38;
-      thudSrc.connect(thudGain);
-      thudGain.connect(ctx.destination);
-      thudSrc.start(thudTime);
-    } catch { /* AudioContext not supported */ }
-  }, []);
+      const thudG = ctx.createGain();
+      thudG.gain.value = 0.38;
+      thudSrc.connect(thudG); thudG.connect(ctx.destination);
+      thudSrc.start(thudAt);
+
+      // ── Výsledkový zvuk (reálné MP3 publika) ─────────────────────────────
+      const resultAt = now + SPIN + 0.35;
+
+      // Reálný zvuk publika — fetch + decode, spustí se 5.4s po kliknutí
+      const RESULT_DELAY_MS = (SPIN + 0.35) * 1000;
+      const file = isLoss ? "/sounds/crowd-loss.mp3" : "/sounds/crowd-cheer.mp3";
+      fetch(file)
+        .then(r => r.arrayBuffer())
+        .then(ab => ctx.decodeAudioData(ab))
+        .then(audioBuf => {
+          // Počkáme na správný moment (fetch trvá < 100ms z localhostu)
+          const remaining = resultAt - ctx.currentTime;
+          const startIn   = Math.max(0, remaining);
+          const src = ctx.createBufferSource();
+          src.buffer = audioBuf;
+          const g = ctx.createGain();
+          g.gain.value = 0.9;
+          src.connect(g); g.connect(ctx.destination);
+          src.start(ctx.currentTime + startIn);
+        })
+        .catch(() => {});
+      void RESULT_DELAY_MS;
+    });
+  }, [getAudioCtx]);
 
   const resetAndClose = useCallback(() => {
     if (spinTimerRef.current) clearTimeout(spinTimerRef.current);
+    setConfetti(false);
     // For side_tab: collapse back to tab (don't hide entirely)
     if (displayStyle === "side_tab") {
       setPhase("idle");
@@ -444,13 +603,19 @@ export default function WheelOfFortunePopup() {
         wheelWrapRef.current.style.transition = "transform 5.2s cubic-bezier(0.12, 0, 0.22, 1)";
         wheelWrapRef.current.style.transform  = `rotate(${target}deg)`;
       }
-      playSpinSound();
+      playAllSounds(won.isLoss);
 
       spinTimerRef.current = setTimeout(() => {
-        setPhase(won.isLoss ? "loss" : "win");
+        if (!won.isLoss) {
+          setPhase("win");
+          setConfetti(true);
+          setTimeout(() => setConfetti(false), 5000);
+        } else {
+          setPhase("loss");
+        }
       }, 5400);
     }
-  }, [selectWinner, cfg?.segments, playSpinSound]);
+  }, [selectWinner, cfg?.segments, playAllSounds]);
 
   const handleSpin = useCallback(() => {
     if (phase !== "idle") return;
@@ -480,88 +645,49 @@ export default function WheelOfFortunePopup() {
 
   const isEmailValid = email.includes("@") && email.includes(".");
 
+  const sharedProps = {
+    cfg, phase, email, setEmail, sending, winner, isMobile, wheelSize,
+    canvasRef, wheelWrapRef, isEmailValid,
+    handleSpin, handleEmailSubmit, resetAndClose, doSpin, setWinner,
+  };
+
   // ── Side Tab render ──────────────────────────────────────────────────────
   if (displayStyle === "side_tab") {
-    return <SideTabWheel
-      cfg={cfg}
-      phase={phase}
-      email={email}
-      setEmail={setEmail}
-      sending={sending}
-      winner={winner}
-      isMobile={isMobile}
-      wheelSize={wheelSize}
-      sparks={sparks}
-      canvasRef={canvasRef}
-      wheelWrapRef={wheelWrapRef}
-      isEmailValid={isEmailValid}
-      handleSpin={handleSpin}
-      handleEmailSubmit={handleEmailSubmit}
-      resetAndClose={resetAndClose}
-      doSpin={doSpin}
-      setWinner={setWinner}
-    />;
+    return <>
+      <Confetti active={confetti} />
+      <SideTabWheel {...sharedProps} sparks={sparks} />
+    </>;
   }
 
   // ── Embedded render ──────────────────────────────────────────────────────
   if (displayStyle === "embedded") {
-    return <EmbeddedWheel
-      cfg={cfg}
-      phase={phase}
-      email={email}
-      setEmail={setEmail}
-      sending={sending}
-      winner={winner}
-      isMobile={isMobile}
-      wheelSize={wheelSize}
-      canvasRef={canvasRef}
-      wheelWrapRef={wheelWrapRef}
-      isEmailValid={isEmailValid}
-      handleSpin={handleSpin}
-      handleEmailSubmit={handleEmailSubmit}
-      resetAndClose={resetAndClose}
-      doSpin={doSpin}
-      setWinner={setWinner}
-    />;
+    return <>
+      <Confetti active={confetti} />
+      <EmbeddedWheel {...sharedProps} />
+    </>;
   }
 
   // ── Popup render (default) ───────────────────────────────────────────────
   return (
-    <div
-      onClick={e => { if (e.target === e.currentTarget) resetAndClose(); }}
-      style={{
-        position: "fixed", inset: 0, zIndex: 1100,
-        background: "rgba(14, 4, 30, 0.82)",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "16px",
-        overflowY: "auto",
-        animation: "wfBackdropIn 0.45s ease both",
-      }}
-    >
-      <WheelCard
-        cfg={cfg}
-        phase={phase}
-        email={email}
-        setEmail={setEmail}
-        sending={sending}
-        winner={winner}
-        isMobile={isMobile}
-        wheelSize={wheelSize}
-        sparks={sparks}
-        canvasRef={canvasRef}
-        wheelWrapRef={wheelWrapRef}
-        isEmailValid={isEmailValid}
-        handleSpin={handleSpin}
-        handleEmailSubmit={handleEmailSubmit}
-        resetAndClose={resetAndClose}
-        doSpin={doSpin}
-        setWinner={setWinner}
-        showClose
-      />
-      <WheelStyles />
-    </div>
+    <>
+      <Confetti active={confetti} />
+      <div
+        onClick={e => { if (e.target === e.currentTarget) resetAndClose(); }}
+        style={{
+          position: "fixed", inset: 0, zIndex: 1100,
+          background: "rgba(14, 4, 30, 0.82)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: "16px",
+          overflowY: "auto",
+          animation: "wfBackdropIn 0.45s ease both",
+        }}
+      >
+        <WheelCard {...sharedProps} sparks={sparks} showClose />
+        <WheelStyles />
+      </div>
+    </>
   );
 }
 
