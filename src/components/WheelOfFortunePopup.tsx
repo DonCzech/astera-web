@@ -82,11 +82,11 @@ function drawWheel(canvas: HTMLCanvasElement, segments: WheelSegment[], size = W
   const R = size / 2 - 6;
   const innerR = R - 10;
 
-  const total = segments.reduce((s, seg) => s + seg.weight, 0);
+  const sliceAngleEqual = (2 * Math.PI) / segments.length;
   let startAngle = 0;
 
   for (const seg of segments) {
-    const sliceAngle = (seg.weight / total) * 2 * Math.PI;
+    const sliceAngle = sliceAngleEqual;
     const endAngle   = startAngle + sliceAngle;
     const midAngle   = startAngle + sliceAngle / 2;
 
@@ -160,16 +160,15 @@ function drawWheel(canvas: HTMLCanvasElement, segments: WheelSegment[], size = W
   ctx.fillStyle = glossGrad;
   ctx.fill();
 
-  const total2 = segments.reduce((s, seg) => s + seg.weight, 0);
   let a2 = 0;
-  for (const seg of segments) {
+  for (let i = 0; i < segments.length; i++) {
     const sx = cx + (R - 5) * Math.cos(a2);
     const sy = cy + (R - 5) * Math.sin(a2);
     ctx.beginPath();
     ctx.arc(sx, sy, 3.5, 0, 2 * Math.PI);
     ctx.fillStyle = "#fff";
     ctx.fill();
-    a2 += (seg.weight / total2) * 2 * Math.PI;
+    a2 += sliceAngleEqual;
   }
 
   const cR = 26;
@@ -427,32 +426,29 @@ export default function WheelOfFortunePopup() {
     setPhase("spinning");
 
     const segs   = cfg.segments;
-    const totalW = segs.reduce((s, seg) => s + seg.weight, 0);
-    let cumDeg   = 0;
+    // Vizuální díly jsou vždy stejně velké — segDeg = 360/N
+    const segDeg = 360 / segs.length;
+    const wonIdx = segs.findIndex(s => s.id === won.id);
 
-    for (const seg of segs) {
-      const segDeg = (seg.weight / totalW) * 360;
-      if (seg.id === won.id) {
-        const midDeg = cumDeg + segDeg / 2;
-        const R_base = ((270 - midDeg) % 360 + 360) % 360;
-        const jitter = (Math.random() - 0.5) * segDeg * 0.35;
-        const target = R_base + 5 * 360 + jitter;
+    if (wonIdx !== -1) {
+      const cumDeg = wonIdx * segDeg;
+      const midDeg = cumDeg + segDeg / 2;
+      const R_base = ((270 - midDeg) % 360 + 360) % 360;
+      const jitter = (Math.random() - 0.5) * segDeg * 0.35;
+      const target = R_base + 5 * 360 + jitter;
 
-        if (wheelWrapRef.current) {
-          wheelWrapRef.current.style.transition = "none";
-          wheelWrapRef.current.style.transform  = "rotate(0deg)";
-          void wheelWrapRef.current.offsetHeight;
-          wheelWrapRef.current.style.transition = "transform 5.2s cubic-bezier(0.12, 0, 0.22, 1)";
-          wheelWrapRef.current.style.transform  = `rotate(${target}deg)`;
-        }
-        playSpinSound();
-
-        spinTimerRef.current = setTimeout(() => {
-          setPhase(won.isLoss ? "loss" : "win");
-        }, 5400);
-        return;
+      if (wheelWrapRef.current) {
+        wheelWrapRef.current.style.transition = "none";
+        wheelWrapRef.current.style.transform  = "rotate(0deg)";
+        void wheelWrapRef.current.offsetHeight;
+        wheelWrapRef.current.style.transition = "transform 5.2s cubic-bezier(0.12, 0, 0.22, 1)";
+        wheelWrapRef.current.style.transform  = `rotate(${target}deg)`;
       }
-      cumDeg += segDeg;
+      playSpinSound();
+
+      spinTimerRef.current = setTimeout(() => {
+        setPhase(won.isLoss ? "loss" : "win");
+      }, 5400);
     }
   }, [selectWinner, cfg?.segments, playSpinSound]);
 
