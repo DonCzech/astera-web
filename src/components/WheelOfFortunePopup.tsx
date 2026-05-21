@@ -30,22 +30,17 @@ function Confetti({ active }: { active: boolean }) {
     if (!canvas) return;
 
     const isMobileDevice = window.innerWidth <= 620;
-    // Na mobilu: canvas 1:1 pixelů (bez DPR scaling) pro výkon
-    const dpr = isMobileDevice ? 1 : Math.min(window.devicePixelRatio || 1, 2);
     const W = window.innerWidth;
     const H = window.innerHeight;
 
-    canvas.width  = W * dpr;
-    canvas.height = H * dpr;
-    canvas.style.width  = `${W}px`;
-    canvas.style.height = `${H}px`;
+    // CSS pixel canvas — žádné DPR scaling (jednodušší, bez bugů)
+    canvas.width  = W;
+    canvas.height = H;
 
     const ctx = canvas.getContext("2d")!;
-    ctx.scale(dpr, dpr);
 
     const count = isMobileDevice ? CONFETTI_COUNT_MOBILE : CONFETTI_COUNT_DESKTOP;
 
-    // Výbuch ze středu obrazovky (na mobilu trochu výš — popup zabírá víc)
     const ox = W * 0.5;
     const oy = isMobileDevice ? H * 0.55 : H * 0.65;
 
@@ -105,7 +100,7 @@ function Confetti({ active }: { active: boolean }) {
       if (progress < 1) {
         rafRef.current = requestAnimationFrame(tick);
       } else {
-        ctx.clearRect(0, 0, W, H);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
     };
 
