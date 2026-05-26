@@ -164,8 +164,8 @@ export default function Header() {
             </a>
           ))}
           {/* Language switcher — bottom of mobile menu */}
-          <div style={{ padding: "16px 30px 8px", borderTop: "1px solid #f0f0f0" }}>
-            <LanguageSwitcher />
+          <div style={{ padding: "14px 20px 8px", borderTop: "1px solid #f0f0f0" }}>
+            <LanguageSwitcher compact />
           </div>
         </div>
       )}

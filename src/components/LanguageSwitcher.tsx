@@ -23,9 +23,9 @@ export default function LanguageSwitcher({ compact = false }: Props) {
     <div
       style={{
         display: "flex",
-        gap: compact ? "8px" : "12px",
+        gap: compact ? "6px" : "10px",
         alignItems: "center",
-        flexWrap: "wrap",
+        flexWrap: "nowrap",
       }}
     >
       {LANGUAGES.map((lang: LangMeta) => {
@@ -40,7 +40,7 @@ export default function LanguageSwitcher({ compact = false }: Props) {
               alignItems: "center",
               gap: "6px",
               textDecoration: "none",
-              padding: compact ? "4px 6px" : "6px 12px",
+              padding: compact ? "4px 6px" : "5px 10px",
               borderRadius: "20px",
               border: active ? "2px solid #7c3bb2" : "1px solid #dde5f0",
               backgroundColor: active ? "#f5f0fb" : "transparent",
