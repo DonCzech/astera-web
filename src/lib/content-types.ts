@@ -265,13 +265,13 @@ export const SITE = "https://www.asteralight.cz";
 export const DEFAULT_CONTENT: SiteContent = {
   header: {
     navItems: [
-      { label: "O mně", href: "/about" },
+      { label: "O mně", href: "/o-mne" },
       { label: "Služby", href: "/sluzby" },
       { label: "Konzultace", href: "/konzultace" },
       { label: "E-shop", href: `${SITE}/shop/` },
       { label: "Kniha", href: "/kniha" },
-      { label: "Návody", href: "/navody" },
-      { label: "Akce", href: `${SITE}/events/` },
+      { label: "FAQ", href: "/navody" },
+      { label: "Vyber kartu", href: "/pick-a-card" },
       { label: "Jak poděkovat", href: "/jak-podekovat" },
     ],
     logoHref: SITE,
