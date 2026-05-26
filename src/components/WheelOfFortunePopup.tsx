@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useContent } from "@/context/ContentContext";
+import { UI_STRINGS } from "@/lib/i18n";
 import type { WheelSegment } from "@/lib/content-types";
 
 // ── Confetti ────────────────────────────────────────────────────────────────
@@ -714,6 +715,8 @@ type SharedProps = {
 // ── WheelCard — shared modal body ────────────────────────────────────────────
 
 function WheelCard({ cfg, phase, email, setEmail, sending, winner, isMobile: _isMobile, wheelSize, sparks = false, canvasRef, wheelWrapRef, isEmailValid, handleSpin, handleEmailSubmit, resetAndClose, doSpin, setWinner, showClose = false, contained = false }: SharedProps) {
+  const { currentLang } = useContent();
+  const ui = UI_STRINGS[currentLang];
   return (
     <div
       style={{
@@ -750,7 +753,7 @@ function WheelCard({ cfg, phase, email, setEmail, sending, winner, isMobile: _is
 
       {showClose && (
         <button
-          onClick={resetAndClose} aria-label="Zavřít"
+          onClick={resetAndClose} aria-label={ui.close}
           style={{
             position: "absolute", top: 13, right: 13, zIndex: 20,
             width: 30, height: 30, borderRadius: "50%",
@@ -875,6 +878,8 @@ function RightColumn({ cfg, phase, email, setEmail, sending, winner, isEmailVali
   doSpin: () => void;
   setWinner: (w: WheelSegment | null) => void;
 }) {
+  const { currentLang } = useContent();
+  const ui = UI_STRINGS[currentLang];
   return (
     <div className="wf-right-col" style={{ padding: "28px 30px 28px 22px" }}>
 
@@ -882,10 +887,10 @@ function RightColumn({ cfg, phase, email, setEmail, sending, winner, isEmailVali
         <div style={{ animation: "wfSlideIn 0.5s 0.2s cubic-bezier(0.34,1.56,0.64,1) both" }}>
           <OrnamentDivider tight />
           <p style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: "#2a1a00", margin: "0 0 8px" }}>
-            Zkuste štěstí!
+            {ui.wheelTryLuck}
           </p>
           <p style={{ fontSize: 12, color: "#4a3728", margin: "0 0 20px", lineHeight: 1.7, fontFamily: "'Poppins', sans-serif" }}>
-            Otočte kolem a zjistěte, jakou výhodu jste získali. Nic neplatíte, točíte zadarmo!
+            {ui.wheelSpinDesc}
           </p>
           <button
             onClick={handleSpin}
@@ -902,7 +907,7 @@ function RightColumn({ cfg, phase, email, setEmail, sending, winner, isEmailVali
           >{cfg.spinButtonText}</button>
           <div style={{ marginTop: 18, padding: "11px 14px", background: `linear-gradient(135deg, ${cream}, ${goldLight}55)`, borderRadius: 12, border: `1px solid ${gold}44` }}>
             <p style={{ fontSize: 10, fontWeight: 700, color: "#5a3a00", margin: "0 0 7px", fontFamily: "'Poppins', sans-serif", textTransform: "uppercase", letterSpacing: "0.07em" }}>
-              Co lze vyhrát
+              {ui.wheelWhatToWin}
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
               {cfg.segments.filter(s => !s.isLoss).map(s => (
@@ -932,12 +937,12 @@ function RightColumn({ cfg, phase, email, setEmail, sending, winner, isEmailVali
             <div style={{ fontSize: 42, animation: "wfBounce 0.7s cubic-bezier(0.34,1.56,0.64,1)" }}>🎉</div>
             <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 700, color: "#2a1a00", margin: "4px 0 6px" }}>{cfg.winTitle}</h3>
             <div style={{ display: "inline-block", background: `linear-gradient(135deg, ${goldLight} 0%, ${cream} 100%)`, border: `2px solid ${gold}`, borderRadius: 14, padding: "10px 20px", margin: "0 0 4px", boxShadow: `0 4px 20px ${gold}33` }}>
-              <p style={{ fontSize: 11, color: "#6b5a3a", margin: "0 0 3px", fontFamily: "'Poppins',sans-serif", textTransform: "uppercase", letterSpacing: "0.07em" }}>Vaše výhra</p>
+              <p style={{ fontSize: 11, color: "#6b5a3a", margin: "0 0 3px", fontFamily: "'Poppins',sans-serif", textTransform: "uppercase", letterSpacing: "0.07em" }}>{ui.wheelYourPrize}</p>
               <p style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 700, color: "#3d2000", margin: 0 }}>{winner.label}</p>
             </div>
           </div>
           <p style={{ fontSize: 12, color: "#4a3728", margin: "0 0 10px", lineHeight: 1.6, fontFamily: "'Poppins', sans-serif" }}>
-            Zadejte e-mail a výhru vám okamžitě odešleme:
+            {ui.wheelEnterEmail}
           </p>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <input
@@ -949,7 +954,7 @@ function RightColumn({ cfg, phase, email, setEmail, sending, winner, isEmailVali
             <button
               onClick={handleEmailSubmit} disabled={!isEmailValid || sending}
               style={{ padding: "11px 18px", borderRadius: 10, background: isEmailValid && !sending ? `linear-gradient(135deg, ${purple}, #5f2a8d)` : "#d1d5db", color: "#fff", border: "none", fontSize: 13, fontWeight: 700, fontFamily: "'Poppins', sans-serif", cursor: isEmailValid && !sending ? "pointer" : "not-allowed", boxShadow: isEmailValid ? `0 4px 14px ${purple}44` : "none", whiteSpace: "nowrap" }}
-            >{sending ? "Odesílám…" : "Odeslat výhru →"}</button>
+            >{sending ? ui.wheelSending : ui.wheelSendPrize}</button>
           </div>
           <p style={{ fontSize: 10, color: "#9b8570", margin: "8px 0 0", fontFamily: "'Poppins', sans-serif" }}>
             🔒 {cfg.privacyText}
@@ -961,7 +966,7 @@ function RightColumn({ cfg, phase, email, setEmail, sending, winner, isEmailVali
         <div style={{ textAlign: "center", animation: "wfWinIn 0.5s ease both" }}>
           <OrnamentDivider tight />
           <div style={{ fontSize: 46, margin: "6px 0 10px", animation: "wfBounce 0.6s ease" }}>✅</div>
-          <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 19, fontWeight: 700, color: "#2a1a00", margin: "0 0 8px" }}>Výhra odeslána!</h3>
+          <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 19, fontWeight: 700, color: "#2a1a00", margin: "0 0 8px" }}>{ui.wheelPrizeSent}</h3>
           <p style={{ fontSize: 12, color: "#4a3728", lineHeight: 1.65, fontFamily: "'Poppins', sans-serif", margin: "0 0 6px" }}>{cfg.winText}</p>
           {winner.coupon && (
             <div style={{ display: "inline-block", marginBottom: 16, background: `linear-gradient(135deg, ${purple}, #5f2a8d)`, color: "#fff", borderRadius: 10, padding: "8px 18px", fontFamily: "'Poppins', sans-serif", fontSize: 16, fontWeight: 800, letterSpacing: "0.14em", boxShadow: `0 4px 16px ${purple}44` }}>
@@ -970,7 +975,7 @@ function RightColumn({ cfg, phase, email, setEmail, sending, winner, isEmailVali
           )}
           <br />
           <button onClick={resetAndClose} style={{ padding: "11px 30px", background: `linear-gradient(135deg, ${purple}, #5f2a8d)`, color: "#fff", border: "none", borderRadius: 999, fontSize: 13, fontWeight: 600, fontFamily: "'Poppins', sans-serif", cursor: "pointer", boxShadow: `0 4px 14px ${purple}44` }}>
-            Zavřít
+            {ui.close}
           </button>
         </div>
       )}
@@ -982,14 +987,14 @@ function RightColumn({ cfg, phase, email, setEmail, sending, winner, isEmailVali
           <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 19, fontWeight: 700, color: "#2a1a00", margin: "0 0 8px", lineHeight: 1.3 }}>{cfg.lossTitle}</h3>
           <p style={{ fontSize: 12, color: "#4a3728", lineHeight: 1.75, fontFamily: "'Poppins', sans-serif", margin: "0 0 6px" }}>{cfg.lossText}</p>
           <p style={{ fontSize: 11, color: `${gold}cc`, fontFamily: "'Playfair Display', serif", fontStyle: "italic", margin: "0 0 20px" }}>
-            Ještě jedna šance je na cestě k vám ✦
+            {ui.wheelAnotherChance}
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <button onClick={() => { setWinner(null); doSpin(); }} style={{ padding: "13px 30px", background: `linear-gradient(135deg, ${purple}, #5f2a8d)`, color: "#fff", border: "none", borderRadius: 999, fontSize: 14, fontWeight: 700, fontFamily: "'Poppins', sans-serif", cursor: "pointer", boxShadow: `0 4px 18px ${purple}44`, display: "flex", alignItems: "center", justifyContent: "center", gap: 7, animation: "wfBtnPulse 2.2s ease-in-out infinite" }}>
-              Točit znovu
+              {ui.wheelSpinAgain}
             </button>
             <button onClick={resetAndClose} style={{ padding: "10px 30px", background: "transparent", color: "#9b8570", border: `1px solid ${gold}55`, borderRadius: 999, fontSize: 12, fontFamily: "'Poppins', sans-serif", cursor: "pointer" }}>
-              Zavřít
+              {ui.close}
             </button>
           </div>
         </div>
@@ -1001,6 +1006,8 @@ function RightColumn({ cfg, phase, email, setEmail, sending, winner, isEmailVali
 // ── Side Tab variant ─────────────────────────────────────────────────────────
 
 function SideTabWheel(props: SharedProps) {
+  const { currentLang } = useContent();
+  const ui = UI_STRINGS[currentLang];
   const [expanded, setExpanded] = useState(false);
   const [isNarrow, setIsNarrow] = useState(false);
 
@@ -1043,7 +1050,7 @@ function SideTabWheel(props: SharedProps) {
       {!expanded && (
         <button
           onClick={open}
-          aria-label="Otevřít kolo štěstí"
+          aria-label={ui.openWheel}
           style={{
             position: "fixed", right: 0, top: "50%",
             transform: "translateY(-50%)",
@@ -1072,7 +1079,7 @@ function SideTabWheel(props: SharedProps) {
           }}
         >
           <span style={{ fontSize: isNarrow ? 16 : 18, writingMode: "horizontal-tb" }}>🎡</span>
-          <span>Kolo štěstí</span>
+          <span>{ui.wheelTabLabel}</span>
         </button>
       )}
 

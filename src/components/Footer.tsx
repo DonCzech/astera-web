@@ -3,6 +3,8 @@ import { useState } from "react";
 import { useContent } from "@/context/ContentContext";
 import EditableText from "./admin/EditableText";
 import OptimizedImage from "@/components/OptimizedImage";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { UI_STRINGS } from "@/lib/i18n";
 
 const SOCIAL_ICONS: Record<string, React.ReactNode> = {
   Facebook: <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" /></svg>,
@@ -15,9 +17,10 @@ const SOCIAL_ICONS: Record<string, React.ReactNode> = {
 const HIDDEN_SOCIALS = new Set(["Facebook", "Pinterest", "TikTok", "LinkedIn"]);
 
 export default function Footer() {
-  const { content } = useContent();
+  const { content, currentLang } = useContent();
   const f = content.footer;
   const logoUrl = content.siteSettings?.logoUrl || "/images/astera-logo.png";
+  const ui = UI_STRINGS[currentLang];
   const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
 
@@ -43,11 +46,11 @@ export default function Footer() {
             <div style={{ marginBottom: "24px" }}>
               <a href="https://www.asteralight.cz/help/" style={{ display: "flex", alignItems: "center", gap: "8px", color: "#1f1f1f", textDecoration: "none", fontFamily: "'Poppins', sans-serif", fontSize: "14px", marginBottom: "12px" }} onMouseEnter={e => (e.currentTarget.style.color = "#7c3bb2")} onMouseLeave={e => (e.currentTarget.style.color = "#1f1f1f")}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" /></svg>
-                Centrum pomoci
+                {ui.helpCenter}
               </a>
               <button style={{ display: "flex", alignItems: "center", gap: "8px", color: "#1f1f1f", fontFamily: "'Poppins', sans-serif", fontSize: "14px", background: "none", border: "none", cursor: "pointer", padding: 0 }} onMouseEnter={e => (e.currentTarget.style.color = "#7c3bb2")} onMouseLeave={e => (e.currentTarget.style.color = "#1f1f1f")}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z" /></svg>
-                Napište mi
+                {ui.writeToMe}
               </button>
             </div>
 
@@ -71,18 +74,22 @@ export default function Footer() {
 
             <form onSubmit={handleSubmit}>
               <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginBottom: "14px" }}>
-                <input type="text" placeholder="Jméno" value={firstName} onChange={e => setFirstName(e.target.value)} style={{ flex: "1 1 120px", backgroundColor: "#ffffff", border: "1px solid #dde5f0", borderRadius: "20px", padding: "10px 18px", fontFamily: "'Poppins', sans-serif", fontSize: "14px", outline: "none" }} />
+                <input type="text" placeholder={ui.namePlaceholder} value={firstName} onChange={e => setFirstName(e.target.value)} style={{ flex: "1 1 120px", backgroundColor: "#ffffff", border: "1px solid #dde5f0", borderRadius: "20px", padding: "10px 18px", fontFamily: "'Poppins', sans-serif", fontSize: "14px", outline: "none" }} />
                 <input type="email" placeholder="E-mail" value={email} onChange={e => setEmail(e.target.value)} style={{ flex: "2 1 180px", backgroundColor: "#ffffff", border: "1px solid #dde5f0", borderRadius: "20px", padding: "10px 18px", fontFamily: "'Poppins', sans-serif", fontSize: "14px", outline: "none" }} />
               </div>
-              <button type="submit" className="btn-primary" style={{ padding: "12px 50px" }}>Přihlásit se</button>
+              <button type="submit" className="btn-primary" style={{ padding: "12px 50px" }}>{ui.subscribeButton}</button>
             </form>
           </div>
         </div>
       </div>
 
       {/* Bottom bar */}
-      <div style={{ backgroundColor: "#f1f6fc", borderTop: "1px solid #dde5f0", minHeight: "60px", display: "flex", alignItems: "center" }}>
-        <div className="container-main" style={{ padding: "0 50px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px", width: "100%" }}>
+      <div style={{ backgroundColor: "#f1f6fc", borderTop: "1px solid #dde5f0" }}>
+        {/* Language switcher row */}
+        <div className="container-main" style={{ padding: "16px 50px 12px", display: "flex", justifyContent: "center" }}>
+          <LanguageSwitcher />
+        </div>
+        <div className="container-main" style={{ padding: "0 50px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px", width: "100%" }}>
           <EditableText
             section="footer"
             field="copyright"

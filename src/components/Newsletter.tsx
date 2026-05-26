@@ -2,8 +2,12 @@
 import { useState } from "react";
 import EditableText from "./admin/EditableText";
 import EditableImg from "./admin/EditableImg";
+import { useContent } from "@/context/ContentContext";
+import { UI_STRINGS } from "@/lib/i18n";
 
 export default function Newsletter() {
+  const { currentLang } = useContent();
+  const ui = UI_STRINGS[currentLang];
   const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
 
@@ -48,7 +52,7 @@ export default function Newsletter() {
 
             <form onSubmit={handleSubmit}>
               <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-                <input type="text" placeholder="Jméno" value={firstName} onChange={e => setFirstName(e.target.value)} className="input-round" style={{ flex: "1 1 140px", minWidth: "120px" }} />
+                <input type="text" placeholder={ui.namePlaceholder} value={firstName} onChange={e => setFirstName(e.target.value)} className="input-round" style={{ flex: "1 1 140px", minWidth: "120px" }} />
                 <input type="email" placeholder="E-mail" value={email} onChange={e => setEmail(e.target.value)} className="input-round" style={{ flex: "2 1 200px", minWidth: "160px" }} />
               </div>
               <div style={{ marginTop: "16px" }}>

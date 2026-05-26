@@ -2,6 +2,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { useContent } from "@/context/ContentContext";
 import { usePathname } from "next/navigation";
+import { stripLangPrefix } from "@/lib/i18n";
 import { DEFAULT_CONTENT, SiteContent, NavItem, ManifestCard, FooterLink, CustomPage, PageBlock, BlockType, SiteSettings, ServicesContent, ServiceItem, ServiceSection, PickACardGameCard, WheelOfFortuneConfig, WheelSegment } from "@/lib/content-types";
 import RichTextEditor from "./RichTextEditor";
 
@@ -27,7 +28,7 @@ const HOMEPAGE_KEYS: Section[] = ["header", "hero", "servicesContent", "newslett
 const CUSTOM_PAGE_KEYS: Section[] = ["pages", "siteSettings"];
 const SLUZBY_KEYS: Section[] = ["servicesContent", "wheelOfFortune", "siteSettings"];
 // Static Next.js routes that must never be treated as custom pages
-const STATIC_ROUTES = ["/", "/sluzby", "/about", "/pick-a-card"];
+const STATIC_ROUTES = ["/", "/sluzby", "/about", "/pick-a-card", "/cs", "/en", "/ua"];
 
 const PANEL_W = 460; // panel width desktop
 
@@ -764,6 +765,7 @@ const BLOCK_TYPES: { type: BlockType; label: string; icon: string }[] = [
   { type: "hero-section", label: "Hero sekce", icon: "🌟" },
   { type: "cards-grid", label: "Karty (grid)", icon: "🃏" },
   { type: "two-col", label: "Dva sloupce", icon: "⬛⬛" },
+  { type: "faq", label: "FAQ Accordion", icon: "❓" },
   { type: "heading", label: "Nadpis", icon: "H" },
   { type: "text", label: "Text", icon: "T" },
   { type: "image", label: "Obrázek", icon: "🖼" },
@@ -772,6 +774,72 @@ const BLOCK_TYPES: { type: BlockType; label: string; icon: string }[] = [
   { type: "newsletter", label: "Newsletter", icon: "📧" },
   { type: "spacer", label: "Mezera", icon: "↕" },
 ];
+
+// ── FAQ block editor ──────────────────────────────────────────────────────────
+
+function FaqBlockEditor({ block, onUpdate }: { block: PageBlock; onUpdate: (b: PageBlock) => void }) {
+  const items = block.faqItems || [];
+
+  function updateItem(id: string, field: "q" | "a", val: string) {
+    onUpdate({ ...block, faqItems: items.map(it => it.id === id ? { ...it, [field]: val } : it) });
+  }
+  function addItem() {
+    onUpdate({ ...block, faqItems: [...items, { id: Date.now().toString(), q: "Nová otázka", a: "Odpověď..." }] });
+  }
+  function removeItem(id: string) {
+    onUpdate({ ...block, faqItems: items.filter(it => it.id !== id) });
+  }
+  function moveItem(id: string, dir: -1 | 1) {
+    const idx = items.findIndex(it => it.id === id);
+    if (idx < 0) return;
+    const next = [...items];
+    const swap = idx + dir;
+    if (swap < 0 || swap >= next.length) return;
+    [next[idx], next[swap]] = [next[swap], next[idx]];
+    onUpdate({ ...block, faqItems: next });
+  }
+
+  const inpStyle = { width: "100%", padding: "4px 7px", border: "1px solid #e5e7eb", borderRadius: 5, fontSize: 11, boxSizing: "border-box" as const };
+  const labelStyle = { display: "block" as const, fontSize: 10, color: "#9ca3af", marginBottom: 2 };
+
+  return (
+    <div>
+      <div style={{ marginBottom: 8 }}>
+        <label style={labelStyle}>Název sekce</label>
+        <input value={block.faqTitle || ""} onChange={e => onUpdate({ ...block, faqTitle: e.target.value })} style={inpStyle} />
+      </div>
+      <div style={{ marginBottom: 10 }}>
+        <label style={labelStyle}>Podnapis</label>
+        <input value={block.faqSubtitle || ""} onChange={e => onUpdate({ ...block, faqSubtitle: e.target.value })} style={inpStyle} />
+      </div>
+      <div style={{ fontSize: 10, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", marginBottom: 6 }}>Otázky &amp; odpovědi</div>
+      {items.map((it, idx) => (
+        <div key={it.id} style={{ border: "1px solid #e5e7eb", borderRadius: 7, padding: 8, marginBottom: 8, background: "#f9fafb" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: "#6b7280" }}>#{idx + 1}</span>
+            <div style={{ display: "flex", gap: 4 }}>
+              <button onClick={() => moveItem(it.id, -1)} disabled={idx === 0} style={{ padding: "2px 6px", fontSize: 10, background: "#f3f4f6", border: "1px solid #e5e7eb", borderRadius: 4, cursor: "pointer" }}>↑</button>
+              <button onClick={() => moveItem(it.id, 1)} disabled={idx === items.length - 1} style={{ padding: "2px 6px", fontSize: 10, background: "#f3f4f6", border: "1px solid #e5e7eb", borderRadius: 4, cursor: "pointer" }}>↓</button>
+              <button onClick={() => removeItem(it.id)} style={{ padding: "2px 6px", fontSize: 10, background: "#fee2e2", border: "1px solid #fca5a5", borderRadius: 4, color: "#dc2626", cursor: "pointer" }}>✕</button>
+            </div>
+          </div>
+          <div style={{ marginBottom: 5 }}>
+            <label style={labelStyle}>Otázka</label>
+            <input value={it.q} onChange={e => updateItem(it.id, "q", e.target.value)} style={inpStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>Odpověď (HTML)</label>
+            <textarea value={it.a} onChange={e => updateItem(it.id, "a", e.target.value)}
+              rows={2} style={{ ...inpStyle, resize: "vertical" }} />
+          </div>
+        </div>
+      ))}
+      <button onClick={addItem} style={{ width: "100%", padding: "7px", background: "#f0fdf4", border: "1px dashed #86efac", borderRadius: 7, color: "#16a34a", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+        + Přidat otázku
+      </button>
+    </div>
+  );
+}
 
 // ── Cards grid block editor (own component, needs card-level state) ─────────────
 
@@ -952,6 +1020,9 @@ function BlockEditorPanel({ block, onUpdate, onDelete, onUp, onDown, isFirst, is
               </select>
             </div>
           </>}
+          {block.type === "faq" && (
+            <FaqBlockEditor block={block} onUpdate={onUpdate} />
+          )}
         </div>
       )}
     </div>
@@ -1011,6 +1082,10 @@ function PagesEditor({ autoSlug }: { autoSlug?: string } = {}) {
         { image: "", title: "Karta 3", text: "Popis karty 3.", btnText: "Zjistit více", btnHref: "#" },
       ]},
       "two-col": { twoColTitle: "Nadpis sekce", twoColText: "<p>Text popis sekce.</p>", twoColBtnText: "Číst více", twoColBtnHref: "#", imageLeft: true },
+      faq: { faqTitle: "Časté dotazy", faqSubtitle: "Odpovědi na vaše otázky", faqItems: [
+        { id: Date.now().toString() + "1", q: "Otázka 1", a: "Odpověď na otázku 1." },
+        { id: Date.now().toString() + "2", q: "Otázka 2", a: "Odpověď na otázku 2." },
+      ]},
     };
     const defaults: Partial<PageBlock> = BLOCK_DEFAULTS[type] || {};
     const block: PageBlock = { id: Date.now().toString(), type, ...defaults };
@@ -1416,8 +1491,9 @@ const EDITORS: Record<Section, React.ComponentType> = {
 // ── Main LiveEditor panel ──────────────────────────────────────────────────────
 
 export default function LiveEditor() {
-  const { admin, content, saveAll, undo, canUndo, saveStatus, logout } = useContent();
+  const { admin, content, saveAll, undo, canUndo, saveStatus, logout, currentLang } = useContent();
   const pathname = usePathname();
+  const basePath = stripLangPrefix(pathname ?? "/");
   const [open, setOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<Section>("hero");
   const [editorKey, setEditorKey] = useState(0);
@@ -1447,19 +1523,19 @@ export default function LiveEditor() {
 
   // Context-aware: detect current custom page
   const currentCustomPage = useMemo(
-    () => STATIC_ROUTES.includes(pathname)
+    () => STATIC_ROUTES.includes(basePath)
       ? null
-      : (content.pages || []).find(p => `/${p.slug}` === pathname) ?? null,
-    [content.pages, pathname]
+      : (content.pages || []).find(p => `/${p.slug}` === basePath) ?? null,
+    [content.pages, basePath]
   );
 
-  // Filter sections based on current route
+  // Filter sections based on current route (use lang-stripped basePath)
   const visibleSections = useMemo(() => {
-    if (pathname === "/") return ALL_SECTIONS.filter(s => HOMEPAGE_KEYS.includes(s.key));
-    if (pathname === "/sluzby") return ALL_SECTIONS.filter(s => SLUZBY_KEYS.includes(s.key));
+    if (basePath === "/") return ALL_SECTIONS.filter(s => HOMEPAGE_KEYS.includes(s.key));
+    if (basePath === "/sluzby") return ALL_SECTIONS.filter(s => SLUZBY_KEYS.includes(s.key));
     if (currentCustomPage) return ALL_SECTIONS.filter(s => CUSTOM_PAGE_KEYS.includes(s.key));
     return ALL_SECTIONS;
-  }, [pathname, currentCustomPage]);
+  }, [basePath, currentCustomPage]);
 
   // Auto-reset activeSection when visible sections change
   useEffect(() => {

@@ -4,6 +4,7 @@ import { useContent } from "@/context/ContentContext";
 import { NavItem } from "@/lib/content-types";
 import EditableText from "./admin/EditableText";
 import OptimizedImage from "@/components/OptimizedImage";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function Header() {
   const { content, admin } = useContent();
@@ -162,6 +163,10 @@ export default function Header() {
               {link.label}
             </a>
           ))}
+          {/* Language switcher — bottom of mobile menu */}
+          <div style={{ padding: "16px 30px 8px", borderTop: "1px solid #f0f0f0" }}>
+            <LanguageSwitcher />
+          </div>
         </div>
       )}
 

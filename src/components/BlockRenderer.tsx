@@ -5,6 +5,7 @@ import { useContent } from "@/context/ContentContext";
 import EditableImg from "@/components/admin/EditableImg";
 import EditableText from "@/components/admin/EditableText";
 import OptimizedImage, { optimizedImageSet } from "@/components/OptimizedImage";
+import FaqAccordionBlock from "@/components/FaqAccordionBlock";
 
 const ALIGN = { left: "left", center: "center", right: "right" } as const;
 type HeadingTag = "h1" | "h2" | "h3" | "h4";
@@ -277,6 +278,7 @@ export default function BlockRenderer({ blocks, pageSlug }: { blocks: PageBlock[
           {b.type === "hero-section" && <HeroSectionBlock b={b} ctx={ctx} />}
           {b.type === "cards-grid" && <CardsGridBlock b={b} ctx={ctx} />}
           {b.type === "two-col" && <TwoColBlock b={b} ctx={ctx} />}
+          {b.type === "faq" && <FaqAccordionBlock b={b} />}
         </div>
         );
       })}

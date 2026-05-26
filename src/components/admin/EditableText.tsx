@@ -3,6 +3,7 @@ import { useRef, useLayoutEffect, useEffect, useState, useCallback } from "react
 import { createPortal } from "react-dom";
 import { useContent } from "@/context/ContentContext";
 import { SiteContent } from "@/lib/content-types";
+import { Lang, LANGUAGES } from "@/lib/i18n";
 
 function getPath(obj: any, path: string): string {
   return String(path.split(".").reduce((o: any, k: string) => o?.[k], obj) ?? "");
@@ -60,38 +61,45 @@ interface Props {
 export default function EditableText({
   section, field, tag = "span", style, className, richText,
 }: Props) {
-  const { content, admin, updateSection } = useContent();
+  const { content, admin, updateSection, allLangContent, currentLang } = useContent();
   const ref = useRef<HTMLElement>(null);
-  const editing = useRef(false);   // true while user is actively typing
+  const editing = useRef(false);
   const [focused, setFocused] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [tbPos, setTbPos] = useState<{ top: number; left: number } | null>(null);
   const [mounted, setMounted] = useState(false);
+  // Active language tab in admin mode (defaults to currentLang)
+  const [editLang, setEditLang] = useState<Lang>(currentLang);
 
   useEffect(() => { setMounted(true); }, []);
+  // Sync editLang when currentLang changes (page navigation)
+  useEffect(() => { setEditLang(currentLang); }, [currentLang]);
 
-  const value = getPath(content[section], field);
+  const getLangValue = useCallback((lang: Lang) => {
+    return getPath(allLangContent[lang][section], field);
+  }, [allLangContent, section, field]);
+
+  const value = getLangValue(editLang);
   const isAdmin = admin.isAdmin;
 
-  // ── Sync innerHTML to DOM (admin mode only) ────────────────────────────────
-  // useLayoutEffect: runs synchronously after DOM update → no flash of empty content.
-  // Fires when: value changes (external edit from panel) OR isAdmin becomes true.
-  // Skips update while user is actively typing (editing.current = true).
+  // ── Sync innerHTML to DOM ────────────────────────────────────────────────
   useLayoutEffect(() => {
     if (isAdmin && !editing.current && ref.current) {
-      if (richText) ref.current.innerHTML = value;
-      else ref.current.textContent = htmlToText(value);
+      // Show value for the currently-selected edit language
+      const displayVal = getLangValue(editLang);
+      if (richText) ref.current.innerHTML = displayVal;
+      else ref.current.textContent = htmlToText(displayVal);
     }
-  }, [value, isAdmin, richText]);
+  }, [value, isAdmin, richText, editLang, getLangValue]);
 
-  // ── Toolbar position ────────────────────────────────────────────────────────
+  // ── Toolbar position ────────────────────────────────────────────────────
   useEffect(() => {
     if (!focused || !ref.current) { setTbPos(null); return; }
     const update = () => {
       if (!ref.current) return;
       const r = ref.current.getBoundingClientRect();
-      const top = r.top < 62 ? r.bottom + 6 : r.top - 50;
-      const left = Math.max(8, Math.min(r.left, window.innerWidth - 390));
+      const top = r.top < 62 ? r.bottom + 6 : r.top - 94; // extra height for lang tabs
+      const left = Math.max(8, Math.min(r.left, window.innerWidth - 430));
       setTbPos({ top, left });
     };
     update();
@@ -100,8 +108,7 @@ export default function EditableText({
     return () => { window.removeEventListener("scroll", update); window.removeEventListener("resize", update); };
   }, [focused]);
 
-  // ── Formatting helpers ──────────────────────────────────────────────────────
-  // If user has no selection → select all text in the element first
+  // ── Formatting helpers ──────────────────────────────────────────────────
   const ensureSelection = useCallback(() => {
     if (!ref.current) return;
     ref.current.focus();
@@ -132,9 +139,19 @@ export default function EditableText({
     catch { document.execCommand("insertHTML", false, `<span style="font-size:${px}px">${sel}</span>`); }
   }, [ensureSelection]);
 
+  // Switch edit language: save current edits first, then switch
+  const switchEditLang = useCallback((lang: Lang) => {
+    if (!ref.current) { setEditLang(lang); return; }
+    // Commit current text to current editLang before switching
+    const nextValue = richText ? ref.current.innerHTML : ref.current.textContent || "";
+    updateSection(section, setPath(allLangContent[editLang][section], field, nextValue), editLang);
+    setEditLang(lang);
+    editing.current = false;
+  }, [ref, richText, updateSection, section, field, allLangContent, editLang]);
+
   const El = (tag || "span") as any;
 
-  // ── Non-admin: always render with content ──────────────────────────────────
+  // ── Non-admin ─────────────────────────────────────────────────────────────
   if (!isAdmin) {
     if (richText) {
       return <El style={style} className={className} dangerouslySetInnerHTML={{ __html: value }} />;
@@ -142,7 +159,7 @@ export default function EditableText({
     return <El style={style} className={className}>{htmlToText(value)}</El>;
   }
 
-  // ── Admin: floating toolbar ────────────────────────────────────────────────
+  // ── Admin: floating toolbar with lang tabs ────────────────────────────────
   const toolbar = mounted && focused && tbPos
     ? createPortal(
         <div
@@ -154,69 +171,96 @@ export default function EditableText({
             zIndex: 999999,
             background: "#111827",
             borderRadius: 10,
-            padding: "5px 10px",
+            padding: "4px 10px 5px",
             display: "flex",
+            flexDirection: "column",
             gap: 4,
-            alignItems: "center",
             boxShadow: "0 8px 30px rgba(0,0,0,0.55)",
             fontFamily: "sans-serif",
             userSelect: "none",
+            minWidth: 320,
           }}
         >
-          {/* B / I / U */}
-          {(["B","I","U"] as const).map((l) => {
-            const cmd = l === "B" ? "bold" : l === "I" ? "italic" : "underline";
-            return (
-              <button key={l} type="button" title={cmd}
-                onClick={() => applyCommand(() => document.execCommand(cmd, false))}
-                style={{ fontWeight: l === "B" ? 700 : 400, fontStyle: l === "I" ? "italic" : "normal",
-                  textDecoration: l === "U" ? "underline" : "none", padding: "3px 8px",
-                  background: "rgba(255,255,255,0.1)", border: "none", color: "#fff",
-                  cursor: "pointer", fontSize: 13, borderRadius: 5, minWidth: 28 }}
-              >{l}</button>
-            );
-          })}
+          {/* Lang tabs row */}
+          <div style={{ display: "flex", gap: 4, paddingTop: 3, paddingBottom: 2, borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+            {LANGUAGES.map(l => (
+              <button
+                key={l.code}
+                type="button"
+                onMouseDown={e => { e.preventDefault(); switchEditLang(l.code); }}
+                style={{
+                  padding: "2px 8px",
+                  borderRadius: 5,
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 11,
+                  fontWeight: editLang === l.code ? 700 : 400,
+                  background: editLang === l.code ? "#7c3bb2" : "rgba(255,255,255,0.1)",
+                  color: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 3,
+                }}
+              >
+                <span style={{ fontSize: 13 }}>{l.flag}</span>
+                {l.code.toUpperCase()}
+              </button>
+            ))}
+            <span style={{ fontSize: 10, color: "#6b7280", marginLeft: "auto", alignSelf: "center" }}>
+              edituje: <strong style={{ color: "#fff" }}>{editLang.toUpperCase()}</strong>
+            </span>
+          </div>
 
-          <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.2)", margin: "0 2px" }} />
+          {/* Formatting row */}
+          <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+            {(["B","I","U"] as const).map((l) => {
+              const cmd = l === "B" ? "bold" : l === "I" ? "italic" : "underline";
+              return (
+                <button key={l} type="button" title={cmd}
+                  onClick={() => applyCommand(() => document.execCommand(cmd, false))}
+                  style={{ fontWeight: l === "B" ? 700 : 400, fontStyle: l === "I" ? "italic" : "normal",
+                    textDecoration: l === "U" ? "underline" : "none", padding: "3px 8px",
+                    background: "rgba(255,255,255,0.1)", border: "none", color: "#fff",
+                    cursor: "pointer", fontSize: 13, borderRadius: 5, minWidth: 28 }}
+                >{l}</button>
+              );
+            })}
 
-          {/* Font size */}
-          <select defaultValue=""
-            onChange={e => { applyCommand(() => applySize(e.target.value)); e.target.value = ""; }}
-            style={{ fontSize: 11, background: "#1f2937", color: "#fff", border: "1px solid #374151", borderRadius: 5, padding: "3px 4px", maxWidth: 72 }}
-          >
-            <option value="" disabled>Vel.</option>
-            {SIZES.map(s => <option key={s} value={s}>{s}px</option>)}
-          </select>
+            <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.2)", margin: "0 2px" }} />
 
-          {/* Font family */}
-          <select defaultValue=""
-            onChange={e => { applyCommand(() => document.execCommand("fontName", false, e.target.value)); e.target.value = ""; }}
-            style={{ fontSize: 11, background: "#1f2937", color: "#fff", border: "1px solid #374151", borderRadius: 5, padding: "3px 4px", maxWidth: 110 }}
-          >
-            <option value="" disabled>Font</option>
-            {FONTS.map(f => <option key={f} value={f}>{f}</option>)}
-          </select>
+            <select defaultValue=""
+              onChange={e => { applyCommand(() => applySize(e.target.value)); e.target.value = ""; }}
+              style={{ fontSize: 11, background: "#1f2937", color: "#fff", border: "1px solid #374151", borderRadius: 5, padding: "3px 4px", maxWidth: 72 }}
+            >
+              <option value="" disabled>Vel.</option>
+              {SIZES.map(s => <option key={s} value={s}>{s}px</option>)}
+            </select>
 
-          {/* Text color */}
-          <label title="Barva textu"
-            style={{ display: "flex", alignItems: "center", gap: 3, color: "#fff", fontSize: 12, cursor: "pointer", padding: "3px 6px", background: "rgba(255,255,255,0.1)", borderRadius: 5 }}
-          >
-            A
-            <input type="color" defaultValue="#ffffff"
-              onChange={e => applyCommand(() => document.execCommand("foreColor", false, e.target.value))}
-              style={{ width: 18, height: 18, border: "none", background: "none", padding: 0, cursor: "pointer" }}
-            />
-          </label>
+            <select defaultValue=""
+              onChange={e => { applyCommand(() => document.execCommand("fontName", false, e.target.value)); e.target.value = ""; }}
+              style={{ fontSize: 11, background: "#1f2937", color: "#fff", border: "1px solid #374151", borderRadius: 5, padding: "3px 4px", maxWidth: 110 }}
+            >
+              <option value="" disabled>Font</option>
+              {FONTS.map(f => <option key={f} value={f}>{f}</option>)}
+            </select>
 
-          <span style={{ fontSize: 10, color: "#6b7280", marginLeft: 2 }}>vyber text → formátuj</span>
+            <label title="Barva textu"
+              style={{ display: "flex", alignItems: "center", gap: 3, color: "#fff", fontSize: 12, cursor: "pointer", padding: "3px 6px", background: "rgba(255,255,255,0.1)", borderRadius: 5 }}
+            >
+              A
+              <input type="color" defaultValue="#ffffff"
+                onChange={e => applyCommand(() => document.execCommand("foreColor", false, e.target.value))}
+                style={{ width: 18, height: 18, border: "none", background: "none", padding: 0, cursor: "pointer" }}
+              />
+            </label>
+
+            <span style={{ fontSize: 10, color: "#6b7280", marginLeft: 2 }}>vyber text → formátuj</span>
+          </div>
         </div>,
         document.body
       )
     : null;
 
-  // ── Admin: contentEditable element ─────────────────────────────────────────
-  // NO dangerouslySetInnerHTML here — innerHTML is managed via useLayoutEffect above.
-  // This ensures the element always shows content AND React never overwrites user edits.
   return (
     <>
       {toolbar}
@@ -238,7 +282,8 @@ export default function EditableText({
           const nextValue = richText ? e.currentTarget.innerHTML : e.currentTarget.textContent || "";
           editing.current = false;
           setFocused(false);
-          updateSection(section, setPath(content[section], field, nextValue));
+          // Save to the currently active edit language
+          updateSection(section, setPath(allLangContent[editLang][section], field, nextValue), editLang);
         }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}

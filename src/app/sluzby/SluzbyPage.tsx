@@ -1,9 +1,10 @@
 "use client";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useContent } from "@/context/ContentContext";
 import { ServiceItem } from "@/lib/content-types";
+import { UI_STRINGS } from "@/lib/i18n";
 import WheelOfFortunePopup from "@/components/WheelOfFortunePopup";
 
 const purple = "#7c3bb2";
@@ -181,24 +182,42 @@ const inlineLinkStyle: React.CSSProperties = {
   textUnderlineOffset: 3,
 };
 
-function LinkedConsultText() {
-  return (
+const CONSULT_TEXT: Record<string, React.ReactNode> = {
+  cs: (
     <>
       Pokud si nejste jistí, jakou službu zvolit, projděte si{" "}
-      <a href="https://www.asteralight.cz/sluzby" style={inlineLinkStyle}>
-        přehled služeb
-      </a>
+      <a href="https://www.asteralight.cz/sluzby" style={inlineLinkStyle}>přehled služeb</a>
       , rezervujte si{" "}
-      <a href="https://app.rezora.cz/book/astera" style={inlineLinkStyle}>
-        konzultaci
-      </a>
+      <a href="https://app.rezora.cz/book/astera" style={inlineLinkStyle}>konzultaci</a>
       , nebo si vyberte praktické návody v{" "}
-      <a href="https://shop.asteralight.cz" style={inlineLinkStyle}>
-        e-shopu
-      </a>
-      .
+      <a href="https://shop.asteralight.cz" style={inlineLinkStyle}>e-shopu</a>.
     </>
-  );
+  ),
+  en: (
+    <>
+      Not sure which service to choose? Browse the{" "}
+      <a href="https://www.asteralight.cz/sluzby" style={inlineLinkStyle}>service overview</a>
+      , book a{" "}
+      <a href="https://app.rezora.cz/book/astera" style={inlineLinkStyle}>consultation</a>
+      , or find practical guides in the{" "}
+      <a href="https://shop.asteralight.cz" style={inlineLinkStyle}>e-shop</a>.
+    </>
+  ),
+  ua: (
+    <>
+      Якщо ви не впевнені, яку послугу обрати, перегляньте{" "}
+      <a href="https://www.asteralight.cz/sluzby" style={inlineLinkStyle}>перелік послуг</a>
+      , забронюйте{" "}
+      <a href="https://app.rezora.cz/book/astera" style={inlineLinkStyle}>консультацію</a>
+      , або оберіть практичні посібники в{" "}
+      <a href="https://shop.asteralight.cz" style={inlineLinkStyle}>е-магазині</a>.
+    </>
+  ),
+};
+
+function LinkedConsultText() {
+  const { currentLang } = useContent();
+  return <>{CONSULT_TEXT[currentLang]}</>;
 }
 
 function LinkedPhrase({ text }: { text: string }) {
@@ -227,6 +246,7 @@ function LinkedPhrase({ text }: { text: string }) {
 }
 
 function ScrollDownControl() {
+  const { currentLang } = useContent();
   const scrollToServices = () => {
     document.getElementById("sluzby-karty")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
@@ -235,7 +255,7 @@ function ScrollDownControl() {
     <button
       type="button"
       onClick={scrollToServices}
-      aria-label="Posunout na výběr služeb"
+      aria-label={UI_STRINGS[currentLang].scrollToServices}
       className="services-scroll-down"
       style={{
         width: 52,

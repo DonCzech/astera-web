@@ -8,7 +8,9 @@ import {
   useRef,
   ReactNode,
 } from "react";
+import { usePathname } from "next/navigation";
 import { SiteContent, DEFAULT_CONTENT } from "@/lib/content-types";
+import { Lang, detectLang, getDefaultContent } from "@/lib/i18n";
 
 interface AdminState {
   isAdmin: boolean;
@@ -25,8 +27,10 @@ interface ContentContextValue {
   canUndo: boolean;
   saveStatus: SaveStatus;
   contentLoaded: boolean;
-  updateSection: <K extends keyof SiteContent>(section: K, data: SiteContent[K]) => void;
-  saveSection: (section: keyof SiteContent) => Promise<void>;
+  currentLang: Lang;
+  allLangContent: Record<Lang, SiteContent>;
+  updateSection: <K extends keyof SiteContent>(section: K, data: SiteContent[K], lang?: Lang) => void;
+  saveSection: (section: keyof SiteContent, lang?: Lang) => Promise<void>;
   saveAll: () => Promise<void>;
   revertSection: (section: keyof SiteContent) => void;
   undo: () => void;
@@ -43,35 +47,50 @@ export function useContent() {
 }
 
 const MAX_HISTORY = 30;
-const AUTOSAVE_DELAY = 1500; // ms
+const AUTOSAVE_DELAY = 1500;
+
+const LANGS: Lang[] = ["cs", "en", "ua"];
 
 export function ContentProvider({ children }: { children: ReactNode }) {
-  const [content, setContent] = useState<SiteContent>(DEFAULT_CONTENT);
-  const [savedContent, setSavedContent] = useState<SiteContent>(DEFAULT_CONTENT);
+  const pathname = usePathname();
+  const currentLang: Lang = detectLang(pathname ?? "/");
+
+  const [allLangContent, setAllLangContent] = useState<Record<Lang, SiteContent>>({
+    cs: DEFAULT_CONTENT,
+    en: getDefaultContent("en"),
+    ua: getDefaultContent("ua"),
+  });
+  const [savedAllLangContent, setSavedAllLangContent] = useState<Record<Lang, SiteContent>>({
+    cs: DEFAULT_CONTENT,
+    en: getDefaultContent("en"),
+    ua: getDefaultContent("ua"),
+  });
   const [admin, setAdmin] = useState<AdminState>({ isAdmin: false, email: null, setupRequired: false });
   const [canUndo, setCanUndo] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [contentLoaded, setContentLoaded] = useState(false);
 
-  const historyRef = useRef<SiteContent[]>([]);
-  const contentRef = useRef<SiteContent>(DEFAULT_CONTENT); // always up-to-date ref for closures
-  const pendingSectionsRef = useRef<Set<string>>(new Set());
+  const historyRef = useRef<Record<Lang, SiteContent>[]>([]);
+  const allLangContentRef = useRef<Record<Lang, SiteContent>>(allLangContent);
+  const pendingSectionsRef = useRef<Map<string, Lang>>(new Map()); // "section:lang" → Lang
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Keep contentRef in sync for delayed autosave callbacks.
   useEffect(() => {
-    contentRef.current = content;
-  }, [content]);
+    allLangContentRef.current = allLangContent;
+  }, [allLangContent]);
 
   // ── Load on mount ─────────────────────────────────────────────────────────
   useEffect(() => {
     Promise.all([
-      fetch("/api/content").then(r => r.json()),
+      fetch("/api/content?lang=cs").then(r => r.json()),
+      fetch("/api/content?lang=en").then(r => r.json()),
+      fetch("/api/content?lang=ua").then(r => r.json()),
       fetch("/api/admin/me").then(r => r.json()),
-    ]).then(([contentData, meData]) => {
-      setContent(contentData);
-      setSavedContent(contentData);
-      contentRef.current = contentData;
+    ]).then(([cs, en, ua, meData]) => {
+      const loaded = { cs, en, ua } as Record<Lang, SiteContent>;
+      setAllLangContent(loaded);
+      setSavedAllLangContent(loaded);
+      allLangContentRef.current = loaded;
       historyRef.current = [];
       setCanUndo(false);
       setSaveStatus("idle");
@@ -86,21 +105,27 @@ export function ContentProvider({ children }: { children: ReactNode }) {
 
   // ── Autosave helper ──────────────────────────────────────────────────────
   const flushSave = useCallback(async () => {
-    const sections = Array.from(pendingSectionsRef.current);
-    if (sections.length === 0) return;
+    const pending = Array.from(pendingSectionsRef.current.entries());
+    if (pending.length === 0) return;
     pendingSectionsRef.current.clear();
     setSaveStatus("saving");
+    const all = allLangContentRef.current;
     try {
       await Promise.all(
-        sections.map(sec =>
-          fetch("/api/content", {
+        pending.map(([key, lang]) => {
+          const section = key.split(":")[0];
+          return fetch("/api/content", {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ section: sec, content: contentRef.current[sec as keyof SiteContent] }),
-          })
-        )
+            body: JSON.stringify({
+              section,
+              content: all[lang][section as keyof SiteContent],
+              lang,
+            }),
+          });
+        })
       );
-      setSavedContent({ ...contentRef.current });
+      setSavedAllLangContent({ ...allLangContentRef.current });
       setSaveStatus("saved");
       setTimeout(() => setSaveStatus("idle"), 2000);
     } catch {
@@ -108,23 +133,25 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // ── updateSection — called by all editors ────────────────────────────────
+  // ── updateSection ────────────────────────────────────────────────────────
   const updateSection = useCallback(
-    <K extends keyof SiteContent>(section: K, data: SiteContent[K]) => {
-      setContent(prev => {
-        const next = { ...prev, [section]: data };
+    <K extends keyof SiteContent>(section: K, data: SiteContent[K], lang?: Lang) => {
+      const targetLang = lang ?? currentLang;
+      setAllLangContent(prev => {
+        const next = {
+          ...prev,
+          [targetLang]: { ...prev[targetLang], [section]: data },
+        };
         historyRef.current = [...historyRef.current.slice(-(MAX_HISTORY - 1)), prev];
         setCanUndo(true);
         return next;
       });
-
-      // Queue autosave
-      pendingSectionsRef.current.add(section as string);
+      pendingSectionsRef.current.set(`${String(section)}:${targetLang}`, targetLang);
       setSaveStatus("unsaved");
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
       autoSaveTimerRef.current = setTimeout(flushSave, AUTOSAVE_DELAY);
     },
-    [flushSave]
+    [flushSave, currentLang]
   );
 
   // ── Undo ──────────────────────────────────────────────────────────────────
@@ -133,37 +160,50 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     if (history.length === 0) return;
     const prev = history[history.length - 1];
     historyRef.current = history.slice(0, -1);
-    setContent(prev);
+    setAllLangContent(prev);
     setCanUndo(historyRef.current.length > 0);
-    // Queue autosave for reverted state
-    Object.keys(prev).forEach(sec => pendingSectionsRef.current.add(sec));
+    LANGS.forEach(lang =>
+      Object.keys(prev[lang]).forEach(sec =>
+        pendingSectionsRef.current.set(`${sec}:${lang}`, lang)
+      )
+    );
     setSaveStatus("unsaved");
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     autoSaveTimerRef.current = setTimeout(flushSave, AUTOSAVE_DELAY);
   }, [flushSave]);
 
   // ── Explicit save (single section) ───────────────────────────────────────
-  const saveSection = useCallback(async (section: keyof SiteContent) => {
+  const saveSection = useCallback(async (section: keyof SiteContent, lang?: Lang) => {
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
-    pendingSectionsRef.current.add(section as string);
+    const targetLang = lang ?? currentLang;
+    pendingSectionsRef.current.set(`${String(section)}:${targetLang}`, targetLang);
     await flushSave();
-  }, [flushSave]);
+  }, [flushSave, currentLang]);
 
   // ── Save all ──────────────────────────────────────────────────────────────
   const saveAll = useCallback(async () => {
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
-    Object.keys(contentRef.current).forEach(sec => pendingSectionsRef.current.add(sec));
+    const all = allLangContentRef.current;
+    LANGS.forEach(lang =>
+      Object.keys(all[lang]).forEach(sec =>
+        pendingSectionsRef.current.set(`${sec}:${lang}`, lang)
+      )
+    );
     await flushSave();
   }, [flushSave]);
 
-  // ── Revert section to last saved ─────────────────────────────────────────
+  // ── Revert section ────────────────────────────────────────────────────────
   const revertSection = useCallback((section: keyof SiteContent) => {
-    setContent(prev => {
+    setAllLangContent(prev => {
       historyRef.current = [...historyRef.current.slice(-(MAX_HISTORY - 1)), prev];
       setCanUndo(true);
-      return { ...prev, [section]: savedContent[section] };
+      const next = { ...prev };
+      LANGS.forEach(lang => {
+        next[lang] = { ...prev[lang], [section]: savedAllLangContent[lang][section] };
+      });
+      return next;
     });
-  }, [savedContent]);
+  }, [savedAllLangContent]);
 
   // ── Auth ──────────────────────────────────────────────────────────────────
   const refreshAdmin = useCallback(async () => {
@@ -182,10 +222,26 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     setCanUndo(false);
   }, []);
 
-  const value = {
-      content, savedContent, admin, canUndo, saveStatus, contentLoaded,
-      updateSection, saveSection, saveAll, revertSection, undo, logout, refreshAdmin,
-    };
+  const content = allLangContent[currentLang];
+  const savedContent = savedAllLangContent[currentLang];
+
+  const value: ContentContextValue = {
+    content,
+    savedContent,
+    admin,
+    canUndo,
+    saveStatus,
+    contentLoaded,
+    currentLang,
+    allLangContent,
+    updateSection,
+    saveSection,
+    saveAll,
+    revertSection,
+    undo,
+    logout,
+    refreshAdmin,
+  };
 
   return (
     <ContentContext.Provider value={value}>

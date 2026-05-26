@@ -1,9 +1,19 @@
 import { cookies } from "next/headers";
 import { verifyToken, COOKIE_NAME } from "@/lib/auth";
-import { getAllContent, saveSection } from "@/lib/db";
+import { getAllContent, saveSection, getAllContentForLang, saveI18nSection } from "@/lib/db";
+import { Lang } from "@/lib/i18n";
 
-export async function GET() {
-  const content = await getAllContent();
+const VALID_LANGS: Lang[] = ["cs", "en", "ua"];
+
+function parseLang(value: string | null): Lang {
+  if (value === "en" || value === "ua") return value;
+  return "cs";
+}
+
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const lang = parseLang(url.searchParams.get("lang"));
+  const content = lang === "cs" ? await getAllContent() : await getAllContentForLang(lang);
   return Response.json(content);
 }
 
@@ -14,10 +24,15 @@ export async function PUT(request: Request) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = await request.json();
-  const { section, content } = body;
+  const { section, content, lang: rawLang } = body;
   if (!section || content === undefined) {
     return Response.json({ error: "section and content required" }, { status: 400 });
   }
-  await saveSection(section, content);
+  const lang = parseLang(rawLang ?? null);
+  if (lang === "cs") {
+    await saveSection(section, content);
+  } else {
+    await saveI18nSection(section, lang, content);
+  }
   return Response.json({ ok: true });
 }

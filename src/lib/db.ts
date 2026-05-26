@@ -1,5 +1,6 @@
 import { Pool } from "pg";
 import { DEFAULT_CONTENT, SiteContent } from "./content-types";
+import { Lang, getDefaultContent } from "./i18n";
 
 // ── Pool ──────────────────────────────────────────────────────────────────────
 
@@ -29,6 +30,14 @@ async function initDb(): Promise<void> {
       updated_at TIMESTAMPTZ DEFAULT now()
     );
 
+    CREATE TABLE IF NOT EXISTS site_content_i18n (
+      section TEXT NOT NULL,
+      lang    TEXT NOT NULL,
+      content JSONB NOT NULL,
+      updated_at TIMESTAMPTZ DEFAULT now(),
+      PRIMARY KEY (section, lang)
+    );
+
     CREATE TABLE IF NOT EXISTS wheel_leads (
       id SERIAL PRIMARY KEY,
       email TEXT NOT NULL,
@@ -51,6 +60,53 @@ async function initDb(): Promise<void> {
 }
 
 // ── Content ──────────────────────────────────────────────────────────────────
+
+// Sections that are not language-specific and should always mirror CS DB content
+// when no explicit EN/UA version has been saved yet.
+const CS_FALLBACK_SECTIONS = ["pages", "siteSettings"] as const;
+
+export async function getAllContentForLang(lang: Lang): Promise<SiteContent> {
+  await initDb();
+  if (lang === "cs") return getAllContent();
+  const defaults = getDefaultContent(lang);
+  const { rows } = await pool.query(
+    "SELECT section, content FROM site_content_i18n WHERE lang = $1",
+    [lang]
+  );
+  const result: Record<string, unknown> = { ...defaults };
+  const savedSections = new Set<string>();
+  for (const row of rows) {
+    savedSections.add(row.section);
+    const stored = typeof row.content === "string" ? JSON.parse(row.content) : row.content;
+    const def = result[row.section];
+    result[row.section] = isPlainObject(def) && isPlainObject(stored)
+      ? { ...def, ...stored }
+      : stored;
+  }
+  // For sections with no EN/UA version saved yet, fall back to CS DB content.
+  // This ensures custom pages (konzultace, kniha, etc.) and site settings are
+  // always available even before the admin explicitly translates them.
+  const missing = CS_FALLBACK_SECTIONS.filter(s => !savedSections.has(s));
+  if (missing.length > 0) {
+    const cs = await getAllContent();
+    const csAny = cs as unknown as Record<string, unknown>;
+    for (const section of missing) {
+      result[section] = csAny[section];
+    }
+  }
+  return result as unknown as SiteContent;
+}
+
+export async function saveI18nSection(section: string, lang: Lang, content: unknown): Promise<void> {
+  await initDb();
+  await pool.query(
+    `INSERT INTO site_content_i18n (section, lang, content, updated_at)
+     VALUES ($1, $2, $3, now())
+     ON CONFLICT (section, lang)
+     DO UPDATE SET content = $3, updated_at = now()`,
+    [section, lang, JSON.stringify(content)]
+  );
+}
 
 export async function getAllContent(): Promise<SiteContent> {
   await initDb();

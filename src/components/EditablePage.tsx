@@ -5,16 +5,18 @@ import BlockRenderer from "@/components/BlockRenderer";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import { useContent } from "@/context/ContentContext";
+import { UI_STRINGS } from "@/lib/i18n";
 
 export default function EditablePage({ slug }: { slug: string }) {
-  const { content, contentLoaded, admin } = useContent();
+  const { content, contentLoaded, admin, currentLang } = useContent();
+  const ui = UI_STRINGS[currentLang];
 
   if (!contentLoaded) {
     return (
       <>
         <Header />
         <main style={{ paddingTop: "102px", minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ color: "#9ca3af", fontFamily: "'Poppins',sans-serif", fontSize: 16 }}>Načítám…</div>
+          <div style={{ color: "#9ca3af", fontFamily: "'Poppins',sans-serif", fontSize: 16 }}>{ui.loading}</div>
         </main>
         <Footer />
       </>

@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useContent } from "@/context/ContentContext";
 import { DEFAULT_CONTENT, PickACardGameCard } from "@/lib/content-types";
+import { UI_STRINGS } from "@/lib/i18n";
 
 const CARD_W = 200;
 const CARD_H = 290;
@@ -48,7 +49,8 @@ function randomCard(cards: PickACardGameCard[]) {
 }
 
 export default function PickACardGame() {
-  const { content } = useContent();
+  const { content, currentLang } = useContent();
+  const ui = UI_STRINGS[currentLang];
   const pickContent = {
     ...DEFAULT_CONTENT.pickacard,
     ...content.pickacard,
@@ -176,7 +178,7 @@ export default function PickACardGame() {
           {/* Slider */}
           <div style={{ position: "relative", maxWidth: 1100, margin: "0 auto" }}>
             <button
-              aria-label="Posunout vlevo"
+              aria-label={ui.scrollLeft}
               onClick={() => moveSlider(-1)}
               style={arrowStyle("left")}
               disabled={phase !== "idle"}
@@ -230,7 +232,7 @@ export default function PickACardGame() {
               </div>
             </div>
             <button
-              aria-label="Posunout vpravo"
+              aria-label={ui.scrollRight}
               onClick={() => moveSlider(1)}
               style={arrowStyle("right")}
               disabled={phase !== "idle"}
@@ -264,7 +266,7 @@ export default function PickACardGame() {
             {phase === "shown" && (
               <button
                 type="button"
-                aria-label="Zavřít kartu"
+                aria-label={ui.closeCard}
                 onClick={closeReveal}
                 style={{
                   position: "absolute",

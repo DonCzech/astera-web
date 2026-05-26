@@ -33,7 +33,7 @@ export interface SocialLink {
   href: string;
 }
 
-export type BlockType = "heading" | "text" | "image" | "button" | "banner" | "newsletter" | "spacer" | "hero-section" | "cards-grid" | "two-col";
+export type BlockType = "heading" | "text" | "image" | "button" | "banner" | "newsletter" | "spacer" | "hero-section" | "cards-grid" | "two-col" | "faq";
 
 export interface PageBlock {
   id: string;
@@ -62,6 +62,10 @@ export interface PageBlock {
   // cards-grid
   sectionTitle?: string;
   cards?: Array<{ image: string; title: string; text: string; btnText: string; btnHref: string }>;
+  // faq
+  faqTitle?: string;
+  faqSubtitle?: string;
+  faqItems?: Array<{ id: string; q: string; a: string }>;
   // two-col
   imageLeft?: boolean;
   twoColImage?: string;
