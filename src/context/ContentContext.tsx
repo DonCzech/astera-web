@@ -46,6 +46,8 @@ export function useContent() {
   return ctx;
 }
 
+export type InitialContent = Record<Lang, SiteContent>;
+
 const MAX_HISTORY = 30;
 const AUTOSAVE_DELAY = 1500;
 
@@ -57,20 +59,22 @@ function makeEmptyNavContent(base: SiteContent): SiteContent {
   return { ...base, header: { ...base.header, navItems: [] } };
 }
 
-export function ContentProvider({ children }: { children: ReactNode }) {
+export function ContentProvider({ children, initialContent }: { children: ReactNode; initialContent?: InitialContent }) {
   const pathname = usePathname();
   const currentLang: Lang = detectLang(pathname ?? "/");
 
-  const [allLangContent, setAllLangContent] = useState<Record<Lang, SiteContent>>({
+  const emptyNav = {
     cs: makeEmptyNavContent(DEFAULT_CONTENT),
     en: makeEmptyNavContent(getDefaultContent("en")),
     ua: makeEmptyNavContent(getDefaultContent("ua")),
-  });
-  const [savedAllLangContent, setSavedAllLangContent] = useState<Record<Lang, SiteContent>>({
-    cs: makeEmptyNavContent(DEFAULT_CONTENT),
-    en: makeEmptyNavContent(getDefaultContent("en")),
-    ua: makeEmptyNavContent(getDefaultContent("ua")),
-  });
+  };
+
+  const [allLangContent, setAllLangContent] = useState<Record<Lang, SiteContent>>(
+    initialContent ?? emptyNav
+  );
+  const [savedAllLangContent, setSavedAllLangContent] = useState<Record<Lang, SiteContent>>(
+    initialContent ?? emptyNav
+  );
   const [admin, setAdmin] = useState<AdminState>({ isAdmin: false, email: null, setupRequired: false });
   const [canUndo, setCanUndo] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
@@ -87,6 +91,20 @@ export function ContentProvider({ children }: { children: ReactNode }) {
 
   // ── Load on mount ─────────────────────────────────────────────────────────
   useEffect(() => {
+    if (initialContent) {
+      // SSR already provided content — only check admin status client-side
+      allLangContentRef.current = initialContent;
+      setContentLoaded(true);
+      fetch("/api/admin/me").then(r => r.json()).then(meData => {
+        setAdmin({
+          isAdmin: meData.admin === true,
+          email: meData.email || null,
+          setupRequired: meData.setupRequired === true,
+        });
+      });
+      return;
+    }
+
     Promise.all([
       fetch("/api/content?lang=cs").then(r => r.json()),
       fetch("/api/content?lang=en").then(r => r.json()),

@@ -5,6 +5,7 @@ import { ContentProvider } from "@/context/ContentContext";
 import LiveEditor from "@/components/admin/LiveEditor";
 import CustomStyles from "@/components/CustomStyles";
 import { SITE_LANGUAGE, SITE_LOCALE, SITE_NAME, SITE_URL } from "@/lib/seo";
+import { getAllContent, getAllContentForLang } from "@/lib/db";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -69,9 +70,14 @@ const schemaOrg = {
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const [cs, en, ua] = await Promise.all([
+    getAllContent(),
+    getAllContentForLang("en"),
+    getAllContentForLang("ua"),
+  ]);
   return (
     <html lang="cs">
       <head>
@@ -94,7 +100,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen">
-        <ContentProvider>
+        <ContentProvider initialContent={{ cs, en, ua }}>
           <CustomStyles />
           {children}
           <LiveEditor />
