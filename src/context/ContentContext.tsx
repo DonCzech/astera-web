@@ -51,19 +51,25 @@ const AUTOSAVE_DELAY = 1500;
 
 const LANGS: Lang[] = ["cs", "en", "ua"];
 
+// Initial state with empty navItems — prevents stale DEFAULT_CONTENT nav
+// from flashing before the DB value loads.
+function makeEmptyNavContent(base: SiteContent): SiteContent {
+  return { ...base, header: { ...base.header, navItems: [] } };
+}
+
 export function ContentProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const currentLang: Lang = detectLang(pathname ?? "/");
 
   const [allLangContent, setAllLangContent] = useState<Record<Lang, SiteContent>>({
-    cs: DEFAULT_CONTENT,
-    en: getDefaultContent("en"),
-    ua: getDefaultContent("ua"),
+    cs: makeEmptyNavContent(DEFAULT_CONTENT),
+    en: makeEmptyNavContent(getDefaultContent("en")),
+    ua: makeEmptyNavContent(getDefaultContent("ua")),
   });
   const [savedAllLangContent, setSavedAllLangContent] = useState<Record<Lang, SiteContent>>({
-    cs: DEFAULT_CONTENT,
-    en: getDefaultContent("en"),
-    ua: getDefaultContent("ua"),
+    cs: makeEmptyNavContent(DEFAULT_CONTENT),
+    en: makeEmptyNavContent(getDefaultContent("en")),
+    ua: makeEmptyNavContent(getDefaultContent("ua")),
   });
   const [admin, setAdmin] = useState<AdminState>({ isAdmin: false, email: null, setupRequired: false });
   const [canUndo, setCanUndo] = useState(false);
