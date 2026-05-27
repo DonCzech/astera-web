@@ -5,6 +5,7 @@ import { NavItem } from "@/lib/content-types";
 import EditableText from "./admin/EditableText";
 import OptimizedImage from "@/components/OptimizedImage";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import MoonWidget from "@/components/MoonWidget";
 
 export default function Header() {
   const { content, admin } = useContent();
@@ -125,10 +126,14 @@ export default function Header() {
               )}
             </div>
           ))}
+
         </nav>
 
-        {/* Mobile toggle */}
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        {/* Right corner: moon widget + mobile toggle */}
+        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+          <div className="moon-widget-wrap">
+            <MoonWidget headerHeight={scrolled ? 80 : 102} />
+          </div>
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             style={{ display: "none", background: "none", border: "none", cursor: "pointer", padding: "8px" }}
@@ -174,6 +179,9 @@ export default function Header() {
         @media (max-width: 992px) {
           .hidden-mobile-nav { display: none !important; }
           .mobile-toggle { display: block !important; }
+          /* On mobile/tablet hide the moon text — keep just the icon */
+          .moon-widget-text { display: none !important; }
+          .moon-widget-wrap button { padding: 0 8px !important; }
         }
         @media (max-width: 640px) {
           .site-header {
@@ -195,6 +203,16 @@ export default function Header() {
           .site-header .mobile-toggle {
             position: absolute;
             right: 16px;
+          }
+          /* Moon widget sits next to (left of) the hamburger on mobile */
+          .moon-widget-wrap {
+            position: absolute;
+            right: 52px;
+            top: 50%;
+            transform: translateY(-50%);
+          }
+          .moon-widget-wrap button {
+            height: auto !important;
           }
         }
       `}</style>
