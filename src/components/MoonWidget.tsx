@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { MOON_2026 } from "@/lib/moon-data-2026";
+import { MOON_DATA } from "@/lib/moon-data";
 
 const PHASE_CS: Record<string, string> = {
   "New Moon":       "Nový měsíc",
@@ -54,7 +54,7 @@ function fallbackImg(date: Date): string {
 function buildMoonDay() {
   const now = new Date();
   const key = todayKey();
-  const entry = MOON_2026[key] ?? { img: fallbackImg(now), phase: "Waxing Gibbous", stage: "Waxing", illumination: 50 };
+  const entry = MOON_DATA[key] ?? { img: fallbackImg(now), phase: "Waxing Gibbous", stage: "Waxing", illumination: 50 };
   const label = `${CZECH_DAYS[now.getDay()]} ${now.getDate()}. ${CZECH_MONTHS[now.getMonth()]} ${now.getFullYear()}`;
   return { entry, label };
 }
