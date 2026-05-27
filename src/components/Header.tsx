@@ -168,9 +168,15 @@ export default function Header() {
               {link.label}
             </a>
           ))}
-          {/* Language switcher — bottom of mobile menu */}
-          <div style={{ padding: "14px 20px 8px", borderTop: "1px solid #f0f0f0" }}>
+          {/* Language switcher + Moon widget — bottom of mobile menu */}
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            gap: "12px", padding: "10px 20px 8px", borderTop: "1px solid #f0f0f0",
+          }}>
             <LanguageSwitcher compact />
+            <div className="moon-widget-mobile">
+              <MoonWidget headerHeight={40} />
+            </div>
           </div>
         </div>
       )}
@@ -179,9 +185,8 @@ export default function Header() {
         @media (max-width: 992px) {
           .hidden-mobile-nav { display: none !important; }
           .mobile-toggle { display: block !important; }
-          /* On mobile/tablet hide the moon text — keep just the icon */
-          .moon-widget-text { display: none !important; }
-          .moon-widget-wrap button { padding: 0 8px !important; }
+          /* Hide top-header moon widget on mobile — it lives in the mobile menu instead */
+          .moon-widget-wrap { display: none !important; }
         }
         @media (max-width: 640px) {
           .site-header {
@@ -204,16 +209,12 @@ export default function Header() {
             position: absolute;
             right: 16px;
           }
-          /* Moon widget sits next to (left of) the hamburger on mobile */
-          .moon-widget-wrap {
-            position: absolute;
-            right: 52px;
-            top: 50%;
-            transform: translateY(-50%);
-          }
-          .moon-widget-wrap button {
-            height: auto !important;
-          }
+        }
+        /* Moon widget inside mobile menu — compact, with text */
+        .moon-widget-mobile button {
+          height: auto !important;
+          padding: 6px 0 !important;
+          font-size: 13px !important;
         }
       `}</style>
     </header>
