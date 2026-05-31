@@ -56,6 +56,27 @@ export default function RichTextEditor({ value, onChange, minHeight = 80 }: Prop
     exec("foreColor", color);
   }, [exec]);
 
+  const handlePaste = useCallback((e: React.ClipboardEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const html = e.clipboardData.getData("text/html");
+    const plain = e.clipboardData.getData("text/plain");
+    let insert = plain;
+    if (html) {
+      const tmp = document.createElement("div");
+      tmp.innerHTML = html;
+      tmp.querySelectorAll("section,div,nav,header,footer,article,aside,main,form,table,thead,tbody,tr,td,th,ul,ol,li,figure,figcaption,button,input,select,textarea,label,script,style,svg,img,video,audio,iframe").forEach(el => {
+        el.replaceWith(document.createTextNode(el.textContent || ""));
+      });
+      tmp.querySelectorAll("*").forEach(el => {
+        const allowed = el.tagName === "A" ? ["href"] : el.tagName === "SPAN" ? ["style"] : [];
+        Array.from(el.attributes).forEach(attr => { if (!allowed.includes(attr.name)) el.removeAttribute(attr.name); });
+      });
+      insert = tmp.innerHTML.replace(/(<br\s*\/?>){2,}/gi, "<br>").trim();
+    }
+    document.execCommand("insertHTML", false, insert);
+    if (editorRef.current) onChange(editorRef.current.innerHTML);
+  }, [onChange]);
+
   const applyFont = useCallback((font: string) => {
     exec("fontName", font);
   }, [exec]);
@@ -138,9 +159,8 @@ export default function RichTextEditor({ value, onChange, minHeight = 80 }: Prop
         ref={editorRef}
         contentEditable
         suppressContentEditableWarning
-        onInput={() => {
-          if (editorRef.current) onChange(editorRef.current.innerHTML);
-        }}
+        onInput={() => { if (editorRef.current) onChange(editorRef.current.innerHTML); }}
+        onPaste={handlePaste}
         style={{
           border: "1px solid #dde5f0",
           borderRadius: 6,

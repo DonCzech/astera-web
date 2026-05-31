@@ -949,11 +949,9 @@ function BlockEditorPanel({ block, onUpdate, onDelete, onUp, onDown, isFirst, is
             {inp("Velikost (px)", "fontSize", "number")}
           </>}
           {block.type === "text" && <>
-            <div style={{ marginBottom: 8 }}>
-              <label style={{ display: "block", fontSize: 10, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", marginBottom: 3 }}>Obsah (HTML)</label>
-              <textarea value={block.content || ""} onChange={e => onUpdate({ ...block, content: e.target.value })}
-                rows={4} style={{ width: "100%", padding: "5px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12, boxSizing: "border-box", resize: "vertical" }} />
-            </div>
+            <Field label="Text">
+              <RTE value={block.content || ""} onChange={v => onUpdate({ ...block, content: v })} minHeight={100} />
+            </Field>
             {sel("Zarovnání", "align", ["left", "center", "right"])}
           </>}
           {block.type === "image" && <>
@@ -1003,11 +1001,9 @@ function BlockEditorPanel({ block, onUpdate, onDelete, onUp, onDown, isFirst, is
           )}
           {block.type === "two-col" && <>
             {inp("Nadpis", "twoColTitle")}
-            <div style={{ marginBottom: 8 }}>
-              <label style={{ display: "block", fontSize: 10, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", marginBottom: 3 }}>Text (HTML)</label>
-              <textarea value={block.twoColText || ""} onChange={e => onUpdate({ ...block, twoColText: e.target.value })}
-                rows={3} style={{ width: "100%", padding: "5px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12, boxSizing: "border-box", resize: "vertical" }} />
-            </div>
+            <Field label="Text">
+              <RTE value={block.twoColText || ""} onChange={v => onUpdate({ ...block, twoColText: v })} minHeight={80} />
+            </Field>
             <ImageField label="Obrázek" value={block.twoColImage || ""} onChange={v => onUpdate({ ...block, twoColImage: v })} />
             {inp("Text tlačítka", "twoColBtnText")}
             {inp("Odkaz tlačítka", "twoColBtnHref")}
