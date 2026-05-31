@@ -12,11 +12,8 @@ function normalizedExt(name: string) {
   return ext === "jpeg" ? "jpg" : ext;
 }
 
-function outputExt(inputExt: string, hasAlpha?: boolean) {
-  if (inputExt === "png" && hasAlpha) return "png";
-  if (inputExt === "png") return "jpg";
-  if (inputExt === "webp" && hasAlpha) return "png";
-  return "jpg";
+function outputExt(_inputExt: string, _hasAlpha?: boolean) {
+  return "webp";
 }
 
 function targetSize(width?: number, height?: number) {
@@ -53,18 +50,13 @@ async function writeOptimizedLocal(buffer: Buffer, uploadDir: string, optimizedD
   await mkdir(uploadDir, { recursive: true });
   await mkdir(optimizedDir, { recursive: true });
 
-  const fallbackBuffer = await renderImage(buffer, target.width, ext);
-  await writeFile(path.join(uploadDir, `${baseName}.${ext}`), fallbackBuffer);
-  await writeFile(path.join(optimizedDir, `${baseName}.${ext}`), fallbackBuffer);
-  await writeFile(path.join(optimizedDir, `${baseName}.webp`), await renderImage(buffer, target.width, "webp"));
+  const mainBuffer = await renderImage(buffer, target.width, ext);
+  await writeFile(path.join(uploadDir, `${baseName}.${ext}`), mainBuffer);
+  await writeFile(path.join(optimizedDir, `${baseName}.${ext}`), mainBuffer);
 
-  await Promise.all(candidates(target.width).flatMap(async width => {
-    const webp = await renderImage(buffer, width, "webp");
-    const fallback = await renderImage(buffer, width, ext);
-    return Promise.all([
-      writeFile(path.join(optimizedDir, `${baseName}-${width}w.webp`), webp),
-      writeFile(path.join(optimizedDir, `${baseName}-${width}w.${ext}`), fallback),
-    ]);
+  await Promise.all(candidates(target.width).map(async width => {
+    const variant = await renderImage(buffer, width, ext);
+    return writeFile(path.join(optimizedDir, `${baseName}-${width}w.${ext}`), variant);
   }));
 }
 
@@ -81,21 +73,15 @@ async function writeOptimizedBlob(buffer: Buffer, baseName: string, ext: string)
   const target = targetSize(metadata.width, metadata.height);
   if (!target) throw new Error("Unsupported image dimensions");
 
-  const contentType = ext === "png" ? "image/png" : "image/jpeg";
-  const fallbackBuffer = await renderImage(buffer, target.width, ext);
-  const fallbackBlob = await putBlobImage(`${baseName}.${ext}`, fallbackBuffer, contentType);
-  await putBlobImage(`${baseName}.webp`, await renderImage(buffer, target.width, "webp"), "image/webp");
+  const mainBuffer = await renderImage(buffer, target.width, ext);
+  const mainBlob = await putBlobImage(`${baseName}.${ext}`, mainBuffer, "image/webp");
 
-  await Promise.all(candidates(target.width).flatMap(async width => {
-    const webp = await renderImage(buffer, width, "webp");
-    const fallback = await renderImage(buffer, width, ext);
-    return Promise.all([
-      putBlobImage(`${baseName}-${width}w.webp`, webp, "image/webp"),
-      putBlobImage(`${baseName}-${width}w.${ext}`, fallback, contentType),
-    ]);
+  await Promise.all(candidates(target.width).map(async width => {
+    const variant = await renderImage(buffer, width, ext);
+    return putBlobImage(`${baseName}-${width}w.${ext}`, variant, "image/webp");
   }));
 
-  return fallbackBlob;
+  return mainBlob;
 }
 
 export async function POST(request: Request) {

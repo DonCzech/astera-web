@@ -108,6 +108,37 @@ export default function EditableText({
     return () => { window.removeEventListener("scroll", update); window.removeEventListener("resize", update); };
   }, [focused]);
 
+  // ── Paste handler — strip unsafe HTML ──────────────────────────────────
+  const handlePaste = useCallback((e: React.ClipboardEvent<HTMLElement>) => {
+    e.preventDefault();
+    const html = e.clipboardData.getData("text/html");
+    const plain = e.clipboardData.getData("text/plain");
+
+    let insertText = plain;
+
+    if (richText && html) {
+      // Allow only safe inline tags
+      const tmp = document.createElement("div");
+      tmp.innerHTML = html;
+      // Remove all block-level junk (section, div, nav, header, footer, article…)
+      tmp.querySelectorAll("section,div,nav,header,footer,article,aside,main,form,table,thead,tbody,tr,td,th,ul,ol,li,figure,figcaption,button,input,select,textarea,label,script,style,svg,img,video,audio,iframe").forEach(el => {
+        el.replaceWith(document.createTextNode(el.textContent || ""));
+      });
+      // Strip all attributes except href on <a> and style on <span>
+      tmp.querySelectorAll("*").forEach(el => {
+        const allowed = el.tagName === "A" ? ["href"] : el.tagName === "SPAN" ? ["style"] : [];
+        Array.from(el.attributes).forEach(attr => {
+          if (!allowed.includes(attr.name)) el.removeAttribute(attr.name);
+        });
+      });
+      insertText = tmp.innerHTML
+        .replace(/(<br\s*\/?>){2,}/gi, "<br>") // collapse multiple br
+        .replace(/^\s+|\s+$/g, "");
+    }
+
+    document.execCommand("insertHTML", false, insertText);
+  }, [richText]);
+
   // ── Formatting helpers ──────────────────────────────────────────────────
   const ensureSelection = useCallback(() => {
     if (!ref.current) return;
@@ -273,6 +304,10 @@ export default function EditableText({
           borderRadius: 3,
           cursor: "text",
           minWidth: "4px",
+          WebkitUserSelect: "text",
+          userSelect: "text",
+          touchAction: "auto",
+          WebkitTapHighlightColor: "transparent",
         }}
         className={className}
         contentEditable
@@ -282,9 +317,9 @@ export default function EditableText({
           const nextValue = richText ? e.currentTarget.innerHTML : e.currentTarget.textContent || "";
           editing.current = false;
           setFocused(false);
-          // Save to the currently active edit language
           updateSection(section, setPath(allLangContent[editLang][section], field, nextValue), editLang);
         }}
+        onPaste={handlePaste}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       />

@@ -42,6 +42,11 @@ export default function Header() {
         className="container-main"
         style={{ display: "flex", alignItems: "center", height: "100%", justifyContent: "space-between" }}
       >
+        {/* Moon widget — mobile header left (≤640px only) */}
+        <div className="moon-widget-header-mobile">
+          <MoonWidget headerHeight={40} />
+        </div>
+
         {/* Logo */}
         <a href={logoHref} className="logo-link" style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
           <OptimizedImage
@@ -215,6 +220,22 @@ export default function Header() {
           height: auto !important;
           padding: 6px 0 !important;
           font-size: 13px !important;
+        }
+        /* Moon widget in mobile header — hidden on desktop */
+        .moon-widget-header-mobile {
+          display: none;
+        }
+        @media (max-width: 640px) {
+          .moon-widget-header-mobile {
+            display: block;
+            position: absolute;
+            left: 16px;
+          }
+          .moon-widget-header-mobile button {
+            height: auto !important;
+            padding: 4px 0 !important;
+            font-size: 12px !important;
+          }
         }
       `}</style>
     </header>
