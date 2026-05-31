@@ -161,6 +161,20 @@ export default function RichTextEditor({ value, onChange, minHeight = 80 }: Prop
         suppressContentEditableWarning
         onInput={() => { if (editorRef.current) onChange(editorRef.current.innerHTML); }}
         onPaste={handlePaste}
+        onKeyDown={e => {
+          if (e.key === "Enter") {
+            e.stopPropagation();
+            e.preventDefault();
+            if (e.shiftKey) {
+              // Shift+Enter = měkké zalomení řádku
+              document.execCommand("insertHTML", false, "<br>");
+            } else {
+              // Enter = nový odstavec
+              document.execCommand("insertParagraph", false);
+            }
+            if (editorRef.current) onChange(editorRef.current.innerHTML);
+          }
+        }}
         style={{
           border: "1px solid #dde5f0",
           borderRadius: 6,
@@ -173,6 +187,7 @@ export default function RichTextEditor({ value, onChange, minHeight = 80 }: Prop
           background: "#fff",
           overflowY: "auto",
           maxHeight: 260,
+          whiteSpace: "pre-wrap",
         }}
       />
     </div>
