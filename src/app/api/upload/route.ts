@@ -5,7 +5,12 @@ import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import sharp from "sharp";
 
-const responsiveWidths = [331, 480, 662, 828, 1200, 1600, 1800];
+const responsiveWidths = [480, 828, 1600];
+
+// Vercel's sharp build lacks the HEVC codec — reject HEIC before sharp tries to open it.
+function isHeicBuffer(buf: Buffer): boolean {
+  return buf.length >= 12 && buf.subarray(4, 8).toString("latin1") === "ftyp";
+}
 
 function normalizedExt(name: string) {
   const ext = name.split(".").pop()?.toLowerCase() || "jpg";
@@ -14,6 +19,12 @@ function normalizedExt(name: string) {
 
 function outputExt(_inputExt: string, _hasAlpha?: boolean) {
   return "webp";
+}
+
+function mimeForExt(ext: string) {
+  if (ext === "gif") return "image/gif";
+  if (ext === "svg") return "image/svg+xml";
+  return "image/webp";
 }
 
 function targetSize(width?: number, height?: number) {
@@ -30,15 +41,16 @@ function candidates(width: number) {
 }
 
 function withFormat(image: sharp.Sharp, ext: string) {
-  if (ext === "webp") return image.webp({ quality: 100, effort: 6, smartSubsample: false });
-  if (ext === "png") return image.png({ compressionLevel: 9, adaptiveFiltering: true, palette: false });
-  return image.jpeg({ quality: 100, mozjpeg: true, chromaSubsampling: "4:4:4" });
+  // alphaQuality: 100 ensures transparent pixels are losslessly preserved in WebP
+  if (ext === "webp") return image.webp({ quality: 82, effort: 1, alphaQuality: 100 });
+  if (ext === "png") return image.png({ compressionLevel: 6 });
+  return image.jpeg({ quality: 85, mozjpeg: false });
 }
 
 async function renderImage(buffer: Buffer, width: number, ext: string) {
   const image = sharp(buffer, { failOn: "none" })
     .rotate()
-    .resize({ width, withoutEnlargement: true, kernel: sharp.kernel.lanczos3 });
+    .resize({ width, withoutEnlargement: true, kernel: sharp.kernel.mitchell });
   return withFormat(image, ext).toBuffer();
 }
 
@@ -60,11 +72,12 @@ async function writeOptimizedLocal(buffer: Buffer, uploadDir: string, optimizedD
   }));
 }
 
-async function putBlobImage(pathname: string, body: Buffer, contentType: string) {
+async function putBlobImage(pathname: string, body: Buffer, ext: string) {
   return put(pathname, body, {
     access: "public",
     addRandomSuffix: false,
-    contentType,
+    contentType: mimeForExt(ext),
+    token: process.env.BLOB_READ_WRITE_TOKEN,
   });
 }
 
@@ -74,11 +87,11 @@ async function writeOptimizedBlob(buffer: Buffer, baseName: string, ext: string)
   if (!target) throw new Error("Unsupported image dimensions");
 
   const mainBuffer = await renderImage(buffer, target.width, ext);
-  const mainBlob = await putBlobImage(`${baseName}.${ext}`, mainBuffer, "image/webp");
+  const mainBlob = await putBlobImage(`${baseName}.${ext}`, mainBuffer, ext);
 
   await Promise.all(candidates(target.width).map(async width => {
     const variant = await renderImage(buffer, width, ext);
-    return putBlobImage(`${baseName}-${width}w.${ext}`, variant, "image/webp");
+    return putBlobImage(`${baseName}-${width}w.${ext}`, variant, ext);
   }));
 
   return mainBlob;
@@ -98,17 +111,18 @@ export async function POST(request: Request) {
     return Response.json({ error: "No file provided" }, { status: 400 });
   }
 
-  const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"];
-  if (!allowedTypes.includes(file.type)) {
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml", "image/heic", "image/heif", "image/heic-sequence", "image/heif-sequence"];
+  // Some browsers report HEIC with empty MIME type — allow by extension fallback
+  const inputExt = normalizedExt(file.name);
+  const isHeic = inputExt === "heic" || inputExt === "heif";
+  if (!allowedTypes.includes(file.type) && !isHeic) {
     return Response.json({ error: "Only image files allowed" }, { status: 400 });
   }
 
-  const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
+  const MAX_SIZE = 25 * 1024 * 1024; // 25 MB (HEIC from iPhone can be large)
   if (file.size > MAX_SIZE) {
-    return Response.json({ error: "File too large (max 10 MB)" }, { status: 400 });
+    return Response.json({ error: "File too large (max 25 MB)" }, { status: 400 });
   }
-
-  const inputExt = normalizedExt(file.name);
   const baseName = `astera-upload-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const bytes = Buffer.from(await file.arrayBuffer());
 
@@ -125,6 +139,10 @@ export async function POST(request: Request) {
     return Response.json({ url: blob.url });
   }
 
+  if (isHeicBuffer(bytes)) {
+    return Response.json({ error: "HEIC/HEIF fotky nejde zpracovat na serveru. Ulož fotku jako JPEG v aplikaci Fotky (sdílet → Uložit jako JPEG) a nahraj ji znovu." }, { status: 400 });
+  }
+
   const metadata = await sharp(bytes, { failOn: "none" }).metadata();
   const ext = outputExt(inputExt, metadata.hasAlpha);
   const filename = `${baseName}.${ext}`;
@@ -136,7 +154,11 @@ export async function POST(request: Request) {
     return Response.json({ url: `/uploads/${filename}` });
   }
 
-  const blob = await writeOptimizedBlob(bytes, baseName, ext);
-
-  return Response.json({ url: blob.url });
+  try {
+    const blob = await writeOptimizedBlob(bytes, baseName, ext);
+    return Response.json({ url: blob.url });
+  } catch (err) {
+    console.error("[upload] Vercel Blob failed:", err);
+    return Response.json({ error: `Blob upload failed: ${err instanceof Error ? err.message : String(err)}` }, { status: 500 });
+  }
 }

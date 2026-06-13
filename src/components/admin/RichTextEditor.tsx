@@ -1,5 +1,6 @@
 "use client";
 import { useRef, useEffect, useCallback } from "react";
+import { applyInlineStyle, restoreSelection, sanitizeEditorPaste, selectionInside } from "@/lib/editor-html";
 
 interface Props {
   value: string;
@@ -9,14 +10,38 @@ interface Props {
 
 const FONTS = ["Poppins", "Playfair Display", "Arial", "Georgia", "Verdana", "Times New Roman"];
 const SIZES = ["12", "13", "14", "15", "16", "18", "20", "22", "24", "28", "32", "38"];
+const TOOLBAR_BUTTONS = [
+  { label: "B", command: "bold", title: "Bold" },
+  { label: "I", command: "italic", title: "Italic" },
+  { label: "U", command: "underline", title: "Underline" },
+  { label: "─", command: "strikeThrough", title: "Strikethrough" },
+];
+const INSERT_BUTTONS = [
+  { label: "¶", command: "insertParagraph", title: "Insert paragraph" },
+  { label: "• List", command: "insertUnorderedList", title: "Bullet list" },
+  { label: "1. List", command: "insertOrderedList", title: "Numbered list" },
+  { label: "↺", command: "undo", title: "Undo" },
+  { label: "↻", command: "redo", title: "Redo" },
+];
+const buttonStyle: React.CSSProperties = {
+  padding: "3px 7px",
+  fontSize: 12,
+  background: "#f0f4f8",
+  border: "1px solid #dde5f0",
+  borderRadius: 4,
+  cursor: "pointer",
+  fontFamily: "inherit",
+};
 
 export default function RichTextEditor({ value, onChange, minHeight = 80 }: Props) {
   const editorRef = useRef<HTMLDivElement>(null);
+  const savedRange = useRef<Range | null>(null);
   // Track if we're initializing to avoid onChange loop
   const isInit = useRef(true);
 
   useEffect(() => {
     if (editorRef.current && isInit.current) {
+      document.execCommand("defaultParagraphSeparator", false, "p");
       editorRef.current.innerHTML = value;
       isInit.current = false;
     }
@@ -24,32 +49,18 @@ export default function RichTextEditor({ value, onChange, minHeight = 80 }: Prop
 
   const exec = useCallback((cmd: string, val?: string) => {
     editorRef.current?.focus();
+    restoreSelection(savedRange.current);
     document.execCommand(cmd, false, val);
-    if (editorRef.current) onChange(editorRef.current.innerHTML);
+    if (editorRef.current) {
+      savedRange.current = selectionInside(editorRef.current);
+      onChange(editorRef.current.innerHTML);
+    }
   }, [onChange]);
 
   const applyFontSize = useCallback((px: string) => {
-    editorRef.current?.focus();
-    const sel = window.getSelection();
-    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) {
-      // No selection — just set execCommand for next typed text
-      document.execCommand("fontSize", false, "3");
-      return;
-    }
-    const range = sel.getRangeAt(0);
-    const span = document.createElement("span");
-    span.style.fontSize = px + "px";
-    try {
-      range.surroundContents(span);
-    } catch {
-      // Selection spans multiple elements — wrap with insertHTML
-      document.execCommand(
-        "insertHTML",
-        false,
-        `<span style="font-size:${px}px">${sel.toString()}</span>`
-      );
-    }
-    if (editorRef.current) onChange(editorRef.current.innerHTML);
+    if (!editorRef.current) return;
+    savedRange.current = applyInlineStyle(editorRef.current, savedRange.current, { fontSize: `${px}px` });
+    onChange(editorRef.current.innerHTML);
   }, [onChange]);
 
   const applyColor = useCallback((color: string) => {
@@ -58,57 +69,36 @@ export default function RichTextEditor({ value, onChange, minHeight = 80 }: Prop
 
   const handlePaste = useCallback((e: React.ClipboardEvent<HTMLDivElement>) => {
     e.preventDefault();
-    const html = e.clipboardData.getData("text/html");
-    const plain = e.clipboardData.getData("text/plain");
-    let insert = plain;
-    if (html) {
-      const tmp = document.createElement("div");
-      tmp.innerHTML = html;
-      tmp.querySelectorAll("section,div,nav,header,footer,article,aside,main,form,table,thead,tbody,tr,td,th,ul,ol,li,figure,figcaption,button,input,select,textarea,label,script,style,svg,img,video,audio,iframe").forEach(el => {
-        el.replaceWith(document.createTextNode(el.textContent || ""));
-      });
-      tmp.querySelectorAll("*").forEach(el => {
-        const allowed = el.tagName === "A" ? ["href"] : el.tagName === "SPAN" ? ["style"] : [];
-        Array.from(el.attributes).forEach(attr => { if (!allowed.includes(attr.name)) el.removeAttribute(attr.name); });
-      });
-      insert = tmp.innerHTML.replace(/(<br\s*\/?>){2,}/gi, "<br>").trim();
-    }
+    const insert = sanitizeEditorPaste(e.clipboardData, true);
+    restoreSelection(savedRange.current);
     document.execCommand("insertHTML", false, insert);
-    if (editorRef.current) onChange(editorRef.current.innerHTML);
+    if (editorRef.current) {
+      savedRange.current = selectionInside(editorRef.current);
+      onChange(editorRef.current.innerHTML);
+    }
   }, [onChange]);
 
   const applyFont = useCallback((font: string) => {
-    exec("fontName", font);
-  }, [exec]);
+    if (!editorRef.current) return;
+    savedRange.current = applyInlineStyle(editorRef.current, savedRange.current, { fontFamily: font });
+    onChange(editorRef.current.innerHTML);
+  }, [onChange]);
 
-  const btn = (label: string, action: () => void, title?: string) => (
-    <button
-      key={label}
-      type="button"
-      title={title || label}
-      onMouseDown={e => { e.preventDefault(); action(); }}
-      style={{
-        padding: "3px 7px",
-        fontSize: 12,
-        background: "#f0f4f8",
-        border: "1px solid #dde5f0",
-        borderRadius: 4,
-        cursor: "pointer",
-        fontFamily: "inherit",
-      }}
-    >
-      {label}
-    </button>
-  );
+  const handleCommandMouseDown = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    const command = e.currentTarget.dataset.command;
+    if (command) exec(command);
+  }, [exec]);
 
   return (
     <div>
       {/* Toolbar */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 6, alignItems: "center" }}>
-        {btn("B", () => exec("bold"), "Bold")}
-        {btn("I", () => exec("italic"), "Italic")}
-        {btn("U", () => exec("underline"), "Underline")}
-        {btn("─", () => exec("strikeThrough"), "Strikethrough")}
+        {TOOLBAR_BUTTONS.map(item => (
+          <button key={item.command} type="button" title={item.title} data-command={item.command} onMouseDown={handleCommandMouseDown} style={buttonStyle}>
+            {item.label}
+          </button>
+        ))}
 
         <div style={{ width: 1, height: 20, background: "#dde5f0", margin: "0 2px" }} />
 
@@ -116,6 +106,7 @@ export default function RichTextEditor({ value, onChange, minHeight = 80 }: Prop
         <select
           title="Font family"
           onChange={e => applyFont(e.target.value)}
+          onMouseDown={() => { if (editorRef.current) savedRange.current = selectionInside(editorRef.current); }}
           defaultValue=""
           style={{ fontSize: 11, padding: "2px 4px", border: "1px solid #dde5f0", borderRadius: 4, background: "#f0f4f8", cursor: "pointer" }}
         >
@@ -127,6 +118,7 @@ export default function RichTextEditor({ value, onChange, minHeight = 80 }: Prop
         <select
           title="Font size (px)"
           onChange={e => applyFontSize(e.target.value)}
+          onMouseDown={() => { if (editorRef.current) savedRange.current = selectionInside(editorRef.current); }}
           defaultValue=""
           style={{ fontSize: 11, padding: "2px 4px", border: "1px solid #dde5f0", borderRadius: 4, background: "#f0f4f8", cursor: "pointer" }}
         >
@@ -141,17 +133,18 @@ export default function RichTextEditor({ value, onChange, minHeight = 80 }: Prop
             type="color"
             defaultValue="#1f1f1f"
             onChange={e => applyColor(e.target.value)}
+            onMouseDown={() => { if (editorRef.current) savedRange.current = selectionInside(editorRef.current); }}
             style={{ width: 18, height: 18, border: "none", padding: 0, cursor: "pointer", background: "none" }}
           />
         </label>
 
         <div style={{ width: 1, height: 20, background: "#dde5f0", margin: "0 2px" }} />
 
-        {btn("¶", () => exec("insertParagraph"), "Insert paragraph")}
-        {btn("• List", () => exec("insertUnorderedList"), "Bullet list")}
-        {btn("1. List", () => exec("insertOrderedList"), "Numbered list")}
-        {btn("↺", () => exec("undo"), "Undo")}
-        {btn("↻", () => exec("redo"), "Redo")}
+        {INSERT_BUTTONS.map(item => (
+          <button key={item.command} type="button" title={item.title} data-command={item.command} onMouseDown={handleCommandMouseDown} style={buttonStyle}>
+            {item.label}
+          </button>
+        ))}
       </div>
 
       {/* Editor area */}
@@ -161,6 +154,9 @@ export default function RichTextEditor({ value, onChange, minHeight = 80 }: Prop
         suppressContentEditableWarning
         onInput={() => { if (editorRef.current) onChange(editorRef.current.innerHTML); }}
         onPaste={handlePaste}
+        onMouseUp={() => { if (editorRef.current) savedRange.current = selectionInside(editorRef.current); }}
+        onKeyUp={() => { if (editorRef.current) savedRange.current = selectionInside(editorRef.current); }}
+        onBlur={() => { if (editorRef.current) savedRange.current = selectionInside(editorRef.current); }}
         onKeyDown={e => {
           if (e.key === "Enter") {
             e.stopPropagation();

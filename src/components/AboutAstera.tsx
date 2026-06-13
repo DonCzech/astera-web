@@ -1,12 +1,11 @@
 "use client";
 import { useContent } from "@/context/ContentContext";
 import EditableText from "./admin/EditableText";
-import EditableImg from "./admin/EditableImg";
+import TestimonialsSlider from "./TestimonialsSlider";
 
 export default function AboutAstera() {
   const { content } = useContent();
   const a = content.about;
-  const hasBottomImage = Boolean(a.imageBottom);
 
   return (
     <section id="o-astere" style={{ backgroundColor: "#f9f7f7", padding: "70px 0 30px", marginTop: "0", scrollMarginTop: "110px" }}>
@@ -45,41 +44,17 @@ export default function AboutAstera() {
           {/* Spacer */}
           <div />
 
-          {/* Images */}
-          <div style={{ position: "relative" }}>
-            <EditableImg
-              section="about"
-              field="imageTop"
-              alt="Astera"
-              sizes="(max-width: 768px) calc(100vw - 40px), 480px"
-              style={{
-                width: "100%",
-                height: "auto",
-                display: "block",
-                borderRadius: "6px",
-                marginTop: hasBottomImage ? "-60px" : "0",
-                position: "relative",
-                zIndex: 2,
-              }}
-            />
-            {hasBottomImage && (
-              <EditableImg
-                section="about"
-                field="imageBottom"
-                alt="Astera"
-                sizes="(max-width: 768px) calc(100vw - 40px), 480px"
-                style={{ width: "100%", height: "auto", display: "block", borderRadius: "6px", marginTop: "12px" }}
-              />
-            )}
+          {/* Testimonials slider */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <TestimonialsSlider />
           </div>
         </div>
       </div>
 
       <style>{`
         @media (max-width: 768px) {
-          .about-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
+          .about-grid { grid-template-columns: 1fr !important; gap: 40px !important; }
           .about-grid > :nth-child(2) { display: none; }
-          .about-grid > :nth-child(3) img:first-child { margin-top: 0 !important; }
         }
       `}</style>
     </section>

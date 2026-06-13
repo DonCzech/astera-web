@@ -1,7 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { useContent } from "@/context/ContentContext";
 import { NavItem } from "@/lib/content-types";
+import { addLangPrefix, detectLang } from "@/lib/i18n";
 import EditableText from "./admin/EditableText";
 import OptimizedImage from "@/components/OptimizedImage";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -9,7 +11,9 @@ import MoonWidget from "@/components/MoonWidget";
 
 export default function Header() {
   const { content, admin } = useContent();
-  const { navItems, logoHref } = content.header;
+  const { navItems } = content.header;
+  const pathname = usePathname() || "/";
+  const logoHref = addLangPrefix("/", detectLang(pathname));
   const logoUrl = content.siteSettings?.logoUrl || "/images/astera-logo.png";
   const adminBarH = admin.isAdmin ? 26 : 0;
 

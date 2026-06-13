@@ -7,6 +7,8 @@ import CustomStyles from "@/components/CustomStyles";
 import { SITE_LANGUAGE, SITE_LOCALE, SITE_NAME, SITE_URL } from "@/lib/seo";
 import { getAllContent, getAllContentForLang } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {

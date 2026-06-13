@@ -5,7 +5,7 @@ import EditableText from "./admin/EditableText";
 import EditableImg from "./admin/EditableImg";
 
 export default function ManifestCards() {
-  const { content } = useContent();
+  const { content, admin } = useContent();
   const { cards } = content.manifest;
 
   return (
@@ -28,13 +28,25 @@ export default function ManifestCards() {
               style={{ backgroundColor: "#ffffff", borderRadius: "12px", overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center", padding: "0 0 32px" }}
             >
               <div className="roundit" style={{ width: "100%", overflow: "hidden" }}>
-                <EditableImg
-                  section="manifest"
-                  field={`cards.${i}.image`}
-                  alt={card.title}
-                  sizes="(max-width: 600px) calc(100vw - 40px), (max-width: 900px) calc((100vw - 64px) / 2), 331px"
-                  style={{ width: "100%", height: "auto", display: "block" }}
-                />
+                {admin.isAdmin || !card.btnHref ? (
+                  <EditableImg
+                    section="manifest"
+                    field={`cards.${i}.image`}
+                    alt={card.title}
+                    sizes="(max-width: 600px) calc(100vw - 40px), (max-width: 900px) calc((100vw - 64px) / 2), 331px"
+                    style={{ width: "100%", height: "auto", display: "block" }}
+                  />
+                ) : (
+                  <a href={card.btnHref} aria-label={card.title} className="manifest-image-link">
+                    <EditableImg
+                      section="manifest"
+                      field={`cards.${i}.image`}
+                      alt={card.title}
+                      sizes="(max-width: 600px) calc(100vw - 40px), (max-width: 900px) calc((100vw - 64px) / 2), 331px"
+                      style={{ width: "100%", height: "auto", display: "block" }}
+                    />
+                  </a>
+                )}
               </div>
 
               <EditableText
@@ -61,6 +73,19 @@ export default function ManifestCards() {
       </div>
 
       <style>{`
+        .manifest-image-link {
+          display: block;
+          width: 100%;
+          color: inherit;
+          text-decoration: none;
+        }
+        .manifest-image-link img {
+          transition: transform 0.28s ease, filter 0.28s ease;
+        }
+        .manifest-image-link:hover img {
+          transform: scale(1.025);
+          filter: brightness(1.03);
+        }
         @media (max-width: 900px) { .manifest-grid { grid-template-columns: repeat(2, 1fr) !important; } }
         @media (max-width: 600px) { .manifest-grid { grid-template-columns: 1fr !important; } }
       `}</style>

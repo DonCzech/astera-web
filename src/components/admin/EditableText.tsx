@@ -4,29 +4,46 @@ import { createPortal } from "react-dom";
 import { useContent } from "@/context/ContentContext";
 import { SiteContent } from "@/lib/content-types";
 import { Lang, LANGUAGES } from "@/lib/i18n";
+import { applyInlineStyle, restoreSelection, sanitizeEditorPaste, selectionInside } from "@/lib/editor-html";
 
-function getPath(obj: any, path: string): string {
-  return String(path.split(".").reduce((o: any, k: string) => o?.[k], obj) ?? "");
+type EditableObject = Record<string, unknown> | unknown[];
+
+function readKey(obj: unknown, key: string) {
+  if (Array.isArray(obj)) return obj[Number(key)];
+  if (obj && typeof obj === "object") return (obj as Record<string, unknown>)[key];
+  return undefined;
 }
 
-function setPath(obj: any, path: string, val: string): any {
+function getPath(obj: unknown, path: string): string {
+  return String(path.split(".").reduce<unknown>((o, k) => readKey(o, k), obj) ?? "");
+}
+
+function setPath<T>(obj: T, path: string, val: string): T {
   const parts = path.split(".");
-  const root = Array.isArray(obj) ? [...obj] : { ...obj };
-  let current: any = root;
+  const source = obj as EditableObject;
+  const root: EditableObject = Array.isArray(source) ? [...source] : { ...source };
+  let current: EditableObject = root;
 
   parts.forEach((part, index) => {
     const key = Array.isArray(current) ? Number(part) : part;
     if (index === parts.length - 1) {
-      current[key] = val;
+      if (Array.isArray(current)) current[key as number] = val;
+      else current[key as string] = val;
       return;
     }
 
-    const next = current[key];
-    current[key] = Array.isArray(next) ? [...next] : { ...next };
-    current = current[key];
+    const next = Array.isArray(current) ? current[key as number] : current[key as string];
+    const clonedNext: EditableObject = Array.isArray(next)
+      ? [...next]
+      : next && typeof next === "object"
+        ? { ...(next as Record<string, unknown>) }
+        : {};
+    if (Array.isArray(current)) current[key as number] = clonedNext;
+    else current[key as string] = clonedNext;
+    current = clonedNext;
   });
 
-  return root;
+  return root as T;
 }
 
 function htmlToText(html: string): string {
@@ -61,8 +78,10 @@ interface Props {
 export default function EditableText({
   section, field, tag = "span", style, className, richText,
 }: Props) {
-  const { content, admin, updateSection, allLangContent, currentLang } = useContent();
+  const { admin, updateSection, allLangContent, currentLang, getLatestSection } = useContent();
   const ref = useRef<HTMLElement>(null);
+  const savedRange = useRef<Range | null>(null);
+  const toolbarInteracting = useRef(false);
   const editing = useRef(false);
   const [focused, setFocused] = useState(false);
   const [hovered, setHovered] = useState(false);
@@ -83,12 +102,17 @@ export default function EditableText({
   const isAdmin = admin.isAdmin;
 
   // ── Sync innerHTML to DOM ────────────────────────────────────────────────
+  // Only update when the element does NOT have focus — if it does, the user is
+  // actively editing and we must not clobber the cursor / typed content.
   useLayoutEffect(() => {
-    if (isAdmin && !editing.current && ref.current) {
-      // Show value for the currently-selected edit language
-      const displayVal = getLangValue(editLang);
-      if (richText) ref.current.innerHTML = displayVal;
-      else ref.current.textContent = htmlToText(displayVal);
+    if (!isAdmin || !ref.current) return;
+    if (ref.current.contains(document.activeElement)) return;
+    const displayVal = getLangValue(editLang);
+    if (richText) {
+      if (ref.current.innerHTML !== displayVal) ref.current.innerHTML = displayVal;
+    } else {
+      const txt = htmlToText(displayVal);
+      if (ref.current.textContent !== txt) ref.current.textContent = txt;
     }
   }, [value, isAdmin, richText, editLang, getLangValue]);
 
@@ -108,41 +132,20 @@ export default function EditableText({
     return () => { window.removeEventListener("scroll", update); window.removeEventListener("resize", update); };
   }, [focused]);
 
-  // ── Paste handler — strip unsafe HTML ──────────────────────────────────
+  // ── Paste handler — strip foreign HTML and keep local editor typography ─
   const handlePaste = useCallback((e: React.ClipboardEvent<HTMLElement>) => {
     e.preventDefault();
-    const html = e.clipboardData.getData("text/html");
-    const plain = e.clipboardData.getData("text/plain");
-
-    let insertText = plain;
-
-    if (richText && html) {
-      // Allow only safe inline tags
-      const tmp = document.createElement("div");
-      tmp.innerHTML = html;
-      // Remove all block-level junk (section, div, nav, header, footer, article…)
-      tmp.querySelectorAll("section,div,nav,header,footer,article,aside,main,form,table,thead,tbody,tr,td,th,ul,ol,li,figure,figcaption,button,input,select,textarea,label,script,style,svg,img,video,audio,iframe").forEach(el => {
-        el.replaceWith(document.createTextNode(el.textContent || ""));
-      });
-      // Strip all attributes except href on <a> and style on <span>
-      tmp.querySelectorAll("*").forEach(el => {
-        const allowed = el.tagName === "A" ? ["href"] : el.tagName === "SPAN" ? ["style"] : [];
-        Array.from(el.attributes).forEach(attr => {
-          if (!allowed.includes(attr.name)) el.removeAttribute(attr.name);
-        });
-      });
-      insertText = tmp.innerHTML
-        .replace(/(<br\s*\/?>){2,}/gi, "<br>") // collapse multiple br
-        .replace(/^\s+|\s+$/g, "");
-    }
-
-    document.execCommand("insertHTML", false, insertText);
+    const insert = sanitizeEditorPaste(e.clipboardData, Boolean(richText));
+    restoreSelection(savedRange.current);
+    document.execCommand("insertHTML", false, insert);
+    if (ref.current) savedRange.current = selectionInside(ref.current);
   }, [richText]);
 
   // ── Formatting helpers ──────────────────────────────────────────────────
   const ensureSelection = useCallback(() => {
     if (!ref.current) return;
     ref.current.focus();
+    if (!selectionInside(ref.current)) restoreSelection(savedRange.current);
     const sel = window.getSelection();
     if (!sel || sel.isCollapsed || sel.rangeCount === 0) {
       const range = document.createRange();
@@ -155,32 +158,33 @@ export default function EditableText({
   const applyCommand = useCallback((fn: () => void) => {
     ensureSelection();
     fn();
+    if (ref.current) savedRange.current = selectionInside(ref.current);
     setFocused(true);
   }, [ensureSelection]);
 
   const applySize = useCallback((px: string) => {
     if (!ref.current) return;
-    ensureSelection();
-    const sel = window.getSelection();
-    if (!sel || sel.rangeCount === 0) return;
-    const range = sel.getRangeAt(0);
-    const span = document.createElement("span");
-    span.style.fontSize = px + "px";
-    try { range.surroundContents(span); }
-    catch { document.execCommand("insertHTML", false, `<span style="font-size:${px}px">${sel}</span>`); }
-  }, [ensureSelection]);
+    savedRange.current = applyInlineStyle(ref.current, savedRange.current, { fontSize: `${px}px` });
+  }, []);
+
+  const applyFont = useCallback((font: string) => {
+    if (!ref.current) return;
+    savedRange.current = applyInlineStyle(ref.current, savedRange.current, { fontFamily: font });
+  }, []);
 
   // Switch edit language: save current edits first, then switch
   const switchEditLang = useCallback((lang: Lang) => {
     if (!ref.current) { setEditLang(lang); return; }
-    // Commit current text to current editLang before switching
     const nextValue = richText ? ref.current.innerHTML : ref.current.textContent || "";
-    updateSection(section, setPath(allLangContent[editLang][section], field, nextValue), editLang);
+    updateSection(section, setPath(getLatestSection(section, editLang), field, nextValue), editLang);
+    const newVal = getPath(getLatestSection(section, lang), field) as string;
+    if (richText) ref.current.innerHTML = newVal;
+    else ref.current.textContent = htmlToText(newVal);
     setEditLang(lang);
     editing.current = false;
-  }, [ref, richText, updateSection, section, field, allLangContent, editLang]);
+  }, [ref, richText, updateSection, section, field, getLatestSection, editLang]);
 
-  const El = (tag || "span") as any;
+  const El = (tag || "span") as React.ElementType;
 
   // ── Non-admin ─────────────────────────────────────────────────────────────
   if (!isAdmin) {
@@ -192,10 +196,17 @@ export default function EditableText({
 
   // ── Admin: floating toolbar with lang tabs ────────────────────────────────
   const toolbar = mounted && focused && tbPos
-    ? createPortal(
-        <div
-          onMouseDown={e => e.preventDefault()}
-          style={{
+	    ? createPortal(
+	        <div
+	          onMouseDown={e => {
+	            toolbarInteracting.current = true;
+	            const target = e.target as HTMLElement;
+	            if (!target.closest("select,input")) e.preventDefault();
+	          }}
+	          onMouseUp={() => {
+	            window.setTimeout(() => { toolbarInteracting.current = false; }, 0);
+	          }}
+	          style={{
             position: "fixed",
             top: tbPos.top,
             left: tbPos.left,
@@ -248,7 +259,7 @@ export default function EditableText({
               const cmd = l === "B" ? "bold" : l === "I" ? "italic" : "underline";
               return (
                 <button key={l} type="button" title={cmd}
-                  onClick={() => applyCommand(() => document.execCommand(cmd, false))}
+                  onMouseDown={e => { e.preventDefault(); applyCommand(() => document.execCommand(cmd, false)); }}
                   style={{ fontWeight: l === "B" ? 700 : 400, fontStyle: l === "I" ? "italic" : "normal",
                     textDecoration: l === "U" ? "underline" : "none", padding: "3px 8px",
                     background: "rgba(255,255,255,0.1)", border: "none", color: "#fff",
@@ -260,6 +271,7 @@ export default function EditableText({
             <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.2)", margin: "0 2px" }} />
 
             <select defaultValue=""
+              onMouseDown={() => { if (ref.current) savedRange.current = selectionInside(ref.current); }}
               onChange={e => { applyCommand(() => applySize(e.target.value)); e.target.value = ""; }}
               style={{ fontSize: 11, background: "#1f2937", color: "#fff", border: "1px solid #374151", borderRadius: 5, padding: "3px 4px", maxWidth: 72 }}
             >
@@ -268,7 +280,8 @@ export default function EditableText({
             </select>
 
             <select defaultValue=""
-              onChange={e => { applyCommand(() => document.execCommand("fontName", false, e.target.value)); e.target.value = ""; }}
+              onMouseDown={() => { if (ref.current) savedRange.current = selectionInside(ref.current); }}
+              onChange={e => { applyCommand(() => applyFont(e.target.value)); e.target.value = ""; }}
               style={{ fontSize: 11, background: "#1f2937", color: "#fff", border: "1px solid #374151", borderRadius: 5, padding: "3px 4px", maxWidth: 110 }}
             >
               <option value="" disabled>Font</option>
@@ -281,6 +294,7 @@ export default function EditableText({
               A
               <input type="color" defaultValue="#ffffff"
                 onChange={e => applyCommand(() => document.execCommand("foreColor", false, e.target.value))}
+                onMouseDown={() => { if (ref.current) savedRange.current = selectionInside(ref.current); }}
                 style={{ width: 18, height: 18, border: "none", background: "none", padding: 0, cursor: "pointer" }}
               />
             </label>
@@ -313,13 +327,22 @@ export default function EditableText({
         contentEditable
         suppressContentEditableWarning
         onFocus={() => { editing.current = true; setFocused(true); }}
-        onBlur={(e: React.FocusEvent<HTMLElement>) => {
-          const nextValue = richText ? e.currentTarget.innerHTML : e.currentTarget.textContent || "";
-          editing.current = false;
-          setFocused(false);
-          updateSection(section, setPath(allLangContent[editLang][section], field, nextValue), editLang);
+	        onBlur={(e: React.FocusEvent<HTMLElement>) => {
+	          const nextValue = richText ? e.currentTarget.innerHTML : e.currentTarget.textContent || "";
+	          editing.current = false;
+	          if (toolbarInteracting.current) {
+	            window.setTimeout(() => setFocused(true), 0);
+	          } else {
+	            setFocused(false);
+	          }
+          // getLatestSection reads from allLangContentRef (always fresh) — prevents overwriting
+          // concurrent edits that happened while this element was focused.
+          updateSection(section, setPath(getLatestSection(section, editLang), field, nextValue), editLang);
         }}
         onPaste={handlePaste}
+        onInput={() => { if (ref.current) savedRange.current = selectionInside(ref.current); }}
+        onMouseUp={() => { if (ref.current) savedRange.current = selectionInside(ref.current); }}
+        onKeyUp={() => { if (ref.current) savedRange.current = selectionInside(ref.current); }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       />

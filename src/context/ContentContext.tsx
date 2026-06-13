@@ -36,6 +36,8 @@ interface ContentContextValue {
   undo: () => void;
   logout: () => Promise<void>;
   refreshAdmin: () => Promise<void>;
+  // Always returns the latest section data regardless of React render cycle
+  getLatestSection: <K extends keyof SiteContent>(section: K, lang?: Lang) => SiteContent[K];
 }
 
 const ContentContext = createContext<ContentContextValue | null>(null);
@@ -57,6 +59,23 @@ const LANGS: Lang[] = ["cs", "en", "ua"];
 // from flashing before the DB value loads.
 function makeEmptyNavContent(base: SiteContent): SiteContent {
   return { ...base, header: { ...base.header, navItems: [] } };
+}
+
+function syncSharedMediaFields(all: Record<Lang, SiteContent>): Record<Lang, SiteContent> {
+  const newsletterImage = all.cs.newsletter?.image;
+  if (!newsletterImage) return all;
+
+  return {
+    ...all,
+    en: {
+      ...all.en,
+      newsletter: { ...all.en.newsletter, image: newsletterImage },
+    },
+    ua: {
+      ...all.ua,
+      newsletter: { ...all.ua.newsletter, image: newsletterImage },
+    },
+  };
 }
 
 export function ContentProvider({ children, initialContent }: { children: ReactNode; initialContent?: InitialContent }) {
@@ -84,10 +103,6 @@ export function ContentProvider({ children, initialContent }: { children: ReactN
   const allLangContentRef = useRef<Record<Lang, SiteContent>>(allLangContent);
   const pendingSectionsRef = useRef<Map<string, Lang>>(new Map()); // "section:lang" → Lang
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    allLangContentRef.current = allLangContent;
-  }, [allLangContent]);
 
   // ── Load on mount ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -125,7 +140,7 @@ export function ContentProvider({ children, initialContent }: { children: ReactN
         setupRequired: meData.setupRequired === true,
       });
     });
-  }, []);
+  }, [initialContent]);
 
   // ── Autosave helper ──────────────────────────────────────────────────────
   const flushSave = useCallback(async () => {
@@ -133,9 +148,11 @@ export function ContentProvider({ children, initialContent }: { children: ReactN
     if (pending.length === 0) return;
     pendingSectionsRef.current.clear();
     setSaveStatus("saving");
-    const all = allLangContentRef.current;
+    const all = syncSharedMediaFields(allLangContentRef.current);
+    allLangContentRef.current = all;
+    setAllLangContent(all);
     try {
-      await Promise.all(
+      const responses = await Promise.all(
         pending.map(([key, lang]) => {
           const section = key.split(":")[0];
           return fetch("/api/content", {
@@ -149,10 +166,20 @@ export function ContentProvider({ children, initialContent }: { children: ReactN
           });
         })
       );
+      const failed = await Promise.all(
+        responses
+          .filter(r => !r.ok)
+          .map(async r => `${r.status} ${r.url}: ${await r.text().catch(() => "")}`)
+      );
+      if (failed.length > 0) {
+        console.error("[ContentContext] Save failed:", failed);
+        throw new Error(`${failed.length} save(s) failed`);
+      }
       setSavedAllLangContent({ ...allLangContentRef.current });
       setSaveStatus("saved");
       setTimeout(() => setSaveStatus("idle"), 2000);
-    } catch {
+    } catch (err) {
+      console.error("[ContentContext] flushSave error:", err);
       setSaveStatus("unsaved");
     }
   }, []);
@@ -161,15 +188,28 @@ export function ContentProvider({ children, initialContent }: { children: ReactN
   const updateSection = useCallback(
     <K extends keyof SiteContent>(section: K, data: SiteContent[K], lang?: Lang) => {
       const targetLang = lang ?? currentLang;
-      setAllLangContent(prev => {
-        const next = {
-          ...prev,
-          [targetLang]: { ...prev[targetLang], [section]: data },
-        };
-        historyRef.current = [...historyRef.current.slice(-(MAX_HISTORY - 1)), prev];
-        setCanUndo(true);
-        return next;
-      });
+      // Compute next state and update the ref SYNCHRONOUSLY — so any immediate
+      // saveSection() call reads the correct new data, not the stale value.
+      const prev = allLangContentRef.current;
+      let next = {
+        ...prev,
+        [targetLang]: { ...prev[targetLang], [section]: data },
+      };
+      if (section === "newsletter") {
+        const image = (data as SiteContent["newsletter"]).image;
+        if (image) {
+          next = {
+            ...next,
+            cs: { ...next.cs, newsletter: { ...next.cs.newsletter, image } },
+            en: { ...next.en, newsletter: { ...next.en.newsletter, image } },
+            ua: { ...next.ua, newsletter: { ...next.ua.newsletter, image } },
+          };
+        }
+      }
+      allLangContentRef.current = next;
+      historyRef.current = [...historyRef.current.slice(-(MAX_HISTORY - 1)), prev];
+      setAllLangContent(next);
+      setCanUndo(true);
       pendingSectionsRef.current.set(`${String(section)}:${targetLang}`, targetLang);
       setSaveStatus("unsaved");
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
@@ -207,7 +247,9 @@ export function ContentProvider({ children, initialContent }: { children: ReactN
   // ── Save all ──────────────────────────────────────────────────────────────
   const saveAll = useCallback(async () => {
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
-    const all = allLangContentRef.current;
+    const all = syncSharedMediaFields(allLangContentRef.current);
+    allLangContentRef.current = all;
+    setAllLangContent(all);
     LANGS.forEach(lang =>
       Object.keys(all[lang]).forEach(sec =>
         pendingSectionsRef.current.set(`${sec}:${lang}`, lang)
@@ -249,6 +291,13 @@ export function ContentProvider({ children, initialContent }: { children: ReactN
   const content = allLangContent[currentLang];
   const savedContent = savedAllLangContent[currentLang];
 
+  // Reads from the mutable ref — always returns the latest data even during async operations
+  // where the React state in the caller's closure may be stale (e.g. after an image upload).
+  const getLatestSection = useCallback(<K extends keyof SiteContent>(section: K, lang?: Lang): SiteContent[K] => {
+    const targetLang = lang ?? currentLang;
+    return allLangContentRef.current[targetLang][section];
+  }, [currentLang]);
+
   const value: ContentContextValue = {
     content,
     savedContent,
@@ -265,6 +314,7 @@ export function ContentProvider({ children, initialContent }: { children: ReactN
     undo,
     logout,
     refreshAdmin,
+    getLatestSection,
   };
 
   return (

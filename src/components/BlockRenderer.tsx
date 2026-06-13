@@ -225,7 +225,8 @@ function CardsGridBlock({ b, ctx }: { b: PageBlock; ctx: EditableBlockContext })
   );
 }
 
-function TwoColBlock({ b, ctx }: { b: PageBlock; ctx: EditableBlockContext }) {
+function TwoColBlock({ b, ctx, pageSlug }: { b: PageBlock; ctx: EditableBlockContext; pageSlug?: string }) {
+  const topAligned = pageSlug === "o-mne";
   const imgCol = (
     <div className="page-two-col-image" style={{ flex: 1, minWidth: 0 }}>
       {b.twoColImage && (
@@ -238,7 +239,7 @@ function TwoColBlock({ b, ctx }: { b: PageBlock; ctx: EditableBlockContext }) {
     </div>
   );
   const textCol = (
-    <div className="page-two-col-text" style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+    <div className="page-two-col-text" style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: topAligned ? "flex-start" : "center" }}>
       {b.twoColTitle && editableText(ctx, "twoColTitle", b.twoColTitle, "h2", { fontFamily: "'Poppins',sans-serif", fontSize: 32, fontWeight: 700, color: "#1f1f1f", margin: "0 0 16px" }, false, "page-two-col-title")}
       {b.twoColText && editableText(ctx, "twoColText", b.twoColText, "div", { fontFamily: "'Poppins',sans-serif", fontSize: 16, lineHeight: 1.8, color: "#374151", margin: "0 0 24px" }, true, "page-two-col-content")}
       {b.twoColBtnText && (
@@ -249,7 +250,7 @@ function TwoColBlock({ b, ctx }: { b: PageBlock; ctx: EditableBlockContext }) {
     </div>
   );
   return (
-    <div className="page-two-col-block" style={{ display: "flex", gap: 48, alignItems: "center", padding: "40px 0", flexWrap: "wrap" }}>
+    <div className="page-two-col-block" style={{ display: "flex", gap: 48, alignItems: topAligned ? "flex-start" : "center", padding: "40px 0", flexWrap: "wrap" }}>
       {b.imageLeft !== false ? imgCol : textCol}
       {b.imageLeft !== false ? textCol : imgCol}
     </div>
@@ -277,7 +278,7 @@ export default function BlockRenderer({ blocks, pageSlug }: { blocks: PageBlock[
           {b.type === "spacer" && <div style={{ height: b.height || 40 }} />}
           {b.type === "hero-section" && <HeroSectionBlock b={b} ctx={ctx} />}
           {b.type === "cards-grid" && <CardsGridBlock b={b} ctx={ctx} />}
-          {b.type === "two-col" && <TwoColBlock b={b} ctx={ctx} />}
+          {b.type === "two-col" && <TwoColBlock b={b} ctx={ctx} pageSlug={pageSlug} />}
           {b.type === "faq" && <FaqAccordionBlock b={b} />}
         </div>
         );
@@ -295,8 +296,11 @@ export default function BlockRenderer({ blocks, pageSlug }: { blocks: PageBlock[
           margin: 0 0 14px;
         }
         .page-text-content p,
-        .page-two-col-content p {
+        .page-text-content div,
+        .page-two-col-content p,
+        .page-two-col-content div {
           margin: 0 0 14px;
+          min-height: 1em;
         }
         .page-text-content ul,
         .page-two-col-content ul {

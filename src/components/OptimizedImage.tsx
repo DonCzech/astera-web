@@ -4,7 +4,7 @@ type Props = React.ImgHTMLAttributes<HTMLImageElement> & {
   pictureStyle?: React.CSSProperties;
 };
 
-const uploadVariantWidths = [331, 480, 662, 828, 1200, 1600, 1800];
+const uploadVariantWidths = [480, 828, 1600];
 
 function extensionFor(src: string) {
   const clean = src.split("?")[0];
@@ -41,6 +41,8 @@ export function getOptimizedImage(src?: string) {
   if (!src || src.startsWith("data:") || src.startsWith("http") || src.endsWith(".svg")) {
     return null;
   }
+  // /uploads/ files are runtime-generated and ephemeral on Vercel — no srcset
+  if (src.startsWith("/uploads/")) return null;
   return OPTIMIZED_IMAGE_MAP[src] ?? derivedUploadImage(src);
 }
 

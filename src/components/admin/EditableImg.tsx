@@ -38,9 +38,10 @@ interface Props {
 }
 
 export default function EditableImg({ section, field, alt, style, className, sizes }: Props) {
-  const { content, admin, updateSection } = useContent();
+  const { content, admin, updateSection, saveSection, getLatestSection } = useContent();
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [hovered, setHovered] = useState(false);
   const [localPreview, setLocalPreview] = useState<string | null>(null);
   const [dims, setDims] = useState<{ w: number; h: number } | null>(null);
@@ -55,9 +56,66 @@ export default function EditableImg({ section, field, alt, style, className, siz
     img.src = src;
   }, [src]);
 
+  // Compress image client-side before upload.
+  // HEIC/HEIF always goes through canvas — Vercel's sharp build lacks the HEVC codec.
+  // Large images (> 3.5 MB) also get compressed to stay under Vercel's 4.5 MB body limit.
+  async function compressForUpload(file: File): Promise<{ blob: Blob; name: string }> {
+    const MAX_BYTES = 3.5 * 1024 * 1024;
+    const MAX_PX = 1800;
+    const lowerName = file.name.toLowerCase();
+    const isVector = file.type === "image/svg+xml";
+    const isGif = file.type === "image/gif";
+    const isHeic = file.type.includes("heic") || file.type.includes("heif")
+      || lowerName.endsWith(".heic") || lowerName.endsWith(".heif");
+
+    if (isVector || isGif) return { blob: file, name: file.name };
+    // Skip canvas for small non-HEIC images
+    if (!isHeic && file.size <= MAX_BYTES) return { blob: file, name: file.name };
+
+    // PNG and WebP may have alpha channel — use WebP output to preserve transparency.
+    // JPEG output destroys alpha (fills with black). HEIC/others → JPEG is fine.
+    const mightHaveAlpha = file.type === "image/png" || file.type === "image/webp";
+    const outMime = mightHaveAlpha ? "image/webp" : "image/jpeg";
+
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("Soubor se nepodařilo přečíst. Zkus ho exportovat jako JPEG v Fotkách."));
+      reader.onload = ev => {
+        const dataUrl = ev.target?.result as string;
+        const img = new Image();
+        img.onerror = () => reject(new Error("Obrázek se nepodařilo otevřít. Ulož ho nejdřív jako JPEG a zkus znovu."));
+        img.onload = () => {
+          const scale = Math.min(1, MAX_PX / Math.max(img.naturalWidth, img.naturalHeight));
+          const w = Math.round(img.naturalWidth * scale);
+          const h = Math.round(img.naturalHeight * scale);
+          const canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+          canvas.toBlob(
+            blob => {
+              if (!blob) { reject(new Error("Komprese selhala. Zkus jiný soubor.")); return; }
+              // blob.type may differ if browser fell back (e.g. WebP → PNG on old Safari)
+              const actualMime = blob.type || outMime;
+              const ext = actualMime === "image/png" ? ".png" : actualMime === "image/webp" ? ".webp" : ".jpg";
+              const out = new File([blob], file.name.replace(/\.[^.]+$/, "") + ext, { type: actualMime });
+              resolve({ blob: out, name: out.name });
+            },
+            outMime,
+            0.88
+          );
+        };
+        img.src = dataUrl;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    setUploadError(null);
 
     // Immediate local preview
     const reader = new FileReader();
@@ -67,14 +125,30 @@ export default function EditableImg({ section, field, alt, style, className, siz
     reader.readAsDataURL(file);
 
     setUploading(true);
-    const fd = new FormData();
-    fd.append("file", file);
-    const res = await fetch("/api/upload", { method: "POST", body: fd });
-    const data = await res.json();
-    setUploading(false);
-    if (data.url) {
-      updateSection(section, setPath(content[section], field, data.url));
-      setLocalPreview(null); // clear local preview, use real URL
+    try {
+      const { blob, name } = await compressForUpload(file);
+      const fd = new FormData();
+      fd.append("file", new File([blob], name, { type: blob.type || file.type }));
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const data = await res.json();
+      if (data.url) {
+        // Use getLatestSection (reads from ref) instead of content[section] (stale React closure)
+        // to avoid overwriting concurrent edits made during the async upload.
+        const newSection = setPath(getLatestSection(section), field, data.url);
+        updateSection(section, newSection);
+        setLocalPreview(null);
+        await saveSection(section);
+      } else {
+        console.error("[EditableImg] upload error:", data);
+        setUploadError(data.error || "Upload selhal");
+        setLocalPreview(null);
+      }
+    } catch (err) {
+      console.error("[EditableImg]", err);
+      setUploadError("Chyba při uploadu");
+      setLocalPreview(null);
+    } finally {
+      setUploading(false);
     }
     e.target.value = "";
   }
@@ -116,12 +190,45 @@ export default function EditableImg({ section, field, alt, style, className, siz
         }}
       />
 
+      {/* Upload progress overlay — fullscreen, blocks all interaction */}
+      {uploading && (
+        <div style={{
+          position: "fixed", inset: 0,
+          background: "rgba(0,0,0,0.75)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          flexDirection: "column", gap: 16, zIndex: 99999,
+          backdropFilter: "blur(3px)",
+        }}>
+          <div style={{
+            background: "rgba(255,255,255,0.08)",
+            border: "1px solid rgba(255,255,255,0.15)",
+            borderRadius: 20,
+            padding: "40px 56px",
+            display: "flex", flexDirection: "column", alignItems: "center", gap: 18,
+            boxShadow: "0 8px 40px rgba(0,0,0,0.5)",
+          }}>
+            <svg viewBox="0 0 44 44" style={{ width: 56, height: 56, animation: "ei-spin 1s linear infinite" }}>
+              <circle cx="22" cy="22" r="18" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="4" />
+              <circle cx="22" cy="22" r="18" fill="none" stroke="#fff" strokeWidth="4"
+                strokeLinecap="round" strokeDasharray="28 85" />
+            </svg>
+            <div style={{ color: "#fff", fontSize: 18, fontFamily: "'Poppins', sans-serif", fontWeight: 700, letterSpacing: "-0.3px" }}>
+              Nahrávám obrázek…
+            </div>
+            <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, fontFamily: "'Poppins', sans-serif", textAlign: "center", lineHeight: 1.5 }}>
+              Prosím počkejte.<br />Neklikejte na refresh stránky.
+            </div>
+          </div>
+          <style>{`@keyframes ei-spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
+      )}
+
       {/* Hover overlay */}
       <div
         style={{
           position: "absolute",
           inset: 0,
-          background: hovered ? "rgba(0,0,0,0.52)" : "transparent",
+          background: !uploading && hovered ? "rgba(0,0,0,0.52)" : "transparent",
           borderRadius: style?.borderRadius,
           transition: "background 0.2s",
           display: "flex",
@@ -131,23 +238,20 @@ export default function EditableImg({ section, field, alt, style, className, siz
           gap: 6,
         }}
       >
-        {hovered && (
+        {!uploading && hovered && (
           <>
-            {uploading ? (
-              <div style={{ color: "#fff", fontSize: 13, fontFamily: "'Poppins', sans-serif", background: "rgba(0,0,0,0.5)", padding: "8px 14px", borderRadius: 8 }}>
-                Nahrávám…
+            <div style={{ fontSize: 32 }}>📷</div>
+            <div style={{ color: "#fff", fontSize: 13, fontFamily: "'Poppins', sans-serif", fontWeight: 600 }}>Změnit obrázek</div>
+            <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 11, fontFamily: "'Poppins', sans-serif" }}>klikni pro výběr souboru</div>
+            {dims && (
+              <div style={{ color: "#fff", fontSize: 11, fontFamily: "monospace", fontWeight: 700, background: "rgba(0,0,0,0.45)", borderRadius: 4, padding: "2px 8px", marginTop: 4 }}>
+                {dims.w} × {dims.h} px
               </div>
-            ) : (
-              <>
-                <div style={{ fontSize: 32 }}>📷</div>
-                <div style={{ color: "#fff", fontSize: 13, fontFamily: "'Poppins', sans-serif", fontWeight: 600 }}>Změnit obrázek</div>
-                <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 11, fontFamily: "'Poppins', sans-serif" }}>klikni pro výběr souboru</div>
-                {dims && (
-                  <div style={{ color: "#fff", fontSize: 11, fontFamily: "monospace", fontWeight: 700, background: "rgba(0,0,0,0.45)", borderRadius: 4, padding: "2px 8px", marginTop: 4 }}>
-                    {dims.w} × {dims.h} px
-                  </div>
-                )}
-              </>
+            )}
+            {uploadError && (
+              <div style={{ color: "#f87171", fontSize: 11, fontFamily: "'Poppins', sans-serif", background: "rgba(0,0,0,0.6)", borderRadius: 4, padding: "2px 8px", marginTop: 4 }}>
+                {uploadError}
+              </div>
             )}
           </>
         )}
@@ -156,7 +260,7 @@ export default function EditableImg({ section, field, alt, style, className, siz
       <input
         ref={fileRef}
         type="file"
-        accept="image/*"
+        accept="image/*,.heic,.heif"
         style={{ display: "none" }}
         onChange={handleFile}
       />

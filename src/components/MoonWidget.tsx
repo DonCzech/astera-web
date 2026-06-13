@@ -2,41 +2,15 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { MOON_DATA } from "@/lib/moon-data";
+import { useContent } from "@/context/ContentContext";
+import type { Lang } from "@/lib/i18n";
+import { DEFAULT_CONTENT } from "@/lib/content-types";
 
-const PHASE_CS: Record<string, string> = {
-  "New Moon":       "Nový měsíc",
-  "Waxing Crescent":"Dorůstající srpek",
-  "First Quarter":  "První čtvrtina",
-  "Waxing Gibbous": "Dorůstající měsíc",
-  "Full Moon":      "Úplněk",
-  "Waning Gibbous": "Ubývající měsíc",
-  "Third Quarter":  "Poslední čtvrtina",
-  "Last Quarter":   "Poslední čtvrtina",
-  "Waning Crescent":"Ubývající srpek",
+const MOON_LOCALES: Record<Lang, string> = {
+  cs: "cs-CZ",
+  en: "en-GB",
+  ua: "uk-UA",
 };
-
-const PHASE_DESC: Record<string, string> = {
-  "New Moon":       "Měsíc není viditelný. Čas nových záměrů, začátků a otevírání nových kapitol.",
-  "Waxing Crescent":"Světlo pomalu přibývá. Ideální čas pro plánování, budování a první kroky.",
-  "First Quarter":  "Polovina cesty k úplňku. Čas rozhodnutí a překonávání překážek.",
-  "Waxing Gibbous": "Energie a světlo narůstají. Záměry se rozvíjejí, dochází k pokroku.",
-  "Full Moon":      "Měsíc svítí v plné síle. Vrchol energie, vyvrcholení a osvícení.",
-  "Waning Gibbous": "Světlo začíná ubývat. Čas vděčnosti, sdílení a reflexe.",
-  "Third Quarter":  "Čas uvolnění a odpouštění. Zbavte se toho, co již neslouží.",
-  "Last Quarter":   "Čas uvolnění a odpouštění. Zbavte se toho, co již neslouží.",
-  "Waning Crescent":"Příprava na nový cyklus. Odpočinek, introspekce a odevzdání.",
-};
-
-const STAGE_CS: Record<string, string> = {
-  "Waxing": "dorůstající",
-  "Waning": "ubývající",
-};
-
-const CZECH_MONTHS = [
-  "ledna","února","března","dubna","května","června",
-  "července","srpna","září","října","listopadu","prosince",
-];
-const CZECH_DAYS = ["neděle","pondělí","úterý","středa","čtvrtek","pátek","sobota"];
 
 function todayKey() {
   const n = new Date();
@@ -51,11 +25,16 @@ function fallbackImg(date: Date): string {
   return `${map[Math.round((age/cycle)*16)%16]}.png`;
 }
 
-function buildMoonDay() {
+function buildMoonDay(lang: Lang) {
   const now = new Date();
   const key = todayKey();
   const entry = MOON_DATA[key] ?? { img: fallbackImg(now), phase: "Waxing Gibbous", stage: "Waxing", illumination: 50 };
-  const label = `${CZECH_DAYS[now.getDay()]} ${now.getDate()}. ${CZECH_MONTHS[now.getMonth()]} ${now.getFullYear()}`;
+  const label = new Intl.DateTimeFormat(MOON_LOCALES[lang], {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(now);
   return { entry, label };
 }
 
@@ -65,9 +44,10 @@ interface Props {
 }
 
 export default function MoonWidget({ headerHeight }: Props) {
+  const { content, currentLang } = useContent();
   const [open, setOpen] = useState(false);
   // Calculate synchronously — moon phase is the same all day, no hydration mismatch
-  const [{ entry: moonDay, label: dateLabel }] = useState(buildMoonDay);
+  const { entry: moonDay, label: dateLabel } = buildMoonDay(currentLang);
   const popupRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -79,9 +59,11 @@ export default function MoonWidget({ headerHeight }: Props) {
     return () => { document.removeEventListener("keydown", onKey); document.removeEventListener("mousedown", onClick); };
   }, [open]);
 
-  const phaseCs = PHASE_CS[moonDay.phase] ?? moonDay.phase;
-  const desc    = PHASE_DESC[moonDay.phase] ?? "";
-  const stageCs = STAGE_CS[moonDay.stage]  ?? moonDay.stage;
+  const moonContent = content.moonWidget ?? DEFAULT_CONTENT.moonWidget;
+  const phaseText = moonContent.phases?.[moonDay.phase];
+  const phaseLabel = phaseText?.label || moonDay.phase;
+  const desc       = phaseText?.description || "";
+  const stageLabel = moonContent.stages?.[moonDay.stage] || moonDay.stage;
   const imgSrc  = `/images/moon-phases/${moonDay.img}`;
 
   return (
@@ -89,7 +71,7 @@ export default function MoonWidget({ headerHeight }: Props) {
       {/* ── Nav item ──────────────────────────────────────────── */}
       <button
         onClick={() => setOpen(true)}
-        aria-label="Fáze měsíce"
+        aria-label={moonContent.aria}
         style={{
           display: "flex", alignItems: "center", gap: "7px",
           padding: "0 12px",
@@ -105,12 +87,12 @@ export default function MoonWidget({ headerHeight }: Props) {
         onMouseLeave={e => (e.currentTarget.style.color = "#1f1f1f")}
       >
         <Image
-          src={imgSrc} alt={phaseCs}
+          src={imgSrc} alt={phaseLabel}
           width={20} height={20}
           style={{ borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
           unoptimized
         />
-        <span className="moon-widget-text">{phaseCs}</span>
+        <span className="moon-widget-text">{phaseLabel}</span>
       </button>
 
       {/* ── Popup ─────────────────────────────────────────────── */}
@@ -138,7 +120,7 @@ export default function MoonWidget({ headerHeight }: Props) {
           >
             <button
               onClick={() => setOpen(false)}
-              aria-label="Zavřít"
+              aria-label={moonContent.close}
               style={{
                 position: "absolute", top: "14px", right: "16px",
                 background: "none", border: "none", cursor: "pointer",
@@ -149,7 +131,7 @@ export default function MoonWidget({ headerHeight }: Props) {
             >×</button>
 
             <div style={{ marginBottom: "22px" }}>
-              <Image src={imgSrc} alt={phaseCs} width={180} height={180}
+              <Image src={imgSrc} alt={phaseLabel} width={180} height={180}
                 style={{ borderRadius: "50%", objectFit: "cover" }} unoptimized />
             </div>
 
@@ -160,12 +142,12 @@ export default function MoonWidget({ headerHeight }: Props) {
 
             <h2 style={{ color: "#f0e4c0", fontSize: "22px",
               fontFamily: "'Playfair Display', serif", marginBottom: "5px", textAlign: "center" }}>
-              {phaseCs}
+              {phaseLabel}
             </h2>
 
             <p style={{ color: "#9b8e72", fontSize: "12px",
               fontFamily: "'Poppins', sans-serif", marginBottom: "18px" }}>
-              osvětlení {moonDay.illumination}&nbsp;% · {stageCs}
+              {moonContent.illumination} {moonDay.illumination}&nbsp;% · {stageLabel}
             </p>
 
             <div style={{ width: "40px", height: "1px", backgroundColor: "#2a2a40", marginBottom: "18px" }} />

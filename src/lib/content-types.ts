@@ -4,6 +4,12 @@ export interface NavItem {
   dropdown?: { label: string; href: string }[];
 }
 
+export interface Testimonial {
+  name: string;
+  text: string;
+  emoji: string;
+}
+
 export interface ManifestCard {
   image: string;
   badge: string;
@@ -118,6 +124,14 @@ export interface WheelOfFortuneConfig {
   segments: WheelSegment[];
 }
 
+export interface MoonWidgetConfig {
+  aria: string;
+  close: string;
+  illumination: string;
+  phases: Record<string, { label: string; description: string }>;
+  stages: Record<string, string>;
+}
+
 export interface AboutPageSection {
   heroTitle: string;
   heroSubtitle: string;
@@ -225,6 +239,10 @@ export interface SiteContent {
     imageTop: string;
     imageBottom: string;
   };
+  testimonials: {
+    sectionTitle: string;
+    items: Testimonial[];
+  };
   manifest: {
     sectionTitle: string;
     cards: ManifestCard[];
@@ -258,6 +276,7 @@ export interface SiteContent {
   pages: CustomPage[];
   siteSettings: SiteSettings;
   wheelOfFortune: WheelOfFortuneConfig;
+  moonWidget: MoonWidgetConfig;
 }
 
 export const SITE = "https://www.asteralight.cz";
@@ -304,6 +323,16 @@ export const DEFAULT_CONTENT: SiteContent = {
     buttonHref: "/about",
     imageTop: "/images/astera-about-home.png",
     imageBottom: "",
+  },
+  testimonials: {
+    sectionTitle: "Co o mně říkají",
+    items: [
+      { name: "Tereza K.", emoji: "🌙", text: "Konzultace s Asterou mi otevřela oči. Konečně jsem pochopila, proč opakuji stejné vzorce ve vztazích. Přesné, laskavé a hluboce pravdivé." },
+      { name: "Markéta V.", emoji: "✨", text: "Numerologický rozbor byl neuvěřitelně přesný. Astera mi pomohla pochopit mé životní číslo a nasměrovat energii tam, kam patří." },
+      { name: "Jana H.", emoji: "🔮", text: "Výklad karet byl tak přesný, až mi naskočila husí kůže. Astera má vzácný dar — mluví přímo k duši, bez zbytečných obalů." },
+      { name: "Lucie M.", emoji: "🌸", text: "Po konzultaci jsem konečně přijala rozhodnutí, které jsem odkládala celý rok. Cítila jsem se bezpečně a pochopena." },
+      { name: "Petra Š.", emoji: "💫", text: "Astera propojuje intuici s praktickými radami. Nejen že mi řekla, co vidí — pomohla mi i pochopit, co s tím dělat." },
+    ],
   },
   manifest: {
     sectionTitle: "Vyber si, co právě potřebuješ",
@@ -401,6 +430,26 @@ export const DEFAULT_CONTENT: SiteContent = {
       { name: "TikTok", href: "https://www.tiktok.com/@asteralight" },
       { name: "LinkedIn", href: "https://www.linkedin.com/in/asteralight" },
     ],
+  },
+  moonWidget: {
+    aria: "Fáze měsíce",
+    close: "Zavřít",
+    illumination: "osvětlení",
+    phases: {
+      "New Moon": { label: "Nový měsíc", description: "Měsíc není viditelný. Čas nových záměrů, začátků a otevírání nových kapitol." },
+      "Waxing Crescent": { label: "Dorůstající srpek", description: "Světlo pomalu přibývá. Ideální čas pro plánování, budování a první kroky." },
+      "First Quarter": { label: "První čtvrtina", description: "Polovina cesty k úplňku. Čas rozhodnutí a překonávání překážek." },
+      "Waxing Gibbous": { label: "Dorůstající měsíc", description: "Energie a světlo narůstají. Záměry se rozvíjejí, dochází k pokroku." },
+      "Full Moon": { label: "Úplněk", description: "Měsíc svítí v plné síle. Vrchol energie, vyvrcholení a osvícení." },
+      "Waning Gibbous": { label: "Ubývající měsíc", description: "Světlo začíná ubývat. Čas vděčnosti, sdílení a reflexe." },
+      "Third Quarter": { label: "Poslední čtvrtina", description: "Čas uvolnění a odpouštění. Zbavte se toho, co již neslouží." },
+      "Last Quarter": { label: "Poslední čtvrtina", description: "Čas uvolnění a odpouštění. Zbavte se toho, co již neslouží." },
+      "Waning Crescent": { label: "Ubývající srpek", description: "Příprava na nový cyklus. Odpočinek, introspekce a odevzdání." },
+    },
+    stages: {
+      Waxing: "dorůstající",
+      Waning: "ubývající",
+    },
   },
   aboutPage: {
     heroTitle: "About Astera-Light",

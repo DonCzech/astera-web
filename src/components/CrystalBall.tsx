@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useState } from "react";
 
 const answers = [
@@ -48,22 +49,27 @@ export default function CrystalBall() {
           </p>
 
           {/* Ball */}
-          <div className={`cb-ball-wrap${isShaking ? " cb-shake" : ""}`}>
-            <div className="cb-glow-ring" />
+          <div className={`cb-ball-wrap${isShaking ? " cb-reading" : ""}`}>
+            <div className="cb-table-glow" aria-hidden="true" />
+            <div className="cb-aura" aria-hidden="true" />
             <div className="cb-sphere">
-              <div className="cb-swirl cb-swirl-a" />
-              <div className="cb-swirl cb-swirl-b" />
-              <div className="cb-swirl cb-swirl-c" />
-              <div className="cb-shine" />
-              <div className="cb-shine-small" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/crystal-ball-astera.png"
+                alt="Křišťálová koule"
+                className="cb-ball-img"
+                draggable={false}
+              />
+              <div className="cb-caustic cb-caustic-a" aria-hidden="true" />
+              <div className="cb-caustic cb-caustic-b" aria-hidden="true" />
+              <div className="cb-light-sweep" />
+              <div className="cb-reading-veil" aria-hidden="true" />
               {answer && (
                 <div className={`cb-inner-answer${revealed ? " cb-visible" : ""}`}>
                   <p className="cb-inner-text">{answer}</p>
                 </div>
               )}
             </div>
-            <div className="cb-base-shadow" />
-            <div className="cb-base" />
           </div>
 
           {/* Input */}
@@ -90,9 +96,9 @@ export default function CrystalBall() {
             <p className="cb-answer-text">{answer}</p>
             <p className="cb-consult-text">
               Cítíš, že v poselství je něco víc?{" "}
-              <a href="/sluzby" className="cb-consult-link">
+              <Link href="/sluzby" className="cb-consult-link">
                 Konzultace ti pomůže porozumět tomu do hloubky.
-              </a>
+              </Link>
             </p>
           </div>
         </div>
@@ -100,8 +106,36 @@ export default function CrystalBall() {
 
       <style>{`
         .cb-section {
-          background: linear-gradient(160deg, #0e0720 0%, #1b0a35 45%, #0b1728 100%);
-          padding: 80px 0 90px;
+          position: relative;
+          background:
+            radial-gradient(ellipse 58% 44% at 50% 39%, rgba(236,218,255,0.20) 0%, rgba(180,143,211,0.10) 43%, transparent 72%),
+            radial-gradient(ellipse 64% 18% at 50% 70%, rgba(255,237,207,0.11) 0%, transparent 66%),
+            linear-gradient(180deg, #171021 0%, #21152c 42%, #15121c 100%);
+          padding: 88px 0 98px;
+          overflow: hidden;
+          isolation: isolate;
+        }
+        .cb-section::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background:
+            linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.045) 48%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.045) 52%, transparent 100%),
+            radial-gradient(ellipse 70% 48% at 50% 28%, rgba(255,255,255,0.065) 0%, transparent 68%);
+          opacity: 0.9;
+          pointer-events: none;
+          z-index: -2;
+        }
+        .cb-section::after {
+          content: "";
+          position: absolute;
+          inset: auto 0 0;
+          height: 36%;
+          background:
+            linear-gradient(180deg, transparent 0%, rgba(12,9,16,0.72) 100%),
+            radial-gradient(ellipse at 50% 0%, rgba(155,116,186,0.20) 0%, transparent 68%);
+          pointer-events: none;
+          z-index: -1;
         }
         .cb-wrap {
           display: flex;
@@ -114,7 +148,7 @@ export default function CrystalBall() {
           font-size: 12px;
           letter-spacing: 3.5px;
           text-transform: uppercase;
-          color: #a78bda;
+          color: #c8aee4;
           margin: 0 0 10px;
         }
         .cb-title {
@@ -126,130 +160,163 @@ export default function CrystalBall() {
         }
         .cb-subtitle {
           font-family: 'Poppins', sans-serif;
-          color: #c4a8e8;
+          color: #d7c8e4;
           font-size: 15px;
           line-height: 1.75;
-          margin: 0 0 52px;
+          margin: 0 0 46px;
           max-width: 480px;
         }
 
         /* ── Ball ── */
         .cb-ball-wrap {
           position: relative;
-          width: 300px;
-          height: 320px;
-          margin: 0 auto 44px;
+          width: min(96vw, 660px);
+          aspect-ratio: 3 / 2;
+          margin: 0 auto 40px;
+          animation: cb-float 6.4s ease-in-out infinite;
+          filter: drop-shadow(0 30px 34px rgba(0,0,0,0.38));
+          transform-origin: 50% 55%;
+          will-change: transform;
         }
-        .cb-glow-ring {
+        .cb-table-glow {
           position: absolute;
-          inset: -24px;
+          left: 10%;
+          right: 10%;
+          bottom: 0;
+          height: 24%;
           border-radius: 50%;
-          background: radial-gradient(circle, rgba(124,59,178,0.22) 0%, transparent 68%);
-          animation: cb-pulse 3.2s ease-in-out infinite;
+          background: radial-gradient(ellipse, rgba(234,211,255,0.22) 0%, rgba(255,235,205,0.12) 34%, transparent 70%);
+          filter: blur(18px);
+          pointer-events: none;
+          will-change: transform, opacity;
+        }
+        .cb-aura {
+          position: absolute;
+          inset: 12% 8% 6%;
+          border-radius: 50%;
+          background:
+            radial-gradient(circle at 50% 48%, rgba(255,240,218,0.52) 0%, rgba(224,199,247,0.20) 34%, transparent 72%);
+          filter: blur(22px);
+          transform: scale(1);
+          pointer-events: none;
         }
         .cb-sphere {
           position: absolute;
-          top: 0; left: 24px; right: 24px;
-          height: 252px;
-          border-radius: 50%;
-          background: radial-gradient(circle at 36% 32%,
-            #7b52c8 0%,
-            #4a2098 28%,
-            #1e0d45 60%,
-            #090e22 100%);
+          inset: 0;
           overflow: hidden;
-          box-shadow:
-            inset 0 0 55px rgba(100,70,200,0.45),
-            inset 0 0 22px rgba(59,130,246,0.25),
-            0 0 50px rgba(110,65,190,0.35),
-            0 0 100px rgba(110,65,190,0.12),
-            0 20px 60px rgba(0,0,0,0.6);
+          border-radius: 36px;
+          transform: translateZ(0);
         }
-        .cb-swirl {
+        .cb-ball-img {
+          width: 100%;
+          height: 100%;
+          display: block;
+          object-fit: contain;
+          user-select: none;
+          transform: scale(1.01);
+          filter: saturate(1.02) contrast(1.02);
+          will-change: transform, opacity;
+        }
+        .cb-caustic {
           position: absolute;
           border-radius: 50%;
+          pointer-events: none;
           mix-blend-mode: screen;
+          opacity: 0;
+          filter: blur(10px);
+          will-change: transform, opacity;
         }
-        .cb-swirl-a {
-          width: 170%; height: 170%;
-          top: -35%; left: -35%;
-          background: radial-gradient(ellipse at 45% 45%,
-            rgba(140,90,230,0.55) 0%, transparent 58%);
-          animation: cb-swirl1 9s linear infinite;
+        .cb-caustic-a {
+          top: 22%;
+          left: 27%;
+          width: 45%;
+          aspect-ratio: 1;
+          background: radial-gradient(circle, rgba(255,246,226,0.32), rgba(224,195,246,0.16) 42%, transparent 68%);
         }
-        .cb-swirl-b {
-          width: 150%; height: 150%;
-          top: -25%; left: -25%;
-          background: radial-gradient(ellipse at 58% 55%,
-            rgba(70,130,255,0.35) 0%, transparent 55%);
-          animation: cb-swirl1 14s linear infinite reverse;
+        .cb-caustic-b {
+          top: 34%;
+          left: 38%;
+          width: 25%;
+          aspect-ratio: 1;
+          background: radial-gradient(circle, rgba(255,255,255,0.28), transparent 70%);
         }
-        .cb-swirl-c {
-          width: 120%; height: 120%;
-          top: -10%; left: -10%;
-          background: radial-gradient(ellipse at 30% 70%,
-            rgba(180,100,255,0.2) 0%, transparent 50%);
-          animation: cb-swirl1 20s linear infinite;
-        }
-        .cb-shine {
+        .cb-light-sweep {
           position: absolute;
-          width: 38%; height: 26%;
-          top: 10%; left: 14%;
-          background: radial-gradient(ellipse,
-            rgba(255,255,255,0.38) 0%, transparent 100%);
-          border-radius: 50%;
-          transform: rotate(-28deg);
+          inset: 9% 18% 17%;
+          background: linear-gradient(105deg, transparent 18%, rgba(255,255,255,0.20) 43%, transparent 62%);
+          mix-blend-mode: screen;
+          opacity: 0;
+          transform: translateX(-70%) skewX(-10deg);
+          pointer-events: none;
+          will-change: transform, opacity;
         }
-        .cb-shine-small {
+        .cb-reading-veil {
           position: absolute;
-          width: 14%; height: 10%;
-          top: 52%; right: 16%;
-          background: radial-gradient(ellipse,
-            rgba(255,255,255,0.18) 0%, transparent 100%);
+          top: 23%;
+          left: 29%;
+          right: 29%;
+          aspect-ratio: 1;
           border-radius: 50%;
+          background:
+            radial-gradient(circle, rgba(255,246,226,0.34) 0%, rgba(217,188,244,0.18) 42%, transparent 70%);
+          opacity: 0;
+          mix-blend-mode: screen;
+          filter: blur(8px);
+          transform: scale(0.72);
+          pointer-events: none;
+          will-change: transform, opacity;
         }
         .cb-inner-answer {
           position: absolute;
-          inset: 0;
+          top: 24%;
+          left: 26%;
+          right: 26%;
+          aspect-ratio: 1;
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 24px;
-          background: rgba(8,4,26,0.65);
-          backdrop-filter: blur(2px);
+          padding: 28px;
+          border-radius: 50%;
+          background:
+            radial-gradient(circle, rgba(36,24,48,0.72) 0%, rgba(27,18,37,0.50) 58%, rgba(27,18,37,0.08) 72%, transparent 100%);
+          backdrop-filter: blur(1.5px);
           opacity: 0;
-          transition: opacity 0.9s ease;
+          transition: opacity 0.9s ease, transform 0.9s ease;
+          transform: scale(0.92);
         }
-        .cb-inner-answer.cb-visible { opacity: 1; }
+        .cb-inner-answer.cb-visible {
+          opacity: 1;
+          transform: scale(1);
+        }
         .cb-inner-text {
           font-family: 'Playfair Display', serif;
-          color: #e8d5ff;
-          font-size: 16px;
+          color: #f1e6ff;
+          font-size: 15px;
           line-height: 1.55;
           margin: 0;
-          text-shadow: 0 0 24px rgba(180,140,255,0.9), 0 0 8px rgba(180,140,255,0.5);
+          text-shadow: 0 0 18px rgba(210,178,244,0.58);
         }
-        .cb-base {
-          position: absolute;
-          bottom: 0; left: 50%;
-          transform: translateX(-50%);
-          width: 90px; height: 28px;
-          background: linear-gradient(135deg,
-            rgba(120,90,180,0.55) 0%,
-            rgba(60,30,100,0.75) 100%);
-          border-radius: 0 0 48px 48px;
-          box-shadow: 0 8px 24px rgba(0,0,0,0.55);
+        .cb-reading {
+          animation: cb-read-hold 1.45s cubic-bezier(.2,.7,.2,1) both;
+          filter: drop-shadow(0 30px 34px rgba(0,0,0,0.40));
         }
-        .cb-base-shadow {
-          position: absolute;
-          bottom: -6px; left: 50%;
-          transform: translateX(-50%);
-          width: 140px; height: 18px;
-          background: radial-gradient(ellipse, rgba(0,0,0,0.45) 0%, transparent 70%);
-          border-radius: 50%;
+        .cb-reading .cb-aura {
+          animation: cb-aura-read 1.45s ease-in-out both;
         }
-        .cb-shake {
-          animation: cb-shake 0.42s ease-in-out 0s 4;
+        .cb-reading .cb-ball-img {
+          animation: cb-ball-read 1.45s ease-in-out both;
+        }
+        .cb-reading .cb-caustic-a {
+          animation: cb-caustic-read 1.45s ease-in-out both;
+        }
+        .cb-reading .cb-caustic-b {
+          animation: cb-caustic-read 1.45s ease-in-out 0.12s both;
+        }
+        .cb-reading .cb-light-sweep {
+          animation: cb-sweep-read 1.45s ease-in-out both;
+        }
+        .cb-reading .cb-reading-veil {
+          animation: cb-veil-read 1.45s ease-in-out both;
         }
 
         /* ── Input ── */
@@ -326,28 +393,54 @@ export default function CrystalBall() {
         .cb-consult-link:hover { color: #ffffff; }
 
         /* ── Animations ── */
-        @keyframes cb-pulse {
-          0%, 100% { transform: scale(1); opacity: 0.7; }
-          50% { transform: scale(1.06); opacity: 1; }
+        @keyframes cb-float {
+          0%, 100% { transform: translateY(0) rotate(-0.25deg); }
+          50% { transform: translateY(-10px) rotate(0.25deg); }
         }
-        @keyframes cb-swirl1 {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
+        @keyframes cb-read-hold {
+          0% { transform: translateY(0) scale(1); }
+          45% { transform: translateY(-5px) scale(1.012); }
+          100% { transform: translateY(0) scale(1); }
         }
-        @keyframes cb-shake {
-          0%, 100% { transform: translate(0, 0) rotate(0deg); }
-          20% { transform: translate(-9px, 2px) rotate(-4deg); }
-          40% { transform: translate(9px, -2px) rotate(4deg); }
-          60% { transform: translate(-7px, 1px) rotate(-2deg); }
-          80% { transform: translate(7px, -1px) rotate(2deg); }
+        @keyframes cb-aura-read {
+          0% { opacity: 0.62; transform: scale(1); }
+          45% { opacity: 0.92; transform: scale(1.06); }
+          100% { opacity: 0.62; transform: scale(1); }
+        }
+        @keyframes cb-ball-read {
+          0% { transform: scale(1.01); opacity: 1; }
+          45% { transform: scale(1.018); opacity: 0.98; }
+          100% { transform: scale(1.01); opacity: 1; }
+        }
+        @keyframes cb-caustic-read {
+          0% { opacity: 0; transform: scale(0.8) translateY(4px); }
+          42% { opacity: 0.88; transform: scale(1.08) translateY(0); }
+          100% { opacity: 0; transform: scale(1.28) translateY(-3px); }
+        }
+        @keyframes cb-sweep-read {
+          0% { opacity: 0; transform: translateX(-70%) skewX(-10deg); }
+          38% { opacity: 0.42; }
+          78%, 100% { opacity: 0; transform: translateX(62%) skewX(-10deg); }
+        }
+        @keyframes cb-veil-read {
+          0% { opacity: 0; transform: scale(0.72); }
+          46% { opacity: 0.82; transform: scale(1); }
+          100% { opacity: 0; transform: scale(1.18); }
         }
 
         /* ── Responsive ── */
         @media (max-width: 600px) {
+          .cb-section { padding: 64px 0 76px; }
           .cb-title { font-size: 26px; }
-          .cb-ball-wrap { width: 240px; height: 260px; }
-          .cb-sphere { left: 18px; right: 18px; height: 202px; }
-          .cb-base { width: 72px; height: 22px; }
+          .cb-subtitle { margin-bottom: 36px; }
+          .cb-ball-wrap { width: min(98vw, 520px); margin-bottom: 34px; }
+          .cb-inner-answer {
+            top: 23%;
+            left: 24%;
+            right: 24%;
+            padding: 18px;
+          }
+          .cb-inner-text { font-size: 13px; line-height: 1.42; }
           .cb-input-row { flex-direction: column; }
           .cb-btn { border-radius: 50px; }
         }

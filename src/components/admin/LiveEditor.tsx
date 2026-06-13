@@ -3,7 +3,7 @@ import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { useContent } from "@/context/ContentContext";
 import { usePathname } from "next/navigation";
 import { stripLangPrefix } from "@/lib/i18n";
-import { DEFAULT_CONTENT, SiteContent, NavItem, ManifestCard, FooterLink, CustomPage, PageBlock, BlockType, SiteSettings, ServicesContent, ServiceItem, ServiceSection, PickACardGameCard, WheelOfFortuneConfig, WheelSegment } from "@/lib/content-types";
+import { DEFAULT_CONTENT, SiteContent, NavItem, ManifestCard, FooterLink, CustomPage, PageBlock, BlockType, SiteSettings, ServicesContent, ServiceItem, ServiceSection, PickACardGameCard, WheelOfFortuneConfig, WheelSegment, Testimonial, MoonWidgetConfig } from "@/lib/content-types";
 import RichTextEditor from "./RichTextEditor";
 
 type Section = keyof SiteContent;
@@ -13,9 +13,11 @@ const ALL_SECTIONS: { key: Section; label: string }[] = [
   { key: "hero", label: "Hero" },
   { key: "newsletter", label: "Newsletter" },
   { key: "about", label: "About" },
+  { key: "testimonials", label: "Recenze" },
   { key: "manifest", label: "Cards" },
   { key: "pickacard", label: "Pick Card" },
   { key: "oracle", label: "Oracle" },
+  { key: "moonWidget", label: "Měsíc" },
   { key: "servicesContent", label: "Služby" },
   { key: "wheelOfFortune", label: "🎡 Kolo štěstí" },
   { key: "footer", label: "Footer" },
@@ -24,13 +26,20 @@ const ALL_SECTIONS: { key: Section; label: string }[] = [
   { key: "siteSettings", label: "⚙️ Web" },
 ];
 
-const HOMEPAGE_KEYS: Section[] = ["header", "hero", "servicesContent", "newsletter", "about", "manifest", "pickacard", "oracle", "footer", "siteSettings"];
+const HOMEPAGE_KEYS: Section[] = ["header", "hero", "servicesContent", "newsletter", "about", "testimonials", "manifest", "pickacard", "oracle", "moonWidget", "footer", "siteSettings"];
 const CUSTOM_PAGE_KEYS: Section[] = ["pages", "siteSettings"];
 const SLUZBY_KEYS: Section[] = ["servicesContent", "wheelOfFortune", "siteSettings"];
 // Static Next.js routes that must never be treated as custom pages
 const STATIC_ROUTES = ["/", "/sluzby", "/about", "/pick-a-card", "/cs", "/en", "/ua"];
 
 const PANEL_W = 460; // panel width desktop
+
+function createEditorId(prefix = "id") {
+  if (typeof globalThis.crypto?.randomUUID === "function") {
+    return `${prefix}-${globalThis.crypto.randomUUID()}`;
+  }
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
 
 // ── Shared field components ─────────────────────────────────────────────────────
 
@@ -121,15 +130,16 @@ function ImageField({ label, value, onChange }: { label: string; value: string; 
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
-  const [dims, setDims] = useState<{ w: number; h: number } | null>(null);
+  const [imageInfo, setImageInfo] = useState<{ src: string; dims: { w: number; h: number } | null } | null>(null);
 
   const displaySrc = preview ?? value;
+  const dims = imageInfo?.src === displaySrc ? imageInfo.dims : null;
 
   useEffect(() => {
-    if (!displaySrc) { setDims(null); return; }
+    if (!displaySrc) return;
     const img = new window.Image();
-    img.onload = () => setDims({ w: img.naturalWidth, h: img.naturalHeight });
-    img.onerror = () => setDims(null);
+    img.onload = () => setImageInfo({ src: displaySrc, dims: { w: img.naturalWidth, h: img.naturalHeight } });
+    img.onerror = () => setImageInfo({ src: displaySrc, dims: null });
     img.src = displaySrc;
   }, [displaySrc]);
 
@@ -354,6 +364,64 @@ function AboutEditor() {
       </Field>
       <ImageField label="Obrázek nahoře" value={a.imageTop} onChange={v => upd("imageTop", v)} />
       <ImageField label="Obrázek dole" value={a.imageBottom} onChange={v => upd("imageBottom", v)} />
+    </div>
+  );
+}
+
+function TestimonialsEditor() {
+  const { content, updateSection } = useContent();
+  const sec = content.testimonials ?? { sectionTitle: "Co o mně říkají", items: [] };
+  const items: Testimonial[] = sec.items ?? [];
+
+  const updItems = (newItems: Testimonial[]) => updateSection("testimonials", { ...sec, items: newItems });
+
+  const addItem = () => updItems([...items, { name: "Jméno Příjmení", emoji: "✨", text: "Text recenze..." }]);
+  const removeItem = (i: number) => updItems(items.filter((_, idx) => idx !== i));
+  const updateItem = (i: number, k: keyof Testimonial, v: string) =>
+    updItems(items.map((t, idx) => idx === i ? { ...t, [k]: v } : t));
+
+  return (
+    <div>
+      <Field label="Nadpis sekce">
+        <RTE value={sec.sectionTitle} onChange={v => updateSection("testimonials", { ...sec, sectionTitle: v })} />
+      </Field>
+
+      {items.map((item, i) => (
+        <div key={i} style={{ borderTop: "1px solid #e5e7eb", paddingTop: 14, marginTop: 14 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "#7c3bb2", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+              Recenze {i + 1}: {item.name}
+            </span>
+            {items.length > 1 && (
+              <button
+                onClick={() => removeItem(i)}
+                style={{ background: "none", border: "1px solid #f87171", color: "#f87171", borderRadius: 5, padding: "2px 8px", fontSize: 11, cursor: "pointer" }}
+              >
+                Smazat
+              </button>
+            )}
+          </div>
+          <Field label="Emoji">
+            <PlainInput value={item.emoji} onChange={v => updateItem(i, "emoji", v)} />
+          </Field>
+          <Field label="Jméno">
+            <PlainInput value={item.name} onChange={v => updateItem(i, "name", v)} />
+          </Field>
+          <Field label={`Text recenze (${item.text.replace(/<[^>]*>/g, "").length}/350)`}>
+            <RTE value={item.text} onChange={v => {
+              const plain = v.replace(/<[^>]*>/g, "");
+              if (plain.length <= 350) updateItem(i, "text", v);
+            }} minHeight={70} />
+          </Field>
+        </div>
+      ))}
+
+      <button
+        onClick={addItem}
+        style={{ marginTop: 16, width: "100%", padding: "9px 0", background: "rgba(124,59,178,0.08)", border: "1.5px dashed #7c3bb2", borderRadius: 8, color: "#7c3bb2", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+      >
+        + Přidat recenzi
+      </button>
     </div>
   );
 }
@@ -1026,7 +1094,7 @@ function BlockEditorPanel({ block, onUpdate, onDelete, onUp, onDown, isFirst, is
 }
 
 function PagesEditor({ autoSlug }: { autoSlug?: string } = {}) {
-  const { content, updateSection } = useContent();
+  const { content, updateSection, getLatestSection, currentLang } = useContent();
   const pages: CustomPage[] = content.pages || [];
   const autoPage = autoSlug ? pages.find(p => p.slug === autoSlug) : null;
   const [selectedId, setSelectedId] = useState<string | null>(autoPage?.id ?? null);
@@ -1034,18 +1102,13 @@ function PagesEditor({ autoSlug }: { autoSlug?: string } = {}) {
   const [newTitle, setNewTitle] = useState("");
   const [addingBlock, setAddingBlock] = useState(false);
 
-  const selected = pages.find(p => p.id === selectedId) || null;
-
-  useEffect(() => {
-    if (autoPage && selectedId !== autoPage.id) {
-      setSelectedId(autoPage.id);
-    }
-  }, [autoPage, selectedId]);
+  const effectiveSelectedId = autoPage?.id ?? selectedId;
+  const selected = pages.find(p => p.id === effectiveSelectedId) || null;
 
   function addPage() {
     if (!newSlug.trim() || !newTitle.trim()) return;
     const slug = newSlug.toLowerCase().replace(/[^a-z0-9-]/g, "-");
-    const page: CustomPage = { id: Date.now().toString(), slug, title: newTitle.trim(), blocks: [] };
+    const page: CustomPage = { id: createEditorId("page"), slug, title: newTitle.trim(), blocks: [] };
     updateSection("pages", [...pages, page]);
     setSelectedId(page.id);
     setNewSlug(""); setNewTitle("");
@@ -1058,7 +1121,10 @@ function PagesEditor({ autoSlug }: { autoSlug?: string } = {}) {
   }
 
   function updatePage(page: CustomPage) {
-    updateSection("pages", pages.map(p => p.id === page.id ? page : p));
+    // Use getLatestSection (reads from ref) to avoid overwriting concurrent edits
+    // made by EditableText/EditableImg while the sidebar was open.
+    const latestPages = (getLatestSection("pages", currentLang) as CustomPage[]) || [];
+    updateSection("pages", latestPages.map(p => p.id === page.id ? page : p));
   }
 
   function addBlock(type: BlockType) {
@@ -1079,12 +1145,12 @@ function PagesEditor({ autoSlug }: { autoSlug?: string } = {}) {
       ]},
       "two-col": { twoColTitle: "Nadpis sekce", twoColText: "<p>Text popis sekce.</p>", twoColBtnText: "Číst více", twoColBtnHref: "#", imageLeft: true },
       faq: { faqTitle: "Časté dotazy", faqSubtitle: "Odpovědi na vaše otázky", faqItems: [
-        { id: Date.now().toString() + "1", q: "Otázka 1", a: "Odpověď na otázku 1." },
-        { id: Date.now().toString() + "2", q: "Otázka 2", a: "Odpověď na otázku 2." },
+        { id: createEditorId("faq"), q: "Otázka 1", a: "Odpověď na otázku 1." },
+        { id: createEditorId("faq"), q: "Otázka 2", a: "Odpověď na otázku 2." },
       ]},
     };
     const defaults: Partial<PageBlock> = BLOCK_DEFAULTS[type] || {};
-    const block: PageBlock = { id: Date.now().toString(), type, ...defaults };
+    const block: PageBlock = { id: createEditorId("block"), type, ...defaults };
     updatePage({ ...selected, blocks: [...selected.blocks, block] });
     setAddingBlock(false);
   }
@@ -1217,6 +1283,88 @@ function SiteSettingsEditor() {
 // ── Wheel of Fortune editor ──────────────────────────────────────────────────────
 
 const WHEEL_COLORS = ["#7c3bb2", "#c9a84c", "#a84a80", "#5878c0", "#5a9e7c", "#c08040", "#7c6ad4", "#3d2060", "#4a2880"];
+
+const MOON_PHASES = [
+  { key: "New Moon", label: "New Moon" },
+  { key: "Waxing Crescent", label: "Waxing Crescent" },
+  { key: "First Quarter", label: "First Quarter" },
+  { key: "Waxing Gibbous", label: "Waxing Gibbous" },
+  { key: "Full Moon", label: "Full Moon" },
+  { key: "Waning Gibbous", label: "Waning Gibbous" },
+  { key: "Third Quarter", label: "Third Quarter" },
+  { key: "Last Quarter", label: "Last Quarter" },
+  { key: "Waning Crescent", label: "Waning Crescent" },
+];
+
+function MoonWidgetEditor() {
+  const { content, updateSection, currentLang } = useContent();
+  const cfg: MoonWidgetConfig = content.moonWidget ?? DEFAULT_CONTENT.moonWidget;
+  const upd = (data: MoonWidgetConfig) => updateSection("moonWidget", data);
+  const updatePhase = (phaseKey: string, field: "label" | "description", value: string) => {
+    const currentPhase = cfg.phases?.[phaseKey] ?? { label: phaseKey, description: "" };
+    upd({
+      ...cfg,
+      phases: {
+        ...cfg.phases,
+        [phaseKey]: { ...currentPhase, [field]: value },
+      },
+    });
+  };
+  const updateStage = (stageKey: string, value: string) => {
+    upd({
+      ...cfg,
+      stages: {
+        ...cfg.stages,
+        [stageKey]: value,
+      },
+    });
+  };
+
+  return (
+    <div>
+      <div style={{ fontSize: 12, color: "#6b7280", lineHeight: 1.5, marginBottom: 14, padding: "10px 12px", background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 8 }}>
+        Upravuješ texty pro aktuální jazyk: <strong>{currentLang.toUpperCase()}</strong>. Přepni jazyk webu a můžeš upravit další jazyk.
+      </div>
+
+      <Divider label="Obecné texty" />
+      <Field label="Aria label / název widgetu">
+        <PlainInput value={cfg.aria} onChange={v => upd({ ...cfg, aria: v })} />
+      </Field>
+      <Field label="Zavírací tlačítko">
+        <PlainInput value={cfg.close} onChange={v => upd({ ...cfg, close: v })} />
+      </Field>
+      <Field label="Text osvětlení">
+        <PlainInput value={cfg.illumination} onChange={v => upd({ ...cfg, illumination: v })} />
+      </Field>
+
+      <Divider label="Stavy měsíce" />
+      <Field label="Dorůstající / Waxing">
+        <PlainInput value={cfg.stages?.Waxing ?? ""} onChange={v => updateStage("Waxing", v)} />
+      </Field>
+      <Field label="Ubývající / Waning">
+        <PlainInput value={cfg.stages?.Waning ?? ""} onChange={v => updateStage("Waning", v)} />
+      </Field>
+
+      <Divider label="Fáze měsíce" />
+      {MOON_PHASES.map(({ key, label }) => {
+        const phase = cfg.phases?.[key] ?? { label, description: "" };
+        return (
+          <div key={key} style={{ border: "1px solid #e5e7eb", borderRadius: 9, padding: "10px 12px", marginBottom: 10, background: "#fafafa" }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: "#7c3bb2", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 8 }}>
+              {label}
+            </div>
+            <Field label="Název fáze">
+              <PlainInput value={phase.label} onChange={v => updatePhase(key, "label", v)} />
+            </Field>
+            <Field label="Popis v popupu">
+              <SmallTextarea value={phase.description} onChange={v => updatePhase(key, "description", v)} rows={4} />
+            </Field>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 function WheelEditor() {
   const { content, updateSection } = useContent();
@@ -1473,9 +1621,11 @@ const EDITORS: Record<Section, React.ComponentType> = {
   hero: HeroEditor,
   newsletter: NewsletterEditor,
   about: AboutEditor,
+  testimonials: TestimonialsEditor,
   manifest: ManifestEditor,
   pickacard: PickACardEditor,
   oracle: OracleEditor,
+  moonWidget: MoonWidgetEditor,
   servicesContent: ServicesEditor,
   wheelOfFortune: WheelEditor,
   footer: FooterEditor,
@@ -1487,7 +1637,7 @@ const EDITORS: Record<Section, React.ComponentType> = {
 // ── Main LiveEditor panel ──────────────────────────────────────────────────────
 
 export default function LiveEditor() {
-  const { admin, content, saveAll, undo, canUndo, saveStatus, logout, currentLang } = useContent();
+  const { admin, content, saveAll, undo, canUndo, saveStatus, logout } = useContent();
   const pathname = usePathname();
   const basePath = stripLangPrefix(pathname ?? "/");
   const [open, setOpen] = useState(false);
@@ -1533,16 +1683,12 @@ export default function LiveEditor() {
     return ALL_SECTIONS;
   }, [basePath, currentCustomPage]);
 
-  // Auto-reset activeSection when visible sections change
-  useEffect(() => {
-    if (!visibleSections.find(s => s.key === activeSection)) {
-      setActiveSection(visibleSections[0]?.key ?? "hero");
-    }
-  }, [visibleSections, activeSection]);
-
   if (!admin.isAdmin) return null;
 
-  const ActiveEditor = EDITORS[activeSection];
+  const resolvedActiveSection = visibleSections.some(s => s.key === activeSection)
+    ? activeSection
+    : visibleSections[0]?.key ?? "hero";
+  const ActiveEditor = EDITORS[resolvedActiveSection];
 
   function handleUndo() {
     undo();
@@ -1682,9 +1828,9 @@ export default function LiveEditor() {
                 fontSize: 11,
                 fontWeight: 600,
                 border: "none",
-                borderBottom: activeSection === s.key ? "2px solid #7c3bb2" : "2px solid transparent",
-                background: activeSection === s.key ? "rgba(124,59,178,0.08)" : "none",
-                color: activeSection === s.key ? "#7c3bb2" : "#6b7280",
+                borderBottom: resolvedActiveSection === s.key ? "2px solid #7c3bb2" : "2px solid transparent",
+                background: resolvedActiveSection === s.key ? "rgba(124,59,178,0.08)" : "none",
+                color: resolvedActiveSection === s.key ? "#7c3bb2" : "#6b7280",
                 cursor: "pointer",
                 whiteSpace: "nowrap",
                 transition: "color 0.15s, background 0.15s",
@@ -1699,10 +1845,10 @@ export default function LiveEditor() {
 
         {/* Editor content — scrollable */}
         <div style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden", padding: "18px 20px", boxSizing: "border-box", WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
-          {currentCustomPage && activeSection === "pages" ? (
+          {currentCustomPage && resolvedActiveSection === "pages" ? (
             <PagesEditor key={`pages-${currentCustomPage.slug}-${editorKey}`} autoSlug={currentCustomPage.slug} />
           ) : (
-            <ActiveEditor key={`${activeSection}-${editorKey}`} />
+            <ActiveEditor key={`${resolvedActiveSection}-${editorKey}`} />
           )}
         </div>
 

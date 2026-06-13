@@ -72,6 +72,26 @@ export const DEFAULT_EN_CONTENT: SiteContent = {
     body: "Once a month I'll send useful tips, gentle guidance and practical guides for harmony at home and in your inner space. No spam — only content that matters.",
     buttonText: "Subscribe",
   },
+  moonWidget: {
+    aria: "Moon phase",
+    close: "Close",
+    illumination: "illumination",
+    phases: {
+      "New Moon": { label: "New Moon", description: "The Moon is not visible. A time for new intentions, beginnings and opening new chapters." },
+      "Waxing Crescent": { label: "Waxing Crescent", description: "The light slowly grows. An ideal time for planning, building and first steps." },
+      "First Quarter": { label: "First Quarter", description: "Halfway to the full moon. A time for decisions and overcoming obstacles." },
+      "Waxing Gibbous": { label: "Waxing Gibbous", description: "Energy and light are increasing. Intentions develop and progress begins to show." },
+      "Full Moon": { label: "Full Moon", description: "The Moon shines at full strength. A peak of energy, culmination and illumination." },
+      "Waning Gibbous": { label: "Waning Gibbous", description: "The light begins to fade. A time for gratitude, sharing and reflection." },
+      "Third Quarter": { label: "Last Quarter", description: "A time for release and forgiveness. Let go of what no longer serves you." },
+      "Last Quarter": { label: "Last Quarter", description: "A time for release and forgiveness. Let go of what no longer serves you." },
+      "Waning Crescent": { label: "Waning Crescent", description: "Preparation for a new cycle. Rest, introspection and surrender." },
+    },
+    stages: {
+      Waxing: "waxing",
+      Waning: "waning",
+    },
+  },
   about: {
     ...DEFAULT_CONTENT.about,
     title: "About Astera",
@@ -326,6 +346,26 @@ export const DEFAULT_UK_CONTENT: SiteContent = {
     title: "Підписатися на розсилку",
     body: "Раз на місяць надішлю корисні поради, м'яке керівництво та практичні матеріали для гармонії дому й внутрішнього простору. Без спаму — лише змістовний контент.",
     buttonText: "Підписатися",
+  },
+  moonWidget: {
+    aria: "Фаза місяця",
+    close: "Закрити",
+    illumination: "освітлення",
+    phases: {
+      "New Moon": { label: "Новий місяць", description: "Місяць не видно. Час нових намірів, початків і відкриття нових розділів." },
+      "Waxing Crescent": { label: "Зростаючий серп", description: "Світло повільно зростає. Ідеальний час для планування, побудови та перших кроків." },
+      "First Quarter": { label: "Перша чверть", description: "Половина шляху до повні. Час рішень і подолання перешкод." },
+      "Waxing Gibbous": { label: "Зростаючий місяць", description: "Енергія та світло зростають. Наміри розвиваються, з'являється прогрес." },
+      "Full Moon": { label: "Повня", description: "Місяць сяє на повну силу. Пік енергії, завершення та осяяння." },
+      "Waning Gibbous": { label: "Спадний місяць", description: "Світло починає спадати. Час вдячності, ділення досвідом і рефлексії." },
+      "Third Quarter": { label: "Остання чверть", description: "Час відпускання і прощення. Позбудьтеся того, що більше не служить вам." },
+      "Last Quarter": { label: "Остання чверть", description: "Час відпускання і прощення. Позбудьтеся того, що більше не служить вам." },
+      "Waning Crescent": { label: "Спадний серп", description: "Підготовка до нового циклу. Відпочинок, самоаналіз і прийняття." },
+    },
+    stages: {
+      Waxing: "зростаючий",
+      Waning: "спадний",
+    },
   },
   about: {
     ...DEFAULT_CONTENT.about,
