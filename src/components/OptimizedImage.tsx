@@ -1,9 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { OPTIMIZED_IMAGE_MAP } from "@/lib/optimized-image-map";
 
 type Props = React.ImgHTMLAttributes<HTMLImageElement> & {
   pictureStyle?: React.CSSProperties;
+  noPlaceholder?: boolean;
 };
 
 const uploadVariantWidths = [480, 828, 1600];
@@ -88,35 +89,57 @@ export function optimizedImageSet(src?: string) {
   )`;
 }
 
-export default function OptimizedImage({ src, alt = "", pictureStyle, ...imgProps }: Props) {
+export default function OptimizedImage({ src, alt = "", pictureStyle, noPlaceholder, ...imgProps }: Props) {
   const stringSrc = typeof src === "string" ? src : undefined;
   const image = getOptimizedImage(stringSrc);
   const sizes = imgProps.sizes || "100vw";
   const isEager = imgProps.fetchPriority === "high" || imgProps.loading === "eager";
   const loading = imgProps.loading ?? (isEager ? "eager" : "lazy");
   const decoding = imgProps.decoding ?? "async";
-  const [loaded, setLoaded] = useState(isEager);
+  const [loaded, setLoaded] = useState(isEager || noPlaceholder);
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  // Handle already-cached images — onLoad won't fire if img.complete is already true
+  useEffect(() => {
+    if (imgRef.current?.complete) setLoaded(true);
+  }, []);
 
   if (!image) {
     // eslint-disable-next-line @next/next/no-img-element
     return <img src={stringSrc} alt={alt} loading={loading} decoding={decoding} {...imgProps} />;
   }
 
-  const { lqip } = image;
+  const usePlaceholder = !noPlaceholder && !!image.lqip;
 
   return (
     <picture
       style={{
         ...pictureStyle,
+        position: "relative",
         display: pictureStyle?.display ?? "block",
-        backgroundImage: lqip ? `url(${lqip})` : undefined,
+        backgroundImage: usePlaceholder ? `url(${image.lqip})` : undefined,
         backgroundSize: "cover",
         backgroundPosition: "center",
         overflow: "hidden",
       }}
     >
+      {/* Shimmer overlay — visible while image loads */}
+      {usePlaceholder && !loaded && (
+        <span
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.45) 50%, transparent 100%)",
+            backgroundSize: "200% 100%",
+            animation: "img-shimmer 1.4s ease-in-out infinite",
+            zIndex: 1,
+          }}
+        />
+      )}
       <source srcSet={image.webpSrcSet || image.webp} sizes={sizes} type="image/webp" />
       <img
+        ref={imgRef}
         src={image.fallback}
         srcSet={image.fallbackSrcSet}
         sizes={sizes}
@@ -132,10 +155,18 @@ export default function OptimizedImage({ src, alt = "", pictureStyle, ...imgProp
         }}
         style={{
           ...imgProps.style,
+          position: "relative",
+          zIndex: 2,
           opacity: loaded ? 1 : 0,
-          transition: loaded ? "opacity 0.4s ease" : "none",
+          transition: loaded ? "opacity 0.5s ease" : "none",
         }}
       />
+      <style>{`
+        @keyframes img-shimmer {
+          0%   { background-position: -200% 0; }
+          100% { background-position:  200% 0; }
+        }
+      `}</style>
     </picture>
   );
 }

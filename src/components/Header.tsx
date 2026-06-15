@@ -58,6 +58,8 @@ export default function Header() {
             src={logoUrl}
             alt="Astera Light"
             sizes="92px"
+            noPlaceholder
+            fetchPriority="high"
             style={{ height: scrolled ? "56px" : "72px", width: "auto", maxWidth: "92px", objectFit: "contain", transition: "height 0.3s ease" }}
           />
         </a>
