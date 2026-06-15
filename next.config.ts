@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    root: process.cwd(),
+  },
   async redirects() {
     return [
       {
@@ -15,14 +18,15 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  turbopack: {
-    root: process.cwd(),
-  },
   images: {
     remotePatterns: [
       {
         protocol: "https",
         hostname: "www.asteralight.com",
+      },
+      {
+        protocol: "https",
+        hostname: "qmioor33ehuegiuc.public.blob.vercel-storage.com",
       },
     ],
   },

@@ -5,9 +5,9 @@ import { ContentProvider } from "@/context/ContentContext";
 import LiveEditor from "@/components/admin/LiveEditor";
 import CustomStyles from "@/components/CustomStyles";
 import { SITE_LANGUAGE, SITE_LOCALE, SITE_NAME, SITE_URL } from "@/lib/seo";
-import { getAllContent, getAllContentForLang } from "@/lib/db";
+import { getCachedContent, getCachedContentForLang } from "@/lib/db";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -76,9 +76,9 @@ export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const [cs, en, ua] = await Promise.all([
-    getAllContent(),
-    getAllContentForLang("en"),
-    getAllContentForLang("ua"),
+    getCachedContent(),
+    getCachedContentForLang("en"),
+    getCachedContentForLang("ua"),
   ]);
   return (
     <html lang="cs">
@@ -94,6 +94,13 @@ export default async function RootLayout({
           as="image"
           href="/optimized/uploads/astera-upload-1777542736772-d2souok25x7-662w.webp"
           media="(max-width: 640px)"
+          type="image/webp"
+        />
+        <link
+          rel="preload"
+          as="image"
+          href="/optimized/uploads/astera-upload-1777542736772-d2souok25x7-1600w.webp"
+          media="(min-width: 641px)"
           type="image/webp"
         />
         <link

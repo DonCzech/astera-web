@@ -1,6 +1,7 @@
+import { revalidatePath, revalidateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { verifyToken, COOKIE_NAME } from "@/lib/auth";
-import { getAllContent, saveSection, getAllContentForLang, saveI18nSection } from "@/lib/db";
+import { getAllContent, saveSection, getAllContentForLang, saveI18nSection, CONTENT_CACHE_TAG } from "@/lib/db";
 import { Lang } from "@/lib/i18n";
 
 const VALID_LANGS: Lang[] = ["cs", "en", "ua"];
@@ -34,5 +35,7 @@ export async function PUT(request: Request) {
   } else {
     await saveI18nSection(section, lang, content);
   }
+  revalidateTag(CONTENT_CACHE_TAG, { expire: 0 });
+  revalidatePath("/", "layout");
   return Response.json({ ok: true });
 }

@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
+import OptimizedImage from "@/components/OptimizedImage";
 
 const answers = [
   "Záři mezi správnými lidmi.",
@@ -53,11 +54,12 @@ export default function CrystalBall() {
             <div className="cb-table-glow" aria-hidden="true" />
             <div className="cb-aura" aria-hidden="true" />
             <div className="cb-sphere">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <OptimizedImage
                 src="/images/crystal-ball-astera.png"
                 alt="Křišťálová koule"
                 className="cb-ball-img"
+                sizes="(max-width: 600px) 98vw, 660px"
+                loading="lazy"
                 draggable={false}
               />
               <div className="cb-caustic cb-caustic-a" aria-hidden="true" />

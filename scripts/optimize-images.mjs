@@ -25,6 +25,8 @@ const exactTargets = new Map([
   ["/uploads/astera-upload-1777543812845-9puk6rdon7f.png", { width: 408, height: 410 }],
   ["/uploads/astera-upload-1777543712527-v1mmzjakq5.png", { width: 702, height: 702 }],
 
+  ["/images/crystal-ball-astera.png", { width: 660, height: 440 }],
+
   ["/images/astera-about-home.png", { width: 579, height: 816 }],
   ["/images/astera-pick-card.png", { width: 579, height: 816 }],
   ["/images/about/astera-sofa.png", { width: 579, height: 816 }],

@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
+import OptimizedImage from "@/components/OptimizedImage";
 
 type Phase = "idle" | "animating" | "revealed";
 
@@ -58,11 +59,12 @@ export default function PickACard() {
               <div className="pac-mask">
                 <div className="pac-ring pac-ring-a" aria-hidden="true" />
                 <div className="pac-ring pac-ring-b" aria-hidden="true" />
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <OptimizedImage
                   src="/images/crystal-ball-astera.png"
                   alt="Křišťálová koule"
                   className="pac-img"
+                  sizes="(max-width: 600px) 98vw, 660px"
+                  loading="lazy"
                   draggable={false}
                 />
               </div>

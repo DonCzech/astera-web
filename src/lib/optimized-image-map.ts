@@ -224,6 +224,14 @@ export const OPTIMIZED_IMAGE_MAP: Record<string, OptimizedImageEntry> = {
     "width": 702,
     "height": 702
   },
+  "/images/astera-VV.webp": {
+    "webp": "/optimized/images/astera-VV.webp",
+    "fallback": "/optimized/images/astera-VV.webp",
+    "webpSrcSet": "/optimized/images/astera-VV-331w.webp 331w, /optimized/images/astera-VV-480w.webp 480w",
+    "fallbackSrcSet": "/optimized/images/astera-VV-331w.webp 331w, /optimized/images/astera-VV-480w.webp 480w",
+    "width": 480,
+    "height": 676
+  },
   "/images/astera-about-home.png": {
     "webp": "/optimized/images/astera-about-home.webp",
     "fallback": "/optimized/images/astera-about-home.png",
@@ -296,6 +304,14 @@ export const OPTIMIZED_IMAGE_MAP: Record<string, OptimizedImageEntry> = {
     "width": 866,
     "height": 668
   },
+  "/images/crystal-ball-astera.png": {
+    "webp": "/optimized/images/crystal-ball-astera.webp",
+    "fallback": "/optimized/images/crystal-ball-astera.png",
+    "webpSrcSet": "/optimized/images/crystal-ball-astera-331w.webp 331w, /optimized/images/crystal-ball-astera-480w.webp 480w, /optimized/images/crystal-ball-astera-660w.webp 660w",
+    "fallbackSrcSet": "/optimized/images/crystal-ball-astera-331w.png 331w, /optimized/images/crystal-ball-astera-480w.png 480w, /optimized/images/crystal-ball-astera-660w.png 660w",
+    "width": 660,
+    "height": 440
+  },
   "/images/kniha-astera.png": {
     "webp": "/optimized/images/kniha-astera.webp",
     "fallback": "/optimized/images/kniha-astera.jpg",
@@ -303,6 +319,142 @@ export const OPTIMIZED_IMAGE_MAP: Record<string, OptimizedImageEntry> = {
     "fallbackSrcSet": "/optimized/images/kniha-astera-331w.jpg 331w, /optimized/images/kniha-astera-480w.jpg 480w, /optimized/images/kniha-astera-662w.jpg 662w, /optimized/images/kniha-astera-702w.jpg 702w",
     "width": 702,
     "height": 702
+  },
+  "/images/koule.jpg": {
+    "webp": "/optimized/images/koule.webp",
+    "fallback": "/optimized/images/koule.jpg",
+    "webpSrcSet": "/optimized/images/koule-331w.webp 331w, /optimized/images/koule-480w.webp 480w, /optimized/images/koule-662w.webp 662w, /optimized/images/koule-828w.webp 828w, /optimized/images/koule-1000w.webp 1000w",
+    "fallbackSrcSet": "/optimized/images/koule-331w.jpg 331w, /optimized/images/koule-480w.jpg 480w, /optimized/images/koule-662w.jpg 662w, /optimized/images/koule-828w.jpg 828w, /optimized/images/koule-1000w.jpg 1000w",
+    "width": 1000,
+    "height": 667
+  },
+  "/images/moon-phases/0.png": {
+    "webp": "/optimized/images/moon-phases/0.webp",
+    "fallback": "/optimized/images/moon-phases/0.png",
+    "webpSrcSet": "/optimized/images/moon-phases/0-300w.webp 300w",
+    "fallbackSrcSet": "/optimized/images/moon-phases/0-300w.png 300w",
+    "width": 300,
+    "height": 300
+  },
+  "/images/moon-phases/1.png": {
+    "webp": "/optimized/images/moon-phases/1.webp",
+    "fallback": "/optimized/images/moon-phases/1.png",
+    "webpSrcSet": "/optimized/images/moon-phases/1-300w.webp 300w",
+    "fallbackSrcSet": "/optimized/images/moon-phases/1-300w.png 300w",
+    "width": 300,
+    "height": 300
+  },
+  "/images/moon-phases/10.png": {
+    "webp": "/optimized/images/moon-phases/10.webp",
+    "fallback": "/optimized/images/moon-phases/10.png",
+    "webpSrcSet": "/optimized/images/moon-phases/10-300w.webp 300w",
+    "fallbackSrcSet": "/optimized/images/moon-phases/10-300w.png 300w",
+    "width": 300,
+    "height": 300
+  },
+  "/images/moon-phases/11.png": {
+    "webp": "/optimized/images/moon-phases/11.webp",
+    "fallback": "/optimized/images/moon-phases/11.png",
+    "webpSrcSet": "/optimized/images/moon-phases/11-300w.webp 300w",
+    "fallbackSrcSet": "/optimized/images/moon-phases/11-300w.png 300w",
+    "width": 300,
+    "height": 300
+  },
+  "/images/moon-phases/12.png": {
+    "webp": "/optimized/images/moon-phases/12.webp",
+    "fallback": "/optimized/images/moon-phases/12.png",
+    "webpSrcSet": "/optimized/images/moon-phases/12-300w.webp 300w",
+    "fallbackSrcSet": "/optimized/images/moon-phases/12-300w.png 300w",
+    "width": 300,
+    "height": 300
+  },
+  "/images/moon-phases/13.png": {
+    "webp": "/optimized/images/moon-phases/13.webp",
+    "fallback": "/optimized/images/moon-phases/13.png",
+    "webpSrcSet": "/optimized/images/moon-phases/13-300w.webp 300w",
+    "fallbackSrcSet": "/optimized/images/moon-phases/13-300w.png 300w",
+    "width": 300,
+    "height": 300
+  },
+  "/images/moon-phases/14.png": {
+    "webp": "/optimized/images/moon-phases/14.webp",
+    "fallback": "/optimized/images/moon-phases/14.png",
+    "webpSrcSet": "/optimized/images/moon-phases/14-300w.webp 300w",
+    "fallbackSrcSet": "/optimized/images/moon-phases/14-300w.png 300w",
+    "width": 300,
+    "height": 300
+  },
+  "/images/moon-phases/15.png": {
+    "webp": "/optimized/images/moon-phases/15.webp",
+    "fallback": "/optimized/images/moon-phases/15.png",
+    "webpSrcSet": "/optimized/images/moon-phases/15-300w.webp 300w",
+    "fallbackSrcSet": "/optimized/images/moon-phases/15-300w.png 300w",
+    "width": 300,
+    "height": 300
+  },
+  "/images/moon-phases/2.png": {
+    "webp": "/optimized/images/moon-phases/2.webp",
+    "fallback": "/optimized/images/moon-phases/2.png",
+    "webpSrcSet": "/optimized/images/moon-phases/2-300w.webp 300w",
+    "fallbackSrcSet": "/optimized/images/moon-phases/2-300w.png 300w",
+    "width": 300,
+    "height": 300
+  },
+  "/images/moon-phases/3.png": {
+    "webp": "/optimized/images/moon-phases/3.webp",
+    "fallback": "/optimized/images/moon-phases/3.png",
+    "webpSrcSet": "/optimized/images/moon-phases/3-300w.webp 300w",
+    "fallbackSrcSet": "/optimized/images/moon-phases/3-300w.png 300w",
+    "width": 300,
+    "height": 300
+  },
+  "/images/moon-phases/4.png": {
+    "webp": "/optimized/images/moon-phases/4.webp",
+    "fallback": "/optimized/images/moon-phases/4.png",
+    "webpSrcSet": "/optimized/images/moon-phases/4-300w.webp 300w",
+    "fallbackSrcSet": "/optimized/images/moon-phases/4-300w.png 300w",
+    "width": 300,
+    "height": 300
+  },
+  "/images/moon-phases/5.png": {
+    "webp": "/optimized/images/moon-phases/5.webp",
+    "fallback": "/optimized/images/moon-phases/5.png",
+    "webpSrcSet": "/optimized/images/moon-phases/5-300w.webp 300w",
+    "fallbackSrcSet": "/optimized/images/moon-phases/5-300w.png 300w",
+    "width": 300,
+    "height": 300
+  },
+  "/images/moon-phases/6.png": {
+    "webp": "/optimized/images/moon-phases/6.webp",
+    "fallback": "/optimized/images/moon-phases/6.png",
+    "webpSrcSet": "/optimized/images/moon-phases/6-300w.webp 300w",
+    "fallbackSrcSet": "/optimized/images/moon-phases/6-300w.png 300w",
+    "width": 300,
+    "height": 300
+  },
+  "/images/moon-phases/7.png": {
+    "webp": "/optimized/images/moon-phases/7.webp",
+    "fallback": "/optimized/images/moon-phases/7.png",
+    "webpSrcSet": "/optimized/images/moon-phases/7-300w.webp 300w",
+    "fallbackSrcSet": "/optimized/images/moon-phases/7-300w.png 300w",
+    "width": 300,
+    "height": 300
+  },
+  "/images/moon-phases/8.png": {
+    "webp": "/optimized/images/moon-phases/8.webp",
+    "fallback": "/optimized/images/moon-phases/8.png",
+    "webpSrcSet": "/optimized/images/moon-phases/8-300w.webp 300w",
+    "fallbackSrcSet": "/optimized/images/moon-phases/8-300w.png 300w",
+    "width": 300,
+    "height": 300
+  },
+  "/images/moon-phases/9.png": {
+    "webp": "/optimized/images/moon-phases/9.webp",
+    "fallback": "/optimized/images/moon-phases/9.png",
+    "webpSrcSet": "/optimized/images/moon-phases/9-300w.webp 300w",
+    "fallbackSrcSet": "/optimized/images/moon-phases/9-300w.png 300w",
+    "width": 300,
+    "height": 300
   },
   "/images/new-book-icon.png": {
     "webp": "/optimized/images/new-book-icon.webp",
@@ -359,6 +511,46 @@ export const OPTIMIZED_IMAGE_MAP: Record<string, OptimizedImageEntry> = {
     "fallbackSrcSet": "/optimized/uploads/astera-upload-1777543812845-9puk6rdon7f-331w.jpg 331w, /optimized/uploads/astera-upload-1777543812845-9puk6rdon7f-408w.jpg 408w",
     "width": 408,
     "height": 410
+  },
+  "/uploads/astera-upload-1780220684302-0u741zmozlhg-nobg.webp": {
+    "webp": "/optimized/uploads/astera-upload-1780220684302-0u741zmozlhg-nobg.webp",
+    "fallback": "/optimized/uploads/astera-upload-1780220684302-0u741zmozlhg-nobg.webp",
+    "webpSrcSet": "/optimized/uploads/astera-upload-1780220684302-0u741zmozlhg-nobg-331w.webp 331w, /optimized/uploads/astera-upload-1780220684302-0u741zmozlhg-nobg-480w.webp 480w, /optimized/uploads/astera-upload-1780220684302-0u741zmozlhg-nobg-662w.webp 662w, /optimized/uploads/astera-upload-1780220684302-0u741zmozlhg-nobg-828w.webp 828w, /optimized/uploads/astera-upload-1780220684302-0u741zmozlhg-nobg-852w.webp 852w",
+    "fallbackSrcSet": "/optimized/uploads/astera-upload-1780220684302-0u741zmozlhg-nobg-331w.webp 331w, /optimized/uploads/astera-upload-1780220684302-0u741zmozlhg-nobg-480w.webp 480w, /optimized/uploads/astera-upload-1780220684302-0u741zmozlhg-nobg-662w.webp 662w, /optimized/uploads/astera-upload-1780220684302-0u741zmozlhg-nobg-828w.webp 828w, /optimized/uploads/astera-upload-1780220684302-0u741zmozlhg-nobg-852w.webp 852w",
+    "width": 852,
+    "height": 1199
+  },
+  "/uploads/astera-upload-1780231907449-7vup1spq1vd.webp": {
+    "webp": "/optimized/uploads/astera-upload-1780231907449-7vup1spq1vd.webp",
+    "fallback": "/optimized/uploads/astera-upload-1780231907449-7vup1spq1vd.webp",
+    "webpSrcSet": "/optimized/uploads/astera-upload-1780231907449-7vup1spq1vd-331w.webp 331w, /optimized/uploads/astera-upload-1780231907449-7vup1spq1vd-480w.webp 480w, /optimized/uploads/astera-upload-1780231907449-7vup1spq1vd-662w.webp 662w, /optimized/uploads/astera-upload-1780231907449-7vup1spq1vd-828w.webp 828w, /optimized/uploads/astera-upload-1780231907449-7vup1spq1vd-852w.webp 852w",
+    "fallbackSrcSet": "/optimized/uploads/astera-upload-1780231907449-7vup1spq1vd-331w.webp 331w, /optimized/uploads/astera-upload-1780231907449-7vup1spq1vd-480w.webp 480w, /optimized/uploads/astera-upload-1780231907449-7vup1spq1vd-662w.webp 662w, /optimized/uploads/astera-upload-1780231907449-7vup1spq1vd-828w.webp 828w, /optimized/uploads/astera-upload-1780231907449-7vup1spq1vd-852w.webp 852w",
+    "width": 852,
+    "height": 1199
+  },
+  "/uploads/astera-upload-1780249727880-fghflgahufr.webp": {
+    "webp": "/optimized/uploads/astera-upload-1780249727880-fghflgahufr.webp",
+    "fallback": "/optimized/uploads/astera-upload-1780249727880-fghflgahufr.webp",
+    "webpSrcSet": "/optimized/uploads/astera-upload-1780249727880-fghflgahufr-331w.webp 331w, /optimized/uploads/astera-upload-1780249727880-fghflgahufr-480w.webp 480w, /optimized/uploads/astera-upload-1780249727880-fghflgahufr-662w.webp 662w, /optimized/uploads/astera-upload-1780249727880-fghflgahufr-828w.webp 828w, /optimized/uploads/astera-upload-1780249727880-fghflgahufr-1200w.webp 1200w",
+    "fallbackSrcSet": "/optimized/uploads/astera-upload-1780249727880-fghflgahufr-331w.webp 331w, /optimized/uploads/astera-upload-1780249727880-fghflgahufr-480w.webp 480w, /optimized/uploads/astera-upload-1780249727880-fghflgahufr-662w.webp 662w, /optimized/uploads/astera-upload-1780249727880-fghflgahufr-828w.webp 828w, /optimized/uploads/astera-upload-1780249727880-fghflgahufr-1200w.webp 1200w",
+    "width": 1199,
+    "height": 697
+  },
+  "/uploads/astera-upload-1780249734951-o1u9hv3n2z.webp": {
+    "webp": "/optimized/uploads/astera-upload-1780249734951-o1u9hv3n2z.webp",
+    "fallback": "/optimized/uploads/astera-upload-1780249734951-o1u9hv3n2z.webp",
+    "webpSrcSet": "/optimized/uploads/astera-upload-1780249734951-o1u9hv3n2z-331w.webp 331w, /optimized/uploads/astera-upload-1780249734951-o1u9hv3n2z-480w.webp 480w, /optimized/uploads/astera-upload-1780249734951-o1u9hv3n2z-662w.webp 662w, /optimized/uploads/astera-upload-1780249734951-o1u9hv3n2z-828w.webp 828w, /optimized/uploads/astera-upload-1780249734951-o1u9hv3n2z-1200w.webp 1200w",
+    "fallbackSrcSet": "/optimized/uploads/astera-upload-1780249734951-o1u9hv3n2z-331w.webp 331w, /optimized/uploads/astera-upload-1780249734951-o1u9hv3n2z-480w.webp 480w, /optimized/uploads/astera-upload-1780249734951-o1u9hv3n2z-662w.webp 662w, /optimized/uploads/astera-upload-1780249734951-o1u9hv3n2z-828w.webp 828w, /optimized/uploads/astera-upload-1780249734951-o1u9hv3n2z-1200w.webp 1200w",
+    "width": 1200,
+    "height": 755
+  },
+  "/uploads/astera-upload-1780250440546-7dk616iblby.webp": {
+    "webp": "/optimized/uploads/astera-upload-1780250440546-7dk616iblby.webp",
+    "fallback": "/optimized/uploads/astera-upload-1780250440546-7dk616iblby.webp",
+    "webpSrcSet": "/optimized/uploads/astera-upload-1780250440546-7dk616iblby-331w.webp 331w, /optimized/uploads/astera-upload-1780250440546-7dk616iblby-480w.webp 480w",
+    "fallbackSrcSet": "/optimized/uploads/astera-upload-1780250440546-7dk616iblby-331w.webp 331w, /optimized/uploads/astera-upload-1780250440546-7dk616iblby-480w.webp 480w",
+    "width": 480,
+    "height": 676
   },
   "/uploads/upload-1775752711594-ra6msm8ooeq.jpg": {
     "webp": "/optimized/uploads/upload-1775752711594-ra6msm8ooeq.webp",

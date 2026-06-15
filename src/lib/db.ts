@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { Pool } from "pg";
 import { DEFAULT_CONTENT, SiteContent } from "./content-types";
 import { Lang, getDefaultContent } from "./i18n";
@@ -128,6 +129,20 @@ export async function getAllContent(): Promise<SiteContent> {
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
+
+export const CONTENT_CACHE_TAG = "site-content";
+
+export const getCachedContent = unstable_cache(
+  () => getAllContent(),
+  ["site-content-cs"],
+  { tags: [CONTENT_CACHE_TAG], revalidate: 3600 }
+);
+
+export const getCachedContentForLang = unstable_cache(
+  (lang: Lang) => getAllContentForLang(lang),
+  ["site-content-lang"],
+  { tags: [CONTENT_CACHE_TAG], revalidate: 3600 }
+);
 
 export async function saveSection(section: string, content: unknown): Promise<void> {
   await initDb();
