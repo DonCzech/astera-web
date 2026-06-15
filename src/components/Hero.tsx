@@ -34,6 +34,7 @@ export default function Hero() {
       <section
         id="home-hero"
         style={{
+          backgroundColor: "#bfafaa",
           backgroundImage: optimizedImageSet(h.backgroundImage),
           "--hero-bg-mobile": mobileHeroUrl ? `url('${mobileHeroUrl}')` : undefined,
           backgroundSize: "cover",

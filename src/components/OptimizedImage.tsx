@@ -1,3 +1,5 @@
+"use client";
+import { useState } from "react";
 import { OPTIMIZED_IMAGE_MAP } from "@/lib/optimized-image-map";
 
 type Props = React.ImgHTMLAttributes<HTMLImageElement> & {
@@ -90,16 +92,29 @@ export default function OptimizedImage({ src, alt = "", pictureStyle, ...imgProp
   const stringSrc = typeof src === "string" ? src : undefined;
   const image = getOptimizedImage(stringSrc);
   const sizes = imgProps.sizes || "100vw";
-  const loading = imgProps.loading ?? (imgProps.fetchPriority === "high" ? "eager" : "lazy");
+  const isEager = imgProps.fetchPriority === "high" || imgProps.loading === "eager";
+  const loading = imgProps.loading ?? (isEager ? "eager" : "lazy");
   const decoding = imgProps.decoding ?? "async";
+  const [loaded, setLoaded] = useState(isEager);
 
   if (!image) {
     // eslint-disable-next-line @next/next/no-img-element
     return <img src={stringSrc} alt={alt} loading={loading} decoding={decoding} {...imgProps} />;
   }
 
+  const { lqip } = image;
+
   return (
-    <picture style={pictureStyle}>
+    <picture
+      style={{
+        ...pictureStyle,
+        display: pictureStyle?.display ?? "block",
+        backgroundImage: lqip ? `url(${lqip})` : undefined,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        overflow: "hidden",
+      }}
+    >
       <source srcSet={image.webpSrcSet || image.webp} sizes={sizes} type="image/webp" />
       <img
         src={image.fallback}
@@ -111,6 +126,15 @@ export default function OptimizedImage({ src, alt = "", pictureStyle, ...imgProp
         loading={loading}
         decoding={decoding}
         {...imgProps}
+        onLoad={(e) => {
+          setLoaded(true);
+          imgProps.onLoad?.(e);
+        }}
+        style={{
+          ...imgProps.style,
+          opacity: loaded ? 1 : 0,
+          transition: loaded ? "opacity 0.4s ease" : "none",
+        }}
       />
     </picture>
   );

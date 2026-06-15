@@ -160,6 +160,16 @@ for (const file of files) {
   }
 
   const fallbackMeta = await sharp(path.join(publicDir, fallback), { failOn: "none" }).metadata();
+
+  // LQIP — tiny 20px blur placeholder embedded as base64 data URL
+  const lqipBuffer = await sharp(file, { failOn: "none" })
+    .rotate()
+    .resize({ width: 20, withoutEnlargement: false })
+    .blur(4)
+    .webp({ quality: 20 })
+    .toBuffer();
+  const lqip = `data:image/webp;base64,${lqipBuffer.toString("base64")}`;
+
   map[src] = {
     webp,
     fallback,
@@ -167,6 +177,7 @@ for (const file of files) {
     fallbackSrcSet: fallbackSrcSet.join(", "),
     width: fallbackMeta.width ?? target.width,
     height: fallbackMeta.height ?? target.height,
+    lqip,
   };
 }
 
@@ -177,6 +188,7 @@ const content = `export type OptimizedImageEntry = {
   fallbackSrcSet?: string;
   width: number;
   height: number;
+  lqip?: string;
 };
 
 export const OPTIMIZED_IMAGE_MAP: Record<string, OptimizedImageEntry> = ${JSON.stringify(map, null, 2)};
