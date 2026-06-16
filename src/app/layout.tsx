@@ -108,16 +108,10 @@ export default async function RootLayout({
         <link
           rel="preload"
           as="image"
-          href="/optimized/uploads/astera-upload-1777542736772-d2souok25x7-662w.webp"
-          media="(max-width: 640px)"
+          imageSrcSet="/optimized/uploads/astera-upload-1777542736772-d2souok25x7-331w.webp 331w, /optimized/uploads/astera-upload-1777542736772-d2souok25x7-480w.webp 480w, /optimized/uploads/astera-upload-1777542736772-d2souok25x7-662w.webp 662w, /optimized/uploads/astera-upload-1777542736772-d2souok25x7-828w.webp 828w, /optimized/uploads/astera-upload-1777542736772-d2souok25x7-1200w.webp 1200w, /optimized/uploads/astera-upload-1777542736772-d2souok25x7-1600w.webp 1600w, /optimized/uploads/astera-upload-1777542736772-d2souok25x7-1787w.webp 1787w"
+          imageSizes="100vw"
           type="image/webp"
-        />
-        <link
-          rel="preload"
-          as="image"
-          href="/optimized/uploads/astera-upload-1777542736772-d2souok25x7-1600w.webp"
-          media="(min-width: 641px)"
-          type="image/webp"
+          fetchPriority="high"
         />
         <Script id="gtag-consent-init" strategy="beforeInteractive">
           {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('consent','default',{analytics_storage:'granted',ad_storage:'denied',wait_for_update:500});`}
