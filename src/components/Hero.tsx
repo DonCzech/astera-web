@@ -259,12 +259,8 @@ export default function Hero() {
           .hero-img {
             object-fit: cover;
             object-position: center center;
-            opacity: 0;
-            transition: opacity 0.6s ease-out;
-            will-change: opacity;
-          }
-          .hero-img.is-loaded {
             opacity: 1;
+            z-index: 2;
           }
           .hero-shimmer {
             position: absolute;

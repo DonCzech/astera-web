@@ -20,9 +20,9 @@
     "react-dom": "19.2.4"
   },
   "browserslist": [
-    "chrome >= 90",
-    "edge >= 90",
-    "firefox >= 90",
+    "chrome >= 94",
+    "edge >= 94",
+    "firefox >= 93",
     "safari >= 15",
     "ios_saf >= 15",
     "not dead"
