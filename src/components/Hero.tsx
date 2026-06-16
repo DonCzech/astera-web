@@ -87,11 +87,6 @@ export default function Hero() {
               : FALLBACK_LQIP_GRADIENT,
           }}
         >
-          <div
-            className="hero-shimmer"
-            style={{ opacity: desktopLoaded ? 0 : 1 }}
-            aria-hidden="true"
-          />
           <picture>
             {desktopImg && (
               <source
