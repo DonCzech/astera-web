@@ -163,8 +163,6 @@ export default function OptimizedImage({ src, alt = "", pictureStyle, noPlacehol
           ...imgProps.style,
           position: "relative",
           zIndex: 2,
-          opacity: loaded ? 1 : 0,
-          transition: loaded ? "opacity 0.5s ease" : "none",
         }}
       />
       <style>{`

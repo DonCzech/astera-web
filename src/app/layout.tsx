@@ -103,7 +103,7 @@ export default async function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaOrg) }}
         />
-        <link rel="preconnect" href="https://qmioor33ehuegiuc.public.blob.vercel-storage.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://qmioor33ehuegiuc.public.blob.vercel-storage.com" />
         <link rel="preload" as="image" href="/optimized/images/astera-logo.webp" type="image/webp" />
         <link
           rel="preload"

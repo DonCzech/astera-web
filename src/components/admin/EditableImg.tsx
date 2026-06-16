@@ -48,13 +48,16 @@ export default function EditableImg({ section, field, alt, style, className, siz
 
   const src = localPreview ?? getPath(content[section], field);
 
+  // Pre-fetch natural dimensions only for admins (used by hover overlay).
+  // Non-admins should never trigger this fetch — for non-optimized raw images
+  // it would re-download multi-MB PNGs and starve the LCP element on slow connections.
   useEffect(() => {
-    if (!src) { setDims(null); return; }
+    if (!admin.isAdmin || !src) { setDims(null); return; }
     const img = new window.Image();
     img.onload = () => setDims({ w: img.naturalWidth, h: img.naturalHeight });
     img.onerror = () => setDims(null);
     img.src = src;
-  }, [src]);
+  }, [src, admin.isAdmin]);
 
   // Compress image client-side before upload.
   // HEIC/HEIF always goes through canvas — Vercel's sharp build lacks the HEVC codec.
