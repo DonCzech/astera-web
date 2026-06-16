@@ -4,9 +4,6 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: process.cwd(),
   },
-  experimental: {
-    inlineCss: true,
-  },
   async redirects() {
     return [
       {
