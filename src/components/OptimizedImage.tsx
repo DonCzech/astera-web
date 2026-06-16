@@ -35,18 +35,23 @@ function derivedUploadImage(src: string) {
     fallback: `${base}${fallbackExt}`,
     webpSrcSet: uploadVariantWidths.map(width => `${base}-${width}w.webp ${width}w`).join(", "),
     fallbackSrcSet: uploadVariantWidths.map(width => `${base}-${width}w${fallbackExt} ${width}w`).join(", "),
-    width: undefined,
-    height: undefined,
+    width: undefined as number | undefined,
+    height: undefined as number | undefined,
+    lqip: undefined as string | undefined,
   };
 }
 
 export function getOptimizedImage(src?: string) {
-  if (!src || src.startsWith("data:") || src.startsWith("http") || src.endsWith(".svg")) {
+  if (!src || src.startsWith("data:") || src.endsWith(".svg")) {
     return null;
   }
-  // /uploads/ files are runtime-generated and ephemeral on Vercel — no srcset
-  if (src.startsWith("/uploads/")) return null;
-  return OPTIMIZED_IMAGE_MAP[src] ?? derivedUploadImage(src);
+  // Check the build-time map first — covers committed /uploads/ and /images/ that have LQIP
+  if (OPTIMIZED_IMAGE_MAP[src]) return OPTIMIZED_IMAGE_MAP[src];
+  // HTTP blob URLs and runtime /uploads/ — derive paths if pattern matches
+  if (src.startsWith("http") || src.startsWith("/uploads/")) {
+    return derivedUploadImage(src);
+  }
+  return null;
 }
 
 function pickFromSrcSet(srcSet: string | undefined, preferredWidth: number) {
@@ -121,6 +126,7 @@ export default function OptimizedImage({ src, alt = "", pictureStyle, noPlacehol
         backgroundSize: "cover",
         backgroundPosition: "center",
         overflow: "hidden",
+        borderRadius: imgProps.style?.borderRadius ?? pictureStyle?.borderRadius,
       }}
     >
       {/* Shimmer overlay — visible while image loads */}
