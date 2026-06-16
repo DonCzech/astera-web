@@ -71,6 +71,9 @@ function targetFor(src, meta) {
   const exact = exactTargets.get(src);
   if (exact) return exact;
 
+  // Moon phase icons are displayed at 20px (widget) or 180px (popup) — never need full 300×300
+  if (src.startsWith("/images/moon-phases/")) return { width: 180, height: 180 };
+
   const { width, height } = meta;
   if (!width || !height) return null;
 
@@ -117,11 +120,11 @@ async function writeVariant(source, target, output, format, fallbackExt) {
   });
 
   if (format === "webp") {
-    img = img.webp({ quality: 100, effort: 6, smartSubsample: false });
+    img = img.webp({ quality: 85, effort: 6, smartSubsample: true });
   } else if (fallbackExt === ".png") {
-    img = img.png({ compressionLevel: 9, adaptiveFiltering: true, palette: false });
+    img = img.png({ compressionLevel: 9, adaptiveFiltering: true, palette: true });
   } else {
-    img = img.jpeg({ quality: 100, mozjpeg: true, chromaSubsampling: "4:4:4" });
+    img = img.jpeg({ quality: 85, mozjpeg: true, chromaSubsampling: "4:2:0" });
   }
 
   await fs.mkdir(path.dirname(output), { recursive: true });
@@ -161,12 +164,12 @@ for (const file of files) {
 
   const fallbackMeta = await sharp(path.join(publicDir, fallback), { failOn: "none" }).metadata();
 
-  // LQIP — tiny 20px blur placeholder embedded as base64 data URL
+  // LQIP — ~48px blurred placeholder, preserves silhouette/composition while staying tiny (~1-2KB)
   const lqipBuffer = await sharp(file, { failOn: "none" })
     .rotate()
-    .resize({ width: 20, withoutEnlargement: false })
-    .blur(4)
-    .webp({ quality: 20 })
+    .resize({ width: 48, withoutEnlargement: false })
+    .blur(1.5)
+    .webp({ quality: 40 })
     .toBuffer();
   const lqip = `data:image/webp;base64,${lqipBuffer.toString("base64")}`;
 

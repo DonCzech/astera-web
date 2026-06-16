@@ -64,7 +64,8 @@ export default function MoonWidget({ headerHeight }: Props) {
   const phaseLabel = phaseText?.label || moonDay.phase;
   const desc       = phaseText?.description || "";
   const stageLabel = moonContent.stages?.[moonDay.stage] || moonDay.stage;
-  const imgSrc  = `/images/moon-phases/${moonDay.img}`;
+  const imgBase = moonDay.img.replace(/\.[^.]+$/, "");
+  const imgSrc  = `/optimized/images/moon-phases/${imgBase}.webp`;
 
   return (
     <>

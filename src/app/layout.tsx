@@ -1,6 +1,22 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import { Playfair_Display, Poppins } from "next/font/google";
 import "./globals.css";
+
+const playfair = Playfair_Display({
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "700"],
+  style: ["normal", "italic"],
+  display: "swap",
+  variable: "--font-playfair",
+});
+
+const poppins = Poppins({
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+  variable: "--font-poppins",
+});
 import { ContentProvider } from "@/context/ContentContext";
 import LiveEditor from "@/components/admin/LiveEditor";
 import CustomStyles from "@/components/CustomStyles";
@@ -81,14 +97,13 @@ export default async function RootLayout({
     getCachedContentForLang("ua"),
   ]);
   return (
-    <html lang="cs">
+    <html lang="cs" className={`${playfair.variable} ${poppins.variable}`}>
       <head>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaOrg) }}
         />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="preload" as="image" href="/optimized/images/astera-logo.webp" type="image/webp" />
         <link
           rel="preload"
           as="image"
@@ -102,10 +117,6 @@ export default async function RootLayout({
           href="/optimized/uploads/astera-upload-1777542736772-d2souok25x7-1600w.webp"
           media="(min-width: 641px)"
           type="image/webp"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Poppins:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
         />
         <Script id="gtag-consent-init" strategy="beforeInteractive">
           {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('consent','default',{analytics_storage:'granted',ad_storage:'denied',wait_for_update:500});`}
