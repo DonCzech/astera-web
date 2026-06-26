@@ -136,6 +136,10 @@ export const DEFAULT_EN_CONTENT: SiteContent = {
     body2: "Her work is grounded in respect, ethics and an individual perception of each place and person. She doesn't seek quick effects, but real harmony — the kind you can feel in everyday life and continue nurturing on your own.",
     buttonText: "More about me",
   },
+  testimonials: {
+    ...DEFAULT_CONTENT.testimonials,
+    sectionTitle: "What people say about me",
+  },
   manifest: {
     sectionTitle: "Choose what you need right now",
     cards: [
@@ -410,6 +414,10 @@ export const DEFAULT_UK_CONTENT: SiteContent = {
     body1: "Астера — провідник для тих моментів, коли ваш дім, робота чи внутрішній простір потребує нового подиху. Вона поєднує чутливу інтуїцію з практичним, спокійним підходом та допомагає людям повернути легкість, безпеку і ясну енергію у свій простір.",
     body2: "Її робота ґрунтується на повазі, етиці та індивідуальному сприйнятті кожного місця та людини. Вона не шукає швидких ефектів, а справжньої гармонії — такої, яку можна відчути в повсякденному житті й надалі плекати власними силами.",
     buttonText: "Більше про мене",
+  },
+  testimonials: {
+    ...DEFAULT_CONTENT.testimonials,
+    sectionTitle: "Що про мене кажуть",
   },
   manifest: {
     sectionTitle: "Оберіть те, що вам зараз потрібно",

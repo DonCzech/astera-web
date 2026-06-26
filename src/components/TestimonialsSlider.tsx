@@ -9,9 +9,15 @@ const SWIPE_THRESHOLD_PX = 42;
 const AUTOPLAY_DELAY_MS = 9000;
 
 export default function TestimonialsSlider() {
-  const { content, admin, updateSection } = useContent();
+  const { content, admin, updateSection, currentLang } = useContent();
   const sec = content.testimonials;
   const items: Testimonial[] = sec?.items ?? [];
+  const localizedSectionTitle =
+    currentLang === "en" && sec?.sectionTitle === "Co o mně říkají"
+      ? "What people say about me"
+      : currentLang === "ua" && sec?.sectionTitle === "Co o mně říkají"
+        ? "Що про мене кажуть"
+        : sec?.sectionTitle;
 
   const [active, setActive] = useState(0);
   const [animating, setAnimating] = useState(false);
@@ -100,7 +106,11 @@ export default function TestimonialsSlider() {
 
   return (
     <div className="testimonials-slider">
-      <EditableText section="testimonials" field="sectionTitle" tag="h3" className="ts-heading" />
+      {isAdmin ? (
+        <EditableText section="testimonials" field="sectionTitle" tag="h3" className="ts-heading" />
+      ) : (
+        <h3 className="ts-heading">{localizedSectionTitle}</h3>
+      )}
 
       {/* Admin: tab selector */}
       {isAdmin && (

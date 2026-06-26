@@ -2,6 +2,22 @@
 import Link from "next/link";
 import { useState } from "react";
 import OptimizedImage from "@/components/OptimizedImage";
+import { useContent } from "@/context/ContentContext";
+
+const crystalBallCopy = {
+  cs: {
+    title: "Zeptej se křišťálové koule",
+    subtitle: "Nech křišťálovou kouli odhalit, co si teď žádá tvou pozornost…",
+  },
+  en: {
+    title: "Ask the crystal ball",
+    subtitle: "Let the crystal ball reveal what is asking for your attention right now…",
+  },
+  ua: {
+    title: "Запитай кришталеву кулю",
+    subtitle: "Нехай кришталева куля відкриє, що зараз потребує твоєї уваги…",
+  },
+};
 
 const answers = [
   "Záři mezi správnými lidmi.",
@@ -19,6 +35,8 @@ const answers = [
 ];
 
 export default function CrystalBall() {
+  const { currentLang } = useContent();
+  const copy = crystalBallCopy[currentLang] ?? crystalBallCopy.cs;
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<string | null>(null);
   const [isShaking, setIsShaking] = useState(false);
@@ -44,9 +62,9 @@ export default function CrystalBall() {
         <div className="cb-wrap">
           {/* Header */}
           <p className="cb-eyebrow">Křišťálová koule</p>
-          <h2 className="cb-title">Zeptej se křišťálové koule</h2>
+          <h2 className="cb-title">{copy.title}</h2>
           <p className="cb-subtitle">
-            Nech křišťálovou kouli odhalit, co si teď žádá tvou pozornost…
+            {copy.subtitle}
           </p>
 
           {/* Ball */}

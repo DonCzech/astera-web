@@ -2,8 +2,24 @@
 import Link from "next/link";
 import { useState } from "react";
 import OptimizedImage from "@/components/OptimizedImage";
+import { useContent } from "@/context/ContentContext";
 
 type Phase = "idle" | "animating" | "revealed";
+
+const crystalBallCopy = {
+  cs: {
+    title: "Zeptej se křišťálové koule",
+    subtitle: "Nech křišťálovou kouli odhalit, co si teď žádá tvou pozornost…",
+  },
+  en: {
+    title: "Ask the crystal ball",
+    subtitle: "Let the crystal ball reveal what is asking for your attention right now…",
+  },
+  ua: {
+    title: "Запитай кришталеву кулю",
+    subtitle: "Нехай кришталева куля відкриє, що зараз потребує твоєї уваги…",
+  },
+};
 
 const answers = [
   "Záři mezi správnými lidmi.",
@@ -21,6 +37,8 @@ const answers = [
 ];
 
 export default function PickACard() {
+  const { currentLang } = useContent();
+  const copy = crystalBallCopy[currentLang] ?? crystalBallCopy.cs;
   const [phase, setPhase] = useState<Phase>("idle");
   const [answer, setAnswer] = useState<string | null>(null);
 
@@ -79,9 +97,9 @@ export default function PickACard() {
             {phase === "idle" && (
               <>
                 <span className="pac-line" />
-                <h2 className="pac-title">Zeptej se křišťálové koule</h2>
+                <h2 className="pac-title">{copy.title}</h2>
                 <p className="pac-subtitle">
-                  Nech křišťálovou kouli odhalit, co si teď žádá tvou pozornost…
+                  {copy.subtitle}
                 </p>
               </>
             )}
