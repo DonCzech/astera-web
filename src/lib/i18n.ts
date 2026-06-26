@@ -15,6 +15,18 @@ export const LANGUAGES: LangMeta[] = [
   { code: "ua", label: "Українська", flag: "🇺🇦", hrefLang: "uk-UA" },
 ];
 
+export const LOCALIZED_ROUTES = [
+  { id: "about", slugs: { cs: "o-mne", en: "about", ua: "pro-mene" } },
+  { id: "services", slugs: { cs: "sluzby", en: "services", ua: "posluhy" } },
+  { id: "consultation", slugs: { cs: "konzultace", en: "consultation", ua: "konsultatsiya" } },
+  { id: "shop", slugs: { cs: "e-shop", en: "shop", ua: "e-shop" } },
+  { id: "book", slugs: { cs: "kniha", en: "book", ua: "knyha" } },
+  { id: "faq", slugs: { cs: "navody", en: "faq", ua: "faq" } },
+  { id: "events", slugs: { cs: "akce", en: "events", ua: "podiyi" } },
+  { id: "thanks", slugs: { cs: "jak-podekovat", en: "how-to-thank", ua: "yak-podyakuvaty" } },
+  { id: "pick-a-card", slugs: { cs: "pick-a-card", en: "pick-a-card", ua: "vyber-kartu" } },
+] as const;
+
 /** Detect language from a pathname like "/en/about" → "en" */
 export function detectLang(pathname: string): Lang {
   if (pathname === "/en" || pathname.startsWith("/en/")) return "en";
@@ -41,6 +53,31 @@ export function addLangPrefix(pathname: string, lang: Lang): string {
   return base;
 }
 
+export function localizePath(pathname: string, lang: Lang): string {
+  const base = stripLangPrefix(pathname).split(/[?#]/)[0] || "/";
+  if (base === "/") return addLangPrefix("/", lang);
+
+  const parts = base.replace(/^\/+/, "").split("/");
+  const first = parts[0];
+  const route = LOCALIZED_ROUTES.find(item =>
+    Object.values(item.slugs).includes(first as never)
+  );
+
+  if (!route) return addLangPrefix(base, lang);
+
+  const translated = route.slugs[lang];
+  const rest = parts.slice(1).join("/");
+  return addLangPrefix(`/${translated}${rest ? `/${rest}` : ""}`, lang);
+}
+
+export function resolveLocalizedPageSlug(slug: string, lang: Lang): string[] {
+  const route = LOCALIZED_ROUTES.find(item => item.slugs[lang] === slug);
+  if (!route) return [slug];
+
+  const fallbacks = [slug, route.slugs.cs];
+  return Array.from(new Set(fallbacks));
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ENGLISH DEFAULT CONTENT
 // ─────────────────────────────────────────────────────────────────────────────
@@ -51,12 +88,12 @@ export const DEFAULT_EN_CONTENT: SiteContent = {
     ...DEFAULT_CONTENT.header,
     navItems: [
       { label: "About me",     href: "/en/about" },
-      { label: "Services",     href: "/en/sluzby" },
-      { label: "Consultation", href: "/en/konzultace" },
+      { label: "Services",     href: "/en/services" },
+      { label: "Consultation", href: "/en/consultation" },
       { label: "E-shop",       href: "https://www.asteralight.cz/shop/" },
-      { label: "Book",         href: "/en/kniha" },
-      { label: "FAQ",          href: "/en/navody" },
-      { label: "How to thank", href: "/en/jak-podekovat" },
+      { label: "Book",         href: "/en/book" },
+      { label: "FAQ",          href: "/en/faq" },
+      { label: "How to thank", href: "/en/how-to-thank" },
       { label: "Pick a card",  href: "/en/pick-a-card" },
     ],
   },
@@ -325,14 +362,14 @@ export const DEFAULT_UK_CONTENT: SiteContent = {
   header: {
     ...DEFAULT_CONTENT.header,
     navItems: [
-      { label: "Про мене",     href: "/ua/o-mne" },
-      { label: "Послуги",      href: "/ua/sluzby" },
-      { label: "Консультація", href: "/ua/konzultace" },
+      { label: "Про мене",     href: "/ua/pro-mene" },
+      { label: "Послуги",      href: "/ua/posluhy" },
+      { label: "Консультація", href: "/ua/konsultatsiya" },
       { label: "Е-магазин",    href: "https://www.asteralight.cz/shop/" },
-      { label: "Книга",        href: "/ua/kniha" },
-      { label: "FAQ",            href: "/ua/navody" },
-      { label: "Як подякувати",  href: "/ua/jak-podekovat" },
-      { label: "Вибери картку",  href: "/ua/pick-a-card" },
+      { label: "Книга",        href: "/ua/knyha" },
+      { label: "FAQ",            href: "/ua/faq" },
+      { label: "Як подякувати",  href: "/ua/yak-podyakuvaty" },
+      { label: "Вибери картку",  href: "/ua/vyber-kartu" },
     ],
   },
   hero: {

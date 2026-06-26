@@ -227,13 +227,21 @@ function CardsGridBlock({ b, ctx }: { b: PageBlock; ctx: EditableBlockContext })
 
 function TwoColBlock({ b, ctx, pageSlug }: { b: PageBlock; ctx: EditableBlockContext; pageSlug?: string }) {
   const topAligned = pageSlug === "o-mne";
+  const needsWhiteMatte = b.twoColImage === "/images/astera-about-home.png";
+  const twoColImageStyle = {
+    width: "100%",
+    height: "auto",
+    borderRadius: 12,
+    display: "block",
+    backgroundColor: needsWhiteMatte ? "#ffffff" : undefined,
+  };
   const imgCol = (
     <div className="page-two-col-image" style={{ flex: 1, minWidth: 0 }}>
       {b.twoColImage && (
         ctx ? (
-          <EditableImg section="pages" field={fieldPath(ctx, "twoColImage")} alt={b.twoColTitle || ""} sizes="(max-width: 768px) calc(100vw - 32px), 460px" style={{ width: "100%", height: "auto", borderRadius: 12, display: "block" }} />
+          <EditableImg section="pages" field={fieldPath(ctx, "twoColImage")} alt={b.twoColTitle || ""} sizes="(max-width: 768px) calc(100vw - 32px), 460px" style={twoColImageStyle} />
         ) : (
-          <OptimizedImage src={b.twoColImage} alt={b.twoColTitle || ""} sizes="(max-width: 768px) calc(100vw - 32px), 460px" style={{ width: "100%", height: "auto", borderRadius: 12, display: "block" }} />
+          <OptimizedImage src={b.twoColImage} alt={b.twoColTitle || ""} sizes="(max-width: 768px) calc(100vw - 32px), 460px" style={twoColImageStyle} pictureStyle={needsWhiteMatte ? { backgroundColor: "#ffffff" } : undefined} noPlaceholder={needsWhiteMatte} />
         )
       )}
     </div>

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function UkAboutPage() {
-  redirect("/ua/o-mne");
+  redirect("/ua/pro-mene");
 }

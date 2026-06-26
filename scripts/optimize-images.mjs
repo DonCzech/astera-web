@@ -48,6 +48,10 @@ const preservePngFallback = new Set([
   "/images/new-book-icon.png",
 ]);
 
+const fullWidthOnly = new Set([
+  "/images/astera-about-home.png",
+]);
+
 async function listImages(dir) {
   const entries = await fs.readdir(dir, { withFileTypes: true });
   const files = [];
@@ -97,7 +101,8 @@ function variantPath(base, width, ext) {
   return `${base}-${width}w${ext}`;
 }
 
-function candidateWidths(target) {
+function candidateWidths(target, src) {
+  if (fullWidthOnly.has(src)) return [target.width];
   const widths = responsiveWidths.filter(width => width < target.width);
   widths.push(target.width);
   return [...new Set(widths)].sort((a, b) => a - b);
@@ -145,7 +150,7 @@ for (const file of files) {
   const base = outBase(src);
   const fallback = `${base}${fallbackExt}`;
   const webp = `${base}.webp`;
-  const widths = candidateWidths(target);
+  const widths = candidateWidths(target, src);
 
   await writeVariant(file, target, path.join(publicDir, webp), "webp", ext);
   await writeVariant(file, target, path.join(publicDir, fallback), "fallback", fallbackExt);

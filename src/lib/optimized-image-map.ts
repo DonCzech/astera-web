@@ -264,8 +264,8 @@ export const OPTIMIZED_IMAGE_MAP: Record<string, OptimizedImageEntry> = {
   "/images/astera-about-home.png": {
     "webp": "/optimized/images/astera-about-home.webp",
     "fallback": "/optimized/images/astera-about-home.png",
-    "webpSrcSet": "/optimized/images/astera-about-home-331w.webp 331w, /optimized/images/astera-about-home-480w.webp 480w, /optimized/images/astera-about-home-579w.webp 579w",
-    "fallbackSrcSet": "/optimized/images/astera-about-home-331w.png 331w, /optimized/images/astera-about-home-480w.png 480w, /optimized/images/astera-about-home-579w.png 579w",
+    "webpSrcSet": "/optimized/images/astera-about-home-579w.webp 579w",
+    "fallbackSrcSet": "/optimized/images/astera-about-home-579w.png 579w",
     "width": 579,
     "height": 816,
     "lqip": "data:image/webp;base64,UklGRgYDAABXRUJQVlA4WAoAAAAQAAAALwAAQwAAQUxQSFsBAAANmQ8QRPQ/BI2c17ZVa/lwp3JqWv3/v8Lp3Hp399OTrJPT3pV927OzcLjZFXp2QkUiJmACVuLlq3CNddbKli0eueeW2+6466bf3aJly2xB4vW5WsZj/ZqrzjjhqNMu+qENdtjvgCMO+rLPHtutB3vAHnstcrV0ajxkDHcK1vuw2Ggzz3TVYfZa6dR9fRnKTf6t40Add019sHm0OV1WpVchHV6XZbE2O/G81aX3PpkiW2suGfQKoKuOoTlIvKKs9t9jGFu2oBleKoCmOpoTrytUmFVDhgMAXwADYBbEG5YqRJJwAJBJBJzEm5cMhEQ6oSrQhbcrCDCBQVZTBt7W81Qd9GCVp1sJLhvGaObZFhRIupZhnsr3shKAoPWFma11lcFAX+ocswylsC4jIycVAqaGzcBAMQEgNFkx8HDKfqNcRnIUhQz+x1IQIzDJCoK7Oop2lEaYyoJU2rvYAQBWUDgghAEAABAMAJ0BKjAARAA+7V6qTamkpCIxFA2xMB2JQBbQgmAoZPqKQDYo6R3a+xwR3JN+Xz1NYYc4AZbY5rwvjaqp+34WeOLa5IjYzdv/oouPP5H3lXOZeWResUukOObOZb7bK/lX+lRhAPRmmADu4IR9WLvwTlChKG74wzqk10NG6NMiXCjFw4Ys/VORQeqjY75WuRvonw597b3eC6q+VDzq3sUJQQOC6O9kl2PeigE8XtXraKe6xUiiesRKiuHj51ANxh8nVy05oXiROARYcwCFVxp4sTLq1OmcE+GKYc1Ap02X32A4jfDUPxVSAypNCkJmxuW+BuWF7VaCg9chhPdvkBdyRnm02eXT9zxgThM1EP0R6cGmu+loEwD/T8Qy0gPwx3zusjwM5n8mzJ6xxAkswel6IAKZf5Tr26/ZkM9JFN2WIbZUMlGs4ZpPsQtSSEYEpDx2ZRygtZ+Er5QxpqY6ANuepHmse85LOoVXEdOoa7yFeEl7X2/80aJOkBEIkk2wOlmAAAA="

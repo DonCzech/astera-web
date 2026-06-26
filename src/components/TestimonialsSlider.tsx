@@ -6,6 +6,7 @@ import EditableText from "./admin/EditableText";
 
 const MAX_TEXT = 350;
 const SWIPE_THRESHOLD_PX = 42;
+const AUTOPLAY_DELAY_MS = 9000;
 
 export default function TestimonialsSlider() {
   const { content, admin, updateSection } = useContent();
@@ -15,6 +16,7 @@ export default function TestimonialsSlider() {
   const [active, setActive] = useState(0);
   const [animating, setAnimating] = useState(false);
   const [direction, setDirection] = useState<"left" | "right">("right");
+  const [isPaused, setIsPaused] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
   const isAdmin = admin.isAdmin;
@@ -43,10 +45,10 @@ export default function TestimonialsSlider() {
   }, [active, goTo, items.length]);
 
   useEffect(() => {
-    if (isAdmin) return;
-    timerRef.current = setTimeout(next, 5000);
+    if (isAdmin || isPaused || items.length <= 1) return;
+    timerRef.current = setTimeout(next, AUTOPLAY_DELAY_MS);
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [active, next, isAdmin]);
+  }, [active, next, isAdmin, isPaused, items.length]);
 
   function updateItems(newItems: Testimonial[]) {
     updateSection("testimonials", { ...sec, items: newItems });
@@ -114,10 +116,16 @@ export default function TestimonialsSlider() {
       {/* Card */}
       <div
         className="ts-card-wrap"
+        onMouseEnter={() => { if (!isAdmin) setIsPaused(true); }}
+        onMouseLeave={() => {
+          swipeStartRef.current = null;
+          if (!isAdmin) setIsPaused(false);
+        }}
+        onFocus={() => { if (!isAdmin) setIsPaused(true); }}
+        onBlur={() => { if (!isAdmin) setIsPaused(false); }}
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onPointerCancel={() => { swipeStartRef.current = null; }}
-        onPointerLeave={() => { swipeStartRef.current = null; }}
       >
         <div className={`ts-card ts-${animating ? (direction === "right" ? "exit-left" : "exit-right") : "enter"}`}>
 

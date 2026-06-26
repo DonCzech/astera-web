@@ -106,7 +106,8 @@ export default function OptimizedImage({ src, alt = "", pictureStyle, noPlacehol
 
   // Handle already-cached images — onLoad won't fire if img.complete is already true
   useEffect(() => {
-    if (imgRef.current?.complete) setLoaded(true);
+    if (!imgRef.current?.complete) return;
+    queueMicrotask(() => setLoaded(true));
   }, []);
 
   if (!image) {
@@ -122,7 +123,7 @@ export default function OptimizedImage({ src, alt = "", pictureStyle, noPlacehol
         ...pictureStyle,
         position: "relative",
         display: pictureStyle?.display ?? "block",
-        backgroundImage: usePlaceholder ? `url(${image.lqip})` : undefined,
+        backgroundImage: usePlaceholder && !loaded ? `url(${image.lqip})` : undefined,
         backgroundSize: "cover",
         backgroundPosition: "center",
         overflow: "hidden",

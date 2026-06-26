@@ -5,7 +5,7 @@ import BlockRenderer from "@/components/BlockRenderer";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import { useContent } from "@/context/ContentContext";
-import { UI_STRINGS } from "@/lib/i18n";
+import { resolveLocalizedPageSlug, UI_STRINGS } from "@/lib/i18n";
 
 export default function EditablePage({ slug }: { slug: string }) {
   const { content, contentLoaded, admin, currentLang } = useContent();
@@ -23,14 +23,15 @@ export default function EditablePage({ slug }: { slug: string }) {
     );
   }
 
-  const page = (content.pages || []).find(p => p.slug === slug);
+  const slugCandidates = resolveLocalizedPageSlug(slug, currentLang);
+  const page = (content.pages || []).find(p => slugCandidates.includes(p.slug));
   if (!page) return notFound();
 
   return (
     <>
       <Header />
       <main style={{ paddingTop: admin.isAdmin ? "128px" : "102px", minHeight: "60vh" }}>
-        <BlockRenderer blocks={page.blocks} pageSlug={slug} />
+        <BlockRenderer blocks={page.blocks} pageSlug={page.slug} />
       </main>
       <Footer />
     </>

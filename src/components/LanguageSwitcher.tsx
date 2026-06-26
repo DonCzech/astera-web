@@ -1,6 +1,6 @@
 "use client";
 import { usePathname } from "next/navigation";
-import { LANGUAGES, LangMeta, stripLangPrefix, Lang } from "@/lib/i18n";
+import { LANGUAGES, LangMeta, localizePath, Lang } from "@/lib/i18n";
 import { useContent } from "@/context/ContentContext";
 
 interface Props {
@@ -10,13 +10,9 @@ interface Props {
 export default function LanguageSwitcher({ compact = false }: Props) {
   const pathname = usePathname() ?? "/";
   const { currentLang } = useContent();
-  const base = stripLangPrefix(pathname);
 
   function hrefFor(lang: Lang): string {
-    if (lang === "cs") return base;
-    if (lang === "en") return base === "/" ? "/en" : `/en${base}`;
-    if (lang === "ua") return base === "/" ? "/ua" : `/ua${base}`;
-    return base;
+    return localizePath(pathname, lang);
   }
 
   return (

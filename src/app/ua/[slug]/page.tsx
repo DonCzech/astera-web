@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { getAllContentForLang } from "@/lib/db";
+import { localizePath, resolveLocalizedPageSlug } from "@/lib/i18n";
 import DynamicPageClient from "@/app/[slug]/DynamicPageClient";
 
 export async function generateMetadata({
@@ -11,7 +13,8 @@ export async function generateMetadata({
   try {
     const content = await getAllContentForLang("ua");
     const pages = (content.pages ?? []) as Array<{ slug: string; title?: string; description?: string }>;
-    const page = pages.find((p) => p.slug === slug);
+    const candidates = resolveLocalizedPageSlug(slug, "ua");
+    const page = pages.find((p) => candidates.includes(p.slug));
     if (!page) return {};
     return {
       title: { absolute: page.title || "Astera Light" },
@@ -27,5 +30,9 @@ export default async function UkDynamicPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  const { slug } = await params;
+  const corrected = localizePath(`/${slug}`, "ua");
+  if (corrected !== `/ua/${slug}`) redirect(corrected);
+
   return <DynamicPageClient params={params} />;
 }

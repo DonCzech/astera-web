@@ -4,7 +4,7 @@ import { useContent } from "@/context/ContentContext";
 import EditableText from "./admin/EditableText";
 import OptimizedImage from "@/components/OptimizedImage";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
-import { UI_STRINGS } from "@/lib/i18n";
+import { addLangPrefix, UI_STRINGS } from "@/lib/i18n";
 
 const SOCIAL_ICONS: Record<string, React.ReactNode> = {
   Facebook: <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" /></svg>,
@@ -19,6 +19,7 @@ const HIDDEN_SOCIALS = new Set(["Facebook", "Pinterest", "TikTok", "LinkedIn"]);
 export default function Footer() {
   const { content, currentLang } = useContent();
   const f = content.footer;
+  const logoHref = addLangPrefix("/", currentLang);
   const logoUrl = content.siteSettings?.logoUrl || "/images/astera-logo.png";
   const ui = UI_STRINGS[currentLang];
   const [firstName, setFirstName] = useState("");
@@ -39,7 +40,7 @@ export default function Footer() {
         >
           {/* Left column */}
           <div>
-            <a href="https://www.asteralight.cz" style={{ display: "inline-block", marginBottom: "28px" }}>
+            <a href={logoHref} style={{ display: "inline-block", marginBottom: "28px" }}>
               <OptimizedImage src={logoUrl} alt="Astera Light" sizes="80px" style={{ height: "60px", width: "auto" }} />
             </a>
 

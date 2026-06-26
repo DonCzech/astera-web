@@ -3,19 +3,22 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useContent } from "@/context/ContentContext";
 import { NavItem } from "@/lib/content-types";
-import { addLangPrefix, detectLang } from "@/lib/i18n";
+import { addLangPrefix, detectLang, localizePath } from "@/lib/i18n";
 import EditableText from "./admin/EditableText";
 import OptimizedImage from "@/components/OptimizedImage";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import MoonWidget from "@/components/MoonWidget";
 
 export default function Header() {
-  const { content, admin } = useContent();
+  const { content, admin, currentLang } = useContent();
   const { navItems } = content.header;
   const pathname = usePathname() || "/";
   const logoHref = addLangPrefix("/", detectLang(pathname));
   const logoUrl = content.siteSettings?.logoUrl || "/images/astera-logo.png";
   const adminBarH = admin.isAdmin ? 26 : 0;
+
+  const localizeInternalHref = (href: string) =>
+    href.startsWith("/") ? localizePath(href, currentLang) : href;
 
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -74,7 +77,7 @@ export default function Header() {
               onMouseLeave={() => setActiveDropdown(null)}
             >
               <a
-                href={link.href}
+                href={localizeInternalHref(link.href)}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -117,7 +120,7 @@ export default function Header() {
                   {link.dropdown.map(item => (
                     <a
                       key={item.label}
-                      href={item.href}
+                      href={localizeInternalHref(item.href)}
                       style={{
                         display: "block",
                         padding: "10px 20px",
@@ -164,7 +167,7 @@ export default function Header() {
           {navItems.map((link: NavItem) => (
             <a
               key={link.label}
-              href={link.href}
+              href={localizeInternalHref(link.href)}
               style={{
                 display: "block",
                 padding: "12px 30px",
