@@ -44,6 +44,14 @@ export const PUBLIC_ROUTES: PublicRoute[] = [
     priority: 0.9,
     changeFrequency: "daily",
   },
+  {
+    path: "/events",
+    title: "Akce a online setkání | Astera Light",
+    description:
+      "Živá a online setkání s Asterou pro výklad karet, intuici, zklidnění, práci se záměrem a jemné vedení v bezpečném prostoru.",
+    priority: 0.88,
+    changeFrequency: "weekly",
+  },
 ];
 
 export type SeoPage = {
