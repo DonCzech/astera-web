@@ -1,12 +1,10 @@
 import { revalidateTag, revalidatePath } from "next/cache";
 import { CONTENT_CACHE_TAG } from "@/lib/db";
 
-// Secret must match REVALIDATE_SECRET env var (or "dev" in development)
-const SECRET = process.env.REVALIDATE_SECRET ?? "dev";
-
 export async function POST(request: Request) {
+  const secret = process.env.REVALIDATE_SECRET ?? "dev";
   const body = await request.json().catch(() => ({}));
-  if (body.secret !== SECRET) {
+  if (body.secret !== secret) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
   revalidateTag(CONTENT_CACHE_TAG, { expire: 0 });
