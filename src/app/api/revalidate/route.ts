@@ -9,7 +9,7 @@ export async function POST(request: Request) {
   if (body.secret !== SECRET) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
-  revalidateTag(CONTENT_CACHE_TAG);
+  revalidateTag(CONTENT_CACHE_TAG, { expire: 0 });
   revalidatePath("/", "layout");
   return Response.json({ ok: true, revalidated: true });
 }
