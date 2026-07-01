@@ -3,7 +3,7 @@ import { useRef, useLayoutEffect, useEffect, useState, useCallback } from "react
 import { createPortal } from "react-dom";
 import { useContent } from "@/context/ContentContext";
 import { SiteContent } from "@/lib/content-types";
-import { Lang, LANGUAGES } from "@/lib/i18n";
+import { Lang, LANGUAGES, localizeHtmlHrefs } from "@/lib/i18n";
 import { applyInlineStyle, restoreSelection, sanitizeEditorPaste, selectionInside } from "@/lib/editor-html";
 
 type EditableObject = Record<string, unknown> | unknown[];
@@ -189,7 +189,7 @@ export default function EditableText({
   // ── Non-admin ─────────────────────────────────────────────────────────────
   if (!isAdmin) {
     if (richText) {
-      return <El style={style} className={className} dangerouslySetInnerHTML={{ __html: value }} />;
+      return <El style={style} className={className} dangerouslySetInnerHTML={{ __html: localizeHtmlHrefs(value, currentLang) }} />;
     }
     return <El style={style} className={className}>{htmlToText(value)}</El>;
   }

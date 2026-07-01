@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useContent } from "@/context/ContentContext";
 import { NavItem } from "@/lib/content-types";
-import { addLangPrefix, detectLang, localizePath } from "@/lib/i18n";
+import { addLangPrefix, detectLang, localizeHref } from "@/lib/i18n";
 import EditableText from "./admin/EditableText";
 import OptimizedImage from "@/components/OptimizedImage";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -17,8 +17,7 @@ export default function Header() {
   const logoUrl = content.siteSettings?.logoUrl || "/images/astera-logo.png";
   const adminBarH = admin.isAdmin ? 26 : 0;
 
-  const localizeInternalHref = (href: string) =>
-    href.startsWith("/") ? localizePath(href, currentLang) : href;
+  const localizeInternalHref = (href: string) => localizeHref(href, currentLang);
 
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);

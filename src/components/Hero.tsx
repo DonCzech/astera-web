@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useContent } from "@/context/ContentContext";
 import EditableText from "./admin/EditableText";
 import { getOptimizedImage } from "@/components/OptimizedImage";
+import { localizeHref } from "@/lib/i18n";
 
 // Generic warm-tone gradient — shows for half a frame if LQIP isn't ready.
 // Tones match the actual hero photo (cream / soft purple / window light).
@@ -11,16 +12,8 @@ const FALLBACK_LQIP_GRADIENT =
   "radial-gradient(circle at 72% 62%, rgba(228,212,198,0.55) 0%, transparent 50%)," +
   "linear-gradient(135deg, #ece0d2 0%, #d8c5b6 50%, #c4ab9c 100%)";
 
-type Layer = {
-  className: string;
-  img: ReturnType<typeof getOptimizedImage>;
-  rawSrc: string;
-  aspectRatio: string;
-  sizes: string;
-};
-
 export default function Hero() {
-  const { content, admin, updateSection } = useContent();
+  const { content, admin, updateSection, currentLang } = useContent();
   const h = content.hero;
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -39,10 +32,6 @@ export default function Hero() {
   const desktopLqip = desktopImg?.lqip;
   const mobileLqip = mobileImg?.lqip || desktopLqip;
 
-  const desktopAspect =
-    desktopImg?.width && desktopImg?.height
-      ? `${desktopImg.width} / ${desktopImg.height}`
-      : "1787 / 880";
   const mobileAspect =
     mobileImg?.width && mobileImg?.height
       ? `${mobileImg.width} / ${mobileImg.height}`
@@ -54,8 +43,11 @@ export default function Hero() {
   const mobileImgRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
-    if (desktopImgRef.current?.complete) setDesktopLoaded(true);
-    if (mobileImgRef.current?.complete) setMobileLoaded(true);
+    const frame = requestAnimationFrame(() => {
+      if (desktopImgRef.current?.complete) setDesktopLoaded(true);
+      if (mobileImgRef.current?.complete) setMobileLoaded(true);
+    });
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   async function handleBgUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -201,7 +193,7 @@ export default function Hero() {
               </div>
               <div className="hero-actions">
                 <a
-                  href={h.ctaHref}
+                  href={localizeHref(h.ctaHref, currentLang)}
                   className="btn-primary hero-primary-button"
                   style={{ background: primaryButtonBg, color: primaryButtonColor }}
                 >

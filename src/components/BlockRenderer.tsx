@@ -2,10 +2,12 @@
 import type { CSSProperties, ElementType } from "react";
 import { PageBlock } from "@/lib/content-types";
 import { useContent } from "@/context/ContentContext";
+import { localizeHref, localizeHtmlHrefs, Lang } from "@/lib/i18n";
 import EditableImg from "@/components/admin/EditableImg";
 import EditableText from "@/components/admin/EditableText";
 import OptimizedImage, { optimizedImageSet } from "@/components/OptimizedImage";
 import FaqAccordionBlock from "@/components/FaqAccordionBlock";
+import ContactFormBlock from "@/components/ContactFormBlock";
 
 const ALIGN = { left: "left", center: "center", right: "right" } as const;
 type HeadingTag = "h1" | "h2" | "h3" | "h4";
@@ -23,11 +25,11 @@ function cardFieldPath(ctx: EditableBlockContext, cardIndex: number, field: stri
   return ctx ? `${ctx.pageIndex}.blocks.${ctx.blockIndex}.cards.${cardIndex}.${field}` : "";
 }
 
-function editableText(ctx: EditableBlockContext, field: string, value: string, tag: string, style: CSSProperties, richText = false, className?: string) {
+function editableText(ctx: EditableBlockContext, field: string, value: string, tag: string, style: CSSProperties, richText = false, className?: string, lang?: Lang) {
   if (!ctx) {
     const Tag = tag as ElementType;
     return richText
-      ? <Tag style={style} className={className} dangerouslySetInnerHTML={{ __html: value }} />
+      ? <Tag style={style} className={className} dangerouslySetInnerHTML={{ __html: lang ? localizeHtmlHrefs(value, lang) : value }} />
       : <Tag style={style} className={className}>{value}</Tag>;
   }
 
@@ -59,14 +61,16 @@ function HeadingBlock({ b, ctx }: { b: PageBlock; ctx: EditableBlockContext }) {
 }
 
 function TextBlock({ b, ctx }: { b: PageBlock; ctx: EditableBlockContext }) {
+  const { currentLang } = useContent();
   return (
     <div className="page-text-block" style={{ padding: "8px 0", textAlign: ALIGN[b.align || "left"] }}>
-      {editableText(ctx, "content", b.content || "", "div", { fontFamily: "'Poppins', sans-serif", fontSize: 16, lineHeight: 1.7, color: "#374151" }, true, "page-text-content")}
+      {editableText(ctx, "content", b.content || "", "div", { fontFamily: "'Poppins', sans-serif", fontSize: 16, lineHeight: 1.7, color: "#374151" }, true, "page-text-content", currentLang)}
     </div>
   );
 }
 
 function ImageBlock({ b, ctx }: { b: PageBlock; ctx: EditableBlockContext }) {
+  const { currentLang } = useContent();
   const imageStyle = { width: b.width || "100%", height: "auto", display: "block", borderRadius: 8 };
   const sizes = b.width && b.width !== "100%" ? String(b.width) : "(max-width: 768px) calc(100vw - 32px), 920px";
   const img = ctx ? (
@@ -76,18 +80,19 @@ function ImageBlock({ b, ctx }: { b: PageBlock; ctx: EditableBlockContext }) {
   );
   return (
     <div style={{ padding: "12px 0", textAlign: ALIGN[b.align || "center"] }}>
-      {b.href ? <a href={b.href}>{img}</a> : img}
+      {b.href ? <a href={localizeHref(b.href, currentLang)}>{img}</a> : img}
     </div>
   );
 }
 
 function ButtonBlock({ b, ctx }: { b: PageBlock; ctx: EditableBlockContext }) {
+  const { currentLang } = useContent();
   const padding = b.size === "sm" ? "8px 20px" : b.size === "lg" ? "16px 48px" : "12px 32px";
   const fontSize = b.size === "sm" ? 13 : b.size === "lg" ? 17 : 15;
   return (
     <div style={{ padding: "12px 0", textAlign: ALIGN[b.align || "center"] }}>
       <a
-        href={b.href || "#"}
+        href={localizeHref(b.href || "#", currentLang)}
         className="page-button"
         style={{
           display: "inline-block",
@@ -109,6 +114,7 @@ function ButtonBlock({ b, ctx }: { b: PageBlock; ctx: EditableBlockContext }) {
 }
 
 function BannerBlock({ b, ctx }: { b: PageBlock; ctx: EditableBlockContext }) {
+  const { currentLang } = useContent();
   return (
     <div className="page-banner-block" style={{
       padding: "64px 32px",
@@ -121,7 +127,7 @@ function BannerBlock({ b, ctx }: { b: PageBlock; ctx: EditableBlockContext }) {
       {editableText(ctx, "content", b.content || "Banner nadpis", "h2", { color: "#fff", fontSize: 32, fontWeight: 700, fontFamily: "'Poppins',sans-serif", margin: "0 0 12px" }, false, "page-banner-title")}
       {b.subtitle && editableText(ctx, "subtitle", b.subtitle, "p", { color: "rgba(255,255,255,0.85)", fontSize: 16, fontFamily: "'Poppins',sans-serif", margin: "0 0 24px" }, false, "page-banner-subtitle")}
       {b.ctaText && (
-        <a href={b.ctaHref || "#"} className="page-button page-banner-button" style={{
+        <a href={localizeHref(b.ctaHref || "#", currentLang)} className="page-button page-banner-button" style={{
           display: "inline-block", padding: "12px 32px", background: "#fff", color: b.bgColor || "#7c3bb2",
           fontWeight: 700, borderRadius: 8, textDecoration: "none", fontFamily: "'Poppins',sans-serif", fontSize: 15,
         }}>
@@ -148,6 +154,7 @@ function NewsletterBlock({ b, ctx }: { b: PageBlock; ctx: EditableBlockContext }
 }
 
 function HeroSectionBlock({ b, ctx }: { b: PageBlock; ctx: EditableBlockContext }) {
+  const { currentLang } = useContent();
   return (
     <div className="page-hero-block" style={{
       position: "relative",
@@ -167,7 +174,7 @@ function HeroSectionBlock({ b, ctx }: { b: PageBlock; ctx: EditableBlockContext 
         {editableText(ctx, "content", b.content || "Hero Nadpis", "h1", { color: "#fff", fontSize: 48, fontWeight: 800, fontFamily: "'Poppins',sans-serif", margin: "0 0 16px", lineHeight: 1.15 }, false, "page-hero-title")}
         {b.subtitle && editableText(ctx, "subtitle", b.subtitle, "p", { color: "rgba(255,255,255,0.85)", fontSize: 20, fontFamily: "'Poppins',sans-serif", margin: "0 0 32px", lineHeight: 1.6 }, false, "page-hero-subtitle")}
         {b.ctaText && (
-          <a href={b.ctaHref || "#"} className="page-button page-hero-button" style={{
+          <a href={localizeHref(b.ctaHref || "#", currentLang)} className="page-button page-hero-button" style={{
             display: "inline-block", padding: "14px 40px", background: b.bgColor || "#7c3bb2",
             color: "#fff", fontWeight: 700, borderRadius: 8, textDecoration: "none",
             fontFamily: "'Poppins',sans-serif", fontSize: 16,
@@ -181,6 +188,7 @@ function HeroSectionBlock({ b, ctx }: { b: PageBlock; ctx: EditableBlockContext 
 }
 
 function CardsGridBlock({ b, ctx }: { b: PageBlock; ctx: EditableBlockContext }) {
+  const { currentLang } = useContent();
   const cards = b.cards || [];
   return (
     <div className="page-cards-block" style={{ padding: "48px 0" }}>
@@ -213,7 +221,7 @@ function CardsGridBlock({ b, ctx }: { b: PageBlock; ctx: EditableBlockContext })
                 <p style={{ fontFamily: "'Poppins',sans-serif", fontSize: 14, color: "#6b7280", lineHeight: 1.6, flex: 1, margin: "0 0 20px" }}>{card.text}</p>
               )}
               {card.btnText && (
-                <a href={card.btnHref || "#"} className="btn-primary page-button page-card-button" style={{ display: "inline-block", padding: "10px 24px", fontSize: 13, textDecoration: "none" }}>
+                <a href={localizeHref(card.btnHref || "#", currentLang)} className="btn-primary page-button page-card-button" style={{ display: "inline-block", padding: "10px 24px", fontSize: 13, textDecoration: "none" }}>
                   {ctx ? <EditableText section="pages" field={cardFieldPath(ctx, i, "btnText")} tag="span" /> : card.btnText}
                 </a>
               )}
@@ -226,6 +234,7 @@ function CardsGridBlock({ b, ctx }: { b: PageBlock; ctx: EditableBlockContext })
 }
 
 function TwoColBlock({ b, ctx, pageSlug }: { b: PageBlock; ctx: EditableBlockContext; pageSlug?: string }) {
+  const { currentLang } = useContent();
   const topAligned = pageSlug === "o-mne";
   const needsWhiteMatte = b.twoColImage === "/images/astera-about-home.png";
   const twoColImageStyle = {
@@ -249,9 +258,9 @@ function TwoColBlock({ b, ctx, pageSlug }: { b: PageBlock; ctx: EditableBlockCon
   const textCol = (
     <div className="page-two-col-text" style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: topAligned ? "flex-start" : "center" }}>
       {b.twoColTitle && editableText(ctx, "twoColTitle", b.twoColTitle, "h2", { fontFamily: "'Poppins',sans-serif", fontSize: 32, fontWeight: 700, color: "#1f1f1f", margin: "0 0 16px" }, false, "page-two-col-title")}
-      {b.twoColText && editableText(ctx, "twoColText", b.twoColText, "div", { fontFamily: "'Poppins',sans-serif", fontSize: 16, lineHeight: 1.8, color: "#374151", margin: "0 0 24px" }, true, "page-two-col-content")}
+      {b.twoColText && editableText(ctx, "twoColText", b.twoColText, "div", { fontFamily: "'Poppins',sans-serif", fontSize: 16, lineHeight: 1.8, color: "#374151", margin: "0 0 24px" }, true, "page-two-col-content", currentLang)}
       {b.twoColBtnText && (
-        <a href={b.twoColBtnHref || "#"} className="btn-primary page-button page-two-col-button" style={{ display: "inline-block", padding: "12px 32px", fontSize: 15, textDecoration: "none", alignSelf: "flex-start" }}>
+        <a href={localizeHref(b.twoColBtnHref || "#", currentLang)} className="btn-primary page-button page-two-col-button" style={{ display: "inline-block", padding: "12px 32px", fontSize: 15, textDecoration: "none", alignSelf: "flex-start" }}>
           {editableText(ctx, "twoColBtnText", b.twoColBtnText, "span", {})}
         </a>
       )}
@@ -288,6 +297,7 @@ export default function BlockRenderer({ blocks, pageSlug }: { blocks: PageBlock[
           {b.type === "cards-grid" && <CardsGridBlock b={b} ctx={ctx} />}
           {b.type === "two-col" && <TwoColBlock b={b} ctx={ctx} pageSlug={pageSlug} />}
           {b.type === "faq" && <FaqAccordionBlock b={b} />}
+          {b.type === "contact-form" && <ContactFormBlock />}
         </div>
         );
       })}

@@ -45,14 +45,14 @@ const EN_PAGES = [
         id: "about-two-col-1777394369079", type: "two-col", imageLeft: false,
         twoColImage: "/images/astera-about-home.png",
         twoColTitle: "About me",
-        twoColBtnHref: "https://www.asteralight.cz/sluzby",
+        twoColBtnHref: "/en/services",
         twoColBtnText: "View services",
         twoColText: `<p>Welcome to my website!</p>
 <p>My spiritual name is Astera and I focus on readings and counselling, where I combine my knowledge, experience and gifts with years of practice.</p>
 <p>I'll be happy to help you gain perspective in various life situations, or in moments when it feels like nothing is moving forward and you need a new impulse…</p>
 <p>I work with Tarot, Oracles and other systems. I use clairvoyance, channelling and other extrasensory perceptions and abilities to help guide your path towards something better!</p>
 <p>We don't always get answers to everything, but we can discover a new perspective and look at our own life as a rich and meaningful journey. Sometimes it needs illuminating, other times you need to pick up a map or choose a different direction.</p>
-<p>As an experienced guide, I'll be happy to help you along this path. You can read more about my services <a href="https://www.asteralight.cz/sluzby" style="color:#7c3bb2;text-decoration:underline;font-weight:700;">here</a>, or book a <a href="https://app.rezora.cz/book/astera" style="color:#7c3bb2;text-decoration:underline;font-weight:700;">consultation</a> right away. If you prefer working independently, explore my <a href="https://shop.asteralight.cz" style="color:#7c3bb2;text-decoration:underline;font-weight:700;">e-shop</a> where you'll find everything you need including guides.</p>
+<p>As an experienced guide, I'll be happy to help you along this path. You can read more about my services <a href="/en/services" style="color:#7c3bb2;text-decoration:underline;font-weight:700;">here</a>, or book a <a href="https://app.rezora.cz/book/astera" style="color:#7c3bb2;text-decoration:underline;font-weight:700;">consultation</a> right away. If you prefer working independently, explore my <a href="https://shop.asteralight.cz" style="color:#7c3bb2;text-decoration:underline;font-weight:700;">e-shop</a> where you'll find everything you need including guides.</p>
 <p>With love, Astera ✨</p>`,
       },
       { id: "about-text-1777394369079", type: "text", align: "left", content: "<p><br></p>" },
@@ -280,14 +280,14 @@ const UA_PAGES = [
         id: "about-two-col-1777394369079", type: "two-col", imageLeft: false,
         twoColImage: "/images/astera-about-home.png",
         twoColTitle: "Про мене",
-        twoColBtnHref: "https://www.asteralight.cz/sluzby",
+        twoColBtnHref: "/ua/posluhy",
         twoColBtnText: "Переглянути послуги",
         twoColText: `<p>Ласкаво прошу на мій сайт!</p>
 <p>Моє духовне ім'я — Астера, і я займаюся читанням і консультуванням, де поєдную свої знання, досвід і дари з багаторічною практикою.</p>
 <p>Я рада допомогти вам отримати нову перспективу в різних життєвих ситуаціях, або в моменти, коли здається, що нічого не рухається вперед і вам потрібен новий імпульс…</p>
 <p>Я працюю з Таро, Оракулами та іншими системами. Використовую ясновидіння, ченнелінг та інші екстрасенсорні здібності, щоб допомогти направити ваш шлях до кращого!</p>
 <p>Ми не завжди отримуємо відповіді на всі питання, але можемо відкрити нову перспективу і побачити власне життя як багатий і наповнений сенсом шлях. Іноді потрібно його освітити, іноді взяти карту або вибрати інший напрямок.</p>
-<p>Як досвідчений провідник, я рада допомогти вам на цьому шляху. Більше про мої послуги ви можете прочитати <a href="https://www.asteralight.cz/sluzby" style="color:#7c3bb2;text-decoration:underline;font-weight:700;">тут</a>, або одразу домовтеся про <a href="https://app.rezora.cz/book/astera" style="color:#7c3bb2;text-decoration:underline;font-weight:700;">консультацію</a>. Якщо ви віддаєте перевагу самостійній роботі, ознайомтеся з пропозицією в моєму <a href="https://shop.asteralight.cz" style="color:#7c3bb2;text-decoration:underline;font-weight:700;">е-магазині</a>, де знайдете все необхідне, включаючи посібники.</p>
+<p>Як досвідчений провідник, я рада допомогти вам на цьому шляху. Більше про мої послуги ви можете прочитати <a href="/ua/posluhy" style="color:#7c3bb2;text-decoration:underline;font-weight:700;">тут</a>, або одразу домовтеся про <a href="https://app.rezora.cz/book/astera" style="color:#7c3bb2;text-decoration:underline;font-weight:700;">консультацію</a>. Якщо ви віддаєте перевагу самостійній роботі, ознайомтеся з пропозицією в моєму <a href="https://shop.asteralight.cz" style="color:#7c3bb2;text-decoration:underline;font-weight:700;">е-магазині</a>, де знайдете все необхідне, включаючи посібники.</p>
 <p>З любов'ю, Астера ✨</p>`,
       },
       { id: "about-text-1777394369079", type: "text", align: "left", content: "<p><br></p>" },

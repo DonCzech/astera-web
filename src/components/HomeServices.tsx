@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useContent } from "@/context/ContentContext";
 import { ServiceItem } from "@/lib/content-types";
+import { localizeHref } from "@/lib/i18n";
 
 const purple = "#7c3bb2";
 const gold = "#c9a84c";
@@ -21,6 +22,8 @@ function OrnamentDivider({ tight = false }: { tight?: boolean }) {
 }
 
 function ServiceModal({ service, onClose }: { service: ServiceItem; onClose: () => void }) {
+  const { currentLang } = useContent();
+
   useEffect(() => {
     document.body.style.overflow = "hidden";
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -145,7 +148,7 @@ function ServiceModal({ service, onClose }: { service: ServiceItem; onClose: () 
             </div>
           ))}
           <OrnamentDivider tight />
-          <a href={service.cta.href} style={{ display: "block", textAlign: "center", background: `linear-gradient(135deg, ${purple} 0%, #5f2a8d 100%)`, color: "#fff", borderRadius: 999, padding: "11px 28px", fontSize: 13, fontWeight: 600, fontFamily: "'Poppins',sans-serif", textDecoration: "none", letterSpacing: 0.3, boxShadow: `0 4px 18px ${purple}44` }}>{service.cta.label}</a>
+          <a href={localizeHref(service.cta.href, currentLang)} style={{ display: "block", textAlign: "center", background: `linear-gradient(135deg, ${purple} 0%, #5f2a8d 100%)`, color: "#fff", borderRadius: 999, padding: "11px 28px", fontSize: 13, fontWeight: 600, fontFamily: "'Poppins',sans-serif", textDecoration: "none", letterSpacing: 0.3, boxShadow: `0 4px 18px ${purple}44` }}>{service.cta.label}</a>
         </div>
       </div>
     </div>

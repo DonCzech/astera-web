@@ -2,9 +2,10 @@
 import { useContent } from "@/context/ContentContext";
 import EditableText from "./admin/EditableText";
 import TestimonialsSlider from "./TestimonialsSlider";
+import { localizeHref } from "@/lib/i18n";
 
 export default function AboutAstera() {
-  const { content } = useContent();
+  const { content, currentLang } = useContent();
   const a = content.about;
 
   return (
@@ -36,7 +37,7 @@ export default function AboutAstera() {
               richText
               style={{ fontFamily: "'Poppins', sans-serif", fontSize: "15px", lineHeight: "1.7", color: "#1f1f1f", marginBottom: "32px", display: "block" }}
             />
-            <a href={a.buttonHref} className="btn-primary">
+            <a href={localizeHref(a.buttonHref, currentLang)} className="btn-primary">
               <EditableText section="about" field="buttonText" tag="span" />
             </a>
           </div>

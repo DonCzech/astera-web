@@ -24,7 +24,14 @@ export const LOCALIZED_ROUTES = [
   { id: "faq", slugs: { cs: "navody", en: "faq", ua: "faq" } },
   { id: "events", slugs: { cs: "akce", en: "events", ua: "podiyi" } },
   { id: "thanks", slugs: { cs: "jak-podekovat", en: "how-to-thank", ua: "yak-podyakuvaty" } },
-  { id: "pick-a-card", slugs: { cs: "pick-a-card", en: "pick-a-card", ua: "vyber-kartu" } },
+  { id: "pick-a-card",      slugs: { cs: "pick-a-card",              en: "pick-a-card",      ua: "vyber-kartu" } },
+  { id: "help-center",     slugs: { cs: "napoveda",                 en: "help-center",      ua: "dopomoha" } },
+  { id: "contact",         slugs: { cs: "kontakt",                  en: "contact",          ua: "kontakt" } },
+  { id: "privacy-policy",  slugs: { cs: "ochrana-osobnich-udaju",   en: "privacy-policy",   ua: "privacy-policy" } },
+  { id: "terms-of-use",    slugs: { cs: "obchodni-podminky",        en: "terms-of-use",     ua: "terms-of-use" } },
+  { id: "returns",         slugs: { cs: "reklamace",                en: "returns",          ua: "returns" } },
+  { id: "payment-terms",   slugs: { cs: "platebni-podminky",        en: "payment-terms",    ua: "payment-terms" } },
+  { id: "membership-terms",slugs: { cs: "podminky-clenstvi",        en: "membership-terms", ua: "membership-terms" } },
 ] as const;
 
 /** Detect language from a pathname like "/en/about" → "en" */
@@ -68,6 +75,58 @@ export function localizePath(pathname: string, lang: Lang): string {
   const translated = route.slugs[lang];
   const rest = parts.slice(1).join("/");
   return addLangPrefix(`/${translated}${rest ? `/${rest}` : ""}`, lang);
+}
+
+function splitPathSuffix(pathname: string) {
+  const hashIndex = pathname.indexOf("#");
+  const queryIndex = pathname.indexOf("?");
+  const indexes = [hashIndex, queryIndex].filter(i => i >= 0);
+  const suffixIndex = indexes.length > 0 ? Math.min(...indexes) : -1;
+  if (suffixIndex < 0) return { path: pathname, suffix: "" };
+  return {
+    path: pathname.slice(0, suffixIndex),
+    suffix: pathname.slice(suffixIndex),
+  };
+}
+
+function internalPathFromHref(href: string): { path: string; fromAbsoluteUrl: boolean } | null {
+  const trimmed = href.trim();
+  if (!trimmed || trimmed.startsWith("#")) return null;
+  if (/^(mailto|tel|sms|javascript):/i.test(trimmed)) return null;
+  if (trimmed.startsWith("/")) return { path: trimmed, fromAbsoluteUrl: false };
+
+  try {
+    const url = new URL(trimmed);
+    const host = url.hostname.replace(/^www\./, "");
+    if (host !== "asteralight.cz") return null;
+    return { path: `${url.pathname}${url.search}${url.hash}`, fromAbsoluteUrl: true };
+  } catch {
+    return null;
+  }
+}
+
+function hasKnownLocalizedRoute(pathname: string): boolean {
+  const { path } = splitPathSuffix(pathname);
+  const parts = path.replace(/^\/+/, "").split("/").filter(Boolean);
+  const first = parts[0];
+  return LOCALIZED_ROUTES.some(item => Object.values(item.slugs).includes(first as never));
+}
+
+export function localizeHref(href: string | undefined, lang: Lang): string {
+  if (!href) return href || "";
+  const internal = internalPathFromHref(href);
+  if (!internal) return href;
+  if (internal.fromAbsoluteUrl && !hasKnownLocalizedRoute(internal.path)) return href;
+
+  const { path, suffix } = splitPathSuffix(internal.path);
+  const cleanPath = path.length > 1 ? path.replace(/\/+$/, "") : path;
+  return `${localizePath(cleanPath || "/", lang)}${suffix}`;
+}
+
+export function localizeHtmlHrefs(html: string, lang: Lang): string {
+  return html.replace(/\bhref=(["'])(.*?)\1/gi, (_match, quote: string, href: string) => {
+    return `href=${quote}${localizeHref(href, lang)}${quote}`;
+  });
 }
 
 export function resolveLocalizedPageSlug(slug: string, lang: Lang): string[] {

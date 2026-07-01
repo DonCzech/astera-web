@@ -39,7 +39,7 @@ export interface SocialLink {
   href: string;
 }
 
-export type BlockType = "heading" | "text" | "image" | "button" | "banner" | "newsletter" | "spacer" | "hero-section" | "cards-grid" | "two-col" | "faq";
+export type BlockType = "heading" | "text" | "image" | "button" | "banner" | "newsletter" | "spacer" | "hero-section" | "cards-grid" | "two-col" | "faq" | "contact-form";
 
 export interface PageBlock {
   id: string;

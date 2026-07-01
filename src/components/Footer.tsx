@@ -4,7 +4,7 @@ import { useContent } from "@/context/ContentContext";
 import EditableText from "./admin/EditableText";
 import OptimizedImage from "@/components/OptimizedImage";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
-import { addLangPrefix, UI_STRINGS } from "@/lib/i18n";
+import { addLangPrefix, localizeHref, UI_STRINGS } from "@/lib/i18n";
 
 const SOCIAL_ICONS: Record<string, React.ReactNode> = {
   Facebook: <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" /></svg>,
@@ -45,14 +45,14 @@ export default function Footer() {
             </a>
 
             <div style={{ marginBottom: "24px" }}>
-              <a href="https://www.asteralight.cz/help/" style={{ display: "flex", alignItems: "center", gap: "8px", color: "#1f1f1f", textDecoration: "none", fontFamily: "'Poppins', sans-serif", fontSize: "14px", marginBottom: "12px" }} onMouseEnter={e => (e.currentTarget.style.color = "#7c3bb2")} onMouseLeave={e => (e.currentTarget.style.color = "#1f1f1f")}>
+              <a href={localizeHref("/napoveda", currentLang)} style={{ display: "flex", alignItems: "center", gap: "8px", color: "#1f1f1f", textDecoration: "none", fontFamily: "'Poppins', sans-serif", fontSize: "14px", marginBottom: "12px" }} onMouseEnter={e => (e.currentTarget.style.color = "#7c3bb2")} onMouseLeave={e => (e.currentTarget.style.color = "#1f1f1f")}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" /></svg>
                 {ui.helpCenter}
               </a>
-              <button style={{ display: "flex", alignItems: "center", gap: "8px", color: "#1f1f1f", fontFamily: "'Poppins', sans-serif", fontSize: "14px", background: "none", border: "none", cursor: "pointer", padding: 0 }} onMouseEnter={e => (e.currentTarget.style.color = "#7c3bb2")} onMouseLeave={e => (e.currentTarget.style.color = "#1f1f1f")}>
+              <a href={localizeHref("/kontakt", currentLang)} style={{ display: "flex", alignItems: "center", gap: "8px", color: "#1f1f1f", textDecoration: "none", fontFamily: "'Poppins', sans-serif", fontSize: "14px" }} onMouseEnter={e => (e.currentTarget.style.color = "#7c3bb2")} onMouseLeave={e => (e.currentTarget.style.color = "#1f1f1f")}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z" /></svg>
                 {ui.writeToMe}
-              </button>
+              </a>
             </div>
 
             <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
@@ -99,7 +99,7 @@ export default function Footer() {
           />
           <nav style={{ display: "flex", gap: "15px", flexWrap: "wrap" }}>
             {f.footerLinks.map(link => (
-              <a key={link.label} href={link.href} style={{ fontFamily: "'Poppins', sans-serif", fontSize: "12px", color: "#767676", textDecoration: "none" }} onMouseEnter={e => (e.currentTarget.style.color = "#7c3bb2")} onMouseLeave={e => (e.currentTarget.style.color = "#767676")}>
+              <a key={link.label} href={localizeHref(link.href, currentLang)} style={{ fontFamily: "'Poppins', sans-serif", fontSize: "12px", color: "#767676", textDecoration: "none" }} onMouseEnter={e => (e.currentTarget.style.color = "#7c3bb2")} onMouseLeave={e => (e.currentTarget.style.color = "#767676")}>
                 {link.label}
               </a>
             ))}

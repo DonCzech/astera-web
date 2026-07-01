@@ -3,9 +3,10 @@ import { useContent } from "@/context/ContentContext";
 import { ManifestCard } from "@/lib/content-types";
 import EditableText from "./admin/EditableText";
 import EditableImg from "./admin/EditableImg";
+import { localizeHref } from "@/lib/i18n";
 
 export default function ManifestCards() {
-  const { content, admin } = useContent();
+  const { content, admin, currentLang } = useContent();
   const { cards } = content.manifest;
 
   return (
@@ -37,7 +38,7 @@ export default function ManifestCards() {
                     style={{ width: "100%", height: "auto", display: "block" }}
                   />
                 ) : (
-                  <a href={card.btnHref} aria-label={card.title} className="manifest-image-link">
+                  <a href={localizeHref(card.btnHref, currentLang)} aria-label={card.title} className="manifest-image-link">
                     <EditableImg
                       section="manifest"
                       field={`cards.${i}.image`}
@@ -64,7 +65,7 @@ export default function ManifestCards() {
                 style={{ fontFamily: "'Poppins', sans-serif", fontSize: "14px", lineHeight: "1.6", color: "#1f1f1f", textAlign: "center", padding: "0 24px", marginBottom: "24px", flex: 1, display: "block" }}
               />
 
-              <a href={card.btnHref} className="btn-primary">
+              <a href={localizeHref(card.btnHref, currentLang)} className="btn-primary">
                 <EditableText section="manifest" field={`cards.${i}.btnText`} tag="span" />
               </a>
             </div>

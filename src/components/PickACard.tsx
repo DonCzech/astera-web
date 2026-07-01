@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useState } from "react";
 import OptimizedImage from "@/components/OptimizedImage";
 import { useContent } from "@/context/ContentContext";
+import { localizeHref } from "@/lib/i18n";
 
 type Phase = "idle" | "animating" | "revealed";
 
@@ -116,7 +117,7 @@ export default function PickACard() {
                 <p className="pac-answer">{answer}</p>
                 <p className="pac-consult">
                   Cítíš, že v poselství je něco víc?{" "}
-                  <Link href="/sluzby" className="pac-consult-link">
+                  <Link href={localizeHref("/sluzby", currentLang)} className="pac-consult-link">
                     Konzultace ti pomůže porozumět tomu do hloubky.
                   </Link>
                 </p>

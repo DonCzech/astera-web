@@ -1,10 +1,11 @@
 "use client";
+import Link from "next/link";
 import React, { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useContent } from "@/context/ContentContext";
 import { ServiceItem } from "@/lib/content-types";
-import { UI_STRINGS } from "@/lib/i18n";
+import { localizeHref, UI_STRINGS } from "@/lib/i18n";
 import WheelOfFortunePopup from "@/components/WheelOfFortunePopup";
 
 const purple = "#7c3bb2";
@@ -186,7 +187,7 @@ const CONSULT_TEXT: Record<string, React.ReactNode> = {
   cs: (
     <>
       Pokud si nejste jistí, jakou službu zvolit, projděte si{" "}
-      <a href="https://www.asteralight.cz/sluzby" style={inlineLinkStyle}>přehled služeb</a>
+      <Link href="/sluzby" style={inlineLinkStyle}>přehled služeb</Link>
       , rezervujte si{" "}
       <a href="https://app.rezora.cz/book/astera" style={inlineLinkStyle}>konzultaci</a>
       , nebo si vyberte praktické návody v{" "}
@@ -196,7 +197,7 @@ const CONSULT_TEXT: Record<string, React.ReactNode> = {
   en: (
     <>
       Not sure which service to choose? Browse the{" "}
-      <a href="https://www.asteralight.cz/sluzby" style={inlineLinkStyle}>service overview</a>
+      <Link href="/en/services" style={inlineLinkStyle}>service overview</Link>
       , book a{" "}
       <a href="https://app.rezora.cz/book/astera" style={inlineLinkStyle}>consultation</a>
       , or find practical guides in the{" "}
@@ -206,7 +207,7 @@ const CONSULT_TEXT: Record<string, React.ReactNode> = {
   ua: (
     <>
       Якщо ви не впевнені, яку послугу обрати, перегляньте{" "}
-      <a href="https://www.asteralight.cz/sluzby" style={inlineLinkStyle}>перелік послуг</a>
+      <Link href="/ua/posluhy" style={inlineLinkStyle}>перелік послуг</Link>
       , забронюйте{" "}
       <a href="https://app.rezora.cz/book/astera" style={inlineLinkStyle}>консультацію</a>
       , або оберіть практичні посібники в{" "}
@@ -292,6 +293,8 @@ function ScrollDownControl() {
 // ─── Modal ──────────────────────────────────────────────────────────────────
 
 function Modal({ service, onClose }: { service: ServiceItem; onClose: () => void }) {
+  const { currentLang } = useContent();
+
   useEffect(() => {
     document.body.style.overflow = "hidden";
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -460,7 +463,7 @@ function Modal({ service, onClose }: { service: ServiceItem; onClose: () => void
 
           <OrnamentDivider tight />
 
-          <a href={service.cta.href} style={{
+          <a href={localizeHref(service.cta.href, currentLang)} style={{
             display: "block", textAlign: "center",
             background: `linear-gradient(135deg, ${purple} 0%, #5f2a8d 100%)`,
             color: "#fff", borderRadius: 999,
@@ -549,7 +552,7 @@ function CreamSection({ children, style }: { children: React.ReactNode; style?: 
 // ─── Page ──────────────────────────────────────────────────────────────────
 
 export default function SluzbyPage() {
-  const { content } = useContent();
+  const { content, currentLang } = useContent();
   const serviceContent = content.servicesContent;
   const serviceItems = serviceContent?.items || [];
   const [active, setActive] = useState<string | null>(null);
@@ -587,7 +590,7 @@ export default function SluzbyPage() {
             }}>
               {serviceContent.pageHeroText}
             </p>
-            <a href={serviceContent.pageHeroButtonHref} style={{
+            <a href={localizeHref(serviceContent.pageHeroButtonHref, currentLang)} style={{
               display: "inline-block", background: "#fff", color: purple,
               borderRadius: 999, padding: "13px 38px",
               fontSize: 14, fontWeight: 700, fontFamily: "'Poppins',sans-serif",
@@ -668,7 +671,7 @@ export default function SluzbyPage() {
               <p style={{ fontSize: 15, lineHeight: 1.8, color: "#4a3728", margin: "0 0 30px", fontFamily: "'Poppins',sans-serif" }}>
                 {serviceContent.pageWhyText2}
               </p>
-              <a href={serviceContent.pageWhyButtonHref} style={{
+              <a href={localizeHref(serviceContent.pageWhyButtonHref, currentLang)} style={{
                 display: "inline-block",
                 background: `linear-gradient(135deg, ${purple}, #5f2a8d)`,
                 color: "#fff", borderRadius: 999, padding: "12px 36px",
@@ -720,7 +723,7 @@ export default function SluzbyPage() {
                 <p style={{ fontSize: 13, lineHeight: 1.78, color: "#374151", margin: "0 0 20px", fontFamily: "'Poppins',sans-serif", flex: 1 }}>
                   <LinkedConsultText />
                 </p>
-                <a href={serviceContent.pageConsultButtonHref} style={{
+                <a href={localizeHref(serviceContent.pageConsultButtonHref, currentLang)} style={{
                   display: "inline-block", alignSelf: "flex-start",
                   background: `linear-gradient(135deg, ${purple}, #5f2a8d)`,
                   color: "#fff", borderRadius: 999, padding: "11px 28px",

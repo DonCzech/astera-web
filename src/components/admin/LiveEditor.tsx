@@ -834,6 +834,7 @@ const BLOCK_TYPES: { type: BlockType; label: string; icon: string }[] = [
   { type: "cards-grid", label: "Karty (grid)", icon: "🃏" },
   { type: "two-col", label: "Dva sloupce", icon: "⬛⬛" },
   { type: "faq", label: "FAQ Accordion", icon: "❓" },
+  { type: "contact-form", label: "Kontaktní formulář", icon: "✉️" },
   { type: "heading", label: "Nadpis", icon: "H" },
   { type: "text", label: "Text", icon: "T" },
   { type: "image", label: "Obrázek", icon: "🖼" },
@@ -1148,6 +1149,7 @@ function PagesEditor({ autoSlug }: { autoSlug?: string } = {}) {
         { id: createEditorId("faq"), q: "Otázka 1", a: "Odpověď na otázku 1." },
         { id: createEditorId("faq"), q: "Otázka 2", a: "Odpověď na otázku 2." },
       ]},
+      "contact-form": {},
     };
     const defaults: Partial<PageBlock> = BLOCK_DEFAULTS[type] || {};
     const block: PageBlock = { id: createEditorId("block"), type, ...defaults };
