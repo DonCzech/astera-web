@@ -207,6 +207,7 @@ export default function EditableImg({ section, field, mobileField, alt, style, c
           display: "block",
           width: "100%",
           height: style?.height || "auto",
+          aspectRatio: style?.aspectRatio,
           borderRadius: style?.borderRadius,
           objectFit: style?.objectFit,
           objectPosition: style?.objectPosition,

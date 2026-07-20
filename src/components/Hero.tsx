@@ -345,10 +345,12 @@ export default function Hero() {
           }
 
           @media (max-width: 640px) {
+            /* Na mobilu se hero neroztahuje na celou výšku okna. Obrázek teče
+               v normálním toku, ukáže se celý (nic se neořezává) a text jde
+               pod něj — sekce je pak přesně tak vysoká, jak potřebuje. */
             .hero-section {
-              display: flex !important;
-              min-height: 100svh !important;
-              align-items: center;
+              display: block !important;
+              min-height: 0 !important;
               padding-top: 76px !important;
               padding-bottom: 32px !important;
               background-color: #ece0d2;
@@ -357,11 +359,22 @@ export default function Hero() {
             .hero-bg-desktop { display: none !important; }
             .hero-bg-mobile {
               display: block !important;
-              position: absolute !important;
-              inset: 0 !important;
-              width: 100%;
-              height: 100%;
+              position: relative !important;
+              inset: auto !important;
+              width: 100% !important;
+              height: auto !important;
+              aspect-ratio: auto !important;
               z-index: 0;
+            }
+            .hero-bg-mobile picture,
+            .hero-bg-mobile picture img {
+              position: relative !important;
+              height: auto !important;
+            }
+            .hero-bg-mobile .hero-img {
+              object-fit: contain !important;
+              width: 100% !important;
+              height: auto !important;
             }
             .hero-content-grid {
               grid-template-columns: 1fr !important;

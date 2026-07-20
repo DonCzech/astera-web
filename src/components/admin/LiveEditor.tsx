@@ -724,9 +724,13 @@ function OracleEditor() {
       <Field label="Text">
         <RTE value={o.body} onChange={v => upd("body", v)} minHeight={70} />
       </Field>
-      <Field label="YouTube embed URL">
-        <PlainInput value={o.youtubeUrl} onChange={v => upd("youtubeUrl", v)} placeholder="https://www.youtube.com/embed/..." />
-      </Field>
+      <ImagePairField
+        label="Obrázek"
+        desktopValue={o.image}
+        mobileValue={o.mobileImage}
+        onDesktopChange={v => upd("image", v)}
+        onMobileChange={v => upd("mobileImage", v)}
+      />
     </div>
   );
 }

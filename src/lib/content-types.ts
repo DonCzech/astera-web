@@ -310,7 +310,10 @@ export interface SiteContent {
   oracle: {
     title: string;
     body: string;
+    /** Zůstává kvůli starým záznamům v DB — sekce se dnes renderuje jako obrázek. */
     youtubeUrl: string;
+    image: string;
+    mobileImage: string;
   };
   crystalBall: CrystalBallContent;
   footer: {
@@ -464,6 +467,8 @@ export const DEFAULT_CONTENT: SiteContent = {
     title: "Měsíční intuitivní vhled",
     body: "Krátké vedení pro období, kdy potřebujete víc klidu, jasnosti a důvěry v další krok.",
     youtubeUrl: "https://www.youtube.com/embed/UcJoLcwuMP4",
+    image: "/images/oracle-video-thumb.jpg",
+    mobileImage: "",
   },
   crystalBall: {
     eyebrow: "Křišťálová koule",

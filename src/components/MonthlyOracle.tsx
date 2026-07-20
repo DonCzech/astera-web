@@ -1,7 +1,12 @@
 "use client";
 import { useContent } from "@/context/ContentContext";
 import EditableText from "./admin/EditableText";
-import { optimizedImageSet } from "@/components/OptimizedImage";
+import EditableImg from "./admin/EditableImg";
+
+/** Titulek se edituje jako rich text — do alt patří holý text, ne značky. */
+function htmlToText(html: string): string {
+  return html.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
+}
 
 export default function MonthlyOracle() {
   const { content } = useContent();
@@ -31,30 +36,26 @@ export default function MonthlyOracle() {
             />
           </div>
 
-          {/* Image */}
+          {/* Image — editovatelný, každý jazyk má vlastní obrázek i mobilní verzi */}
           <div>
-            <div style={{ position: "relative", paddingBottom: "56.25%", height: 0, overflow: "hidden", borderRadius: "8px" }}>
-              <div
-                className="oracle-video-thumb"
-                role="img"
-                aria-label={o.title}
-                style={{ backgroundImage: optimizedImageSet("/images/oracle-video-thumb.jpg") }}
-              />
-            </div>
+            <EditableImg
+              section="oracle"
+              field="image"
+              mobileField="mobileImage"
+              alt={htmlToText(o.title)}
+              sizes="(max-width: 768px) calc(100vw - 32px), 60vw"
+              style={{
+                width: "100%",
+                aspectRatio: "16 / 9",
+                objectFit: "cover",
+                borderRadius: "8px",
+              }}
+            />
           </div>
         </div>
       </div>
 
       <style>{`
-        .oracle-video-thumb {
-          position: absolute;
-          inset: 0;
-          width: 100%;
-          height: 100%;
-          background-position: center;
-          background-size: cover;
-          background-repeat: no-repeat;
-        }
         @media (max-width: 768px) {
           .oracle-grid { grid-template-columns: 1fr !important; gap: 28px !important; }
         }

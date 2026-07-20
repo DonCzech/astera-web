@@ -188,7 +188,14 @@ export default function EditableText({
     editing.current = false;
   }, [ref, richText, updateSection, section, field, getLatestSection, editLang]);
 
-  const El = (tag || "span") as React.ElementType;
+  // Uložený rich text často obsahuje blokové značky (vložený odjinud, typicky
+  // celý <p>). Zanořit blok do <p> nebo <span> je neplatné HTML — prohlížeč ho
+  // při parsování vytáhne ven, DOM se rozejde se serverovým a spadne hydratace.
+  // V takovém případě renderujeme obal jako <div>; styly zůstávají stejné.
+  const INLINE_TAGS = ["p", "span", "em", "strong", "a", "label"];
+  const hasBlockHtml = Boolean(richText) && /<(p|div|h[1-6]|ul|ol|li|blockquote|table|section)\b/i.test(value);
+  const effectiveTag = hasBlockHtml && INLINE_TAGS.includes(tag || "span") ? "div" : (tag || "span");
+  const El = effectiveTag as React.ElementType;
 
   // ── Non-admin ─────────────────────────────────────────────────────────────
   if (!isAdmin) {
