@@ -102,7 +102,7 @@ export default function Hero() {
           </picture>
         </div>
 
-        {/* MOBILE background layer — fixed aspect ratio, sits at top of section */}
+        {/* MOBILE background layer — fills the hero like the desktop background */}
         <div
           className="hero-bg hero-bg-mobile"
           style={{
@@ -346,20 +346,21 @@ export default function Hero() {
 
           @media (max-width: 640px) {
             .hero-section {
-              display: block !important;
-              min-height: 0 !important;
+              display: flex !important;
+              min-height: 100svh !important;
+              align-items: center;
               padding-top: 76px !important;
               padding-bottom: 32px !important;
-              background-color: #fbf8f5;
-              overflow: visible;
+              background-color: #ece0d2;
+              overflow: hidden;
             }
             .hero-bg-desktop { display: none !important; }
             .hero-bg-mobile {
               display: block !important;
-              position: relative !important;
-              inset: auto !important;
+              position: absolute !important;
+              inset: 0 !important;
               width: 100%;
-              height: auto;
+              height: 100%;
               z-index: 0;
             }
             .hero-content-grid {

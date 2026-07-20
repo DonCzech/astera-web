@@ -4,40 +4,12 @@ import { useState } from "react";
 import OptimizedImage from "@/components/OptimizedImage";
 import { useContent } from "@/context/ContentContext";
 import { localizeHref } from "@/lib/i18n";
-
-const crystalBallCopy = {
-  cs: {
-    title: "Zeptej se křišťálové koule",
-    subtitle: "Nech křišťálovou kouli odhalit, co si teď žádá tvou pozornost…",
-  },
-  en: {
-    title: "Ask the crystal ball",
-    subtitle: "Let the crystal ball reveal what is asking for your attention right now…",
-  },
-  ua: {
-    title: "Запитай кришталеву кулю",
-    subtitle: "Нехай кришталева куля відкриє, що зараз потребує твоєї уваги…",
-  },
-};
-
-const answers = [
-  "Záři mezi správnými lidmi.",
-  "Buď k sobě laskavá.",
-  "Naslouchej své intuici.",
-  "Malé změny pomohou.",
-  "Ukliď své finance.",
-  "Přehodnoť své vztahy.",
-  "Dopřej mysli klid.",
-  "Zpomal a odpočívej.",
-  "Otevři staré otázky.",
-  "Všímej si znamení.",
-  "Následuj svá přání.",
-  "Pusť staré věci.",
-];
+import { DEFAULT_CONTENT } from "@/lib/content-types";
 
 export default function CrystalBall() {
-  const { currentLang } = useContent();
-  const copy = crystalBallCopy[currentLang] ?? crystalBallCopy.cs;
+  const { content, currentLang } = useContent();
+  const crystalBall = { ...DEFAULT_CONTENT.crystalBall, ...content.crystalBall };
+  const answers = crystalBall.answers?.length ? crystalBall.answers : DEFAULT_CONTENT.crystalBall.answers;
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<string | null>(null);
   const [isShaking, setIsShaking] = useState(false);
@@ -62,10 +34,10 @@ export default function CrystalBall() {
       <div className="container-main">
         <div className="cb-wrap">
           {/* Header */}
-          <p className="cb-eyebrow">Křišťálová koule</p>
-          <h2 className="cb-title">{copy.title}</h2>
+          <p className="cb-eyebrow">{crystalBall.eyebrow}</p>
+          <h2 className="cb-title">{crystalBall.title}</h2>
           <p className="cb-subtitle">
-            {copy.subtitle}
+            {crystalBall.subtitle}
           </p>
 
           {/* Ball */}
@@ -74,8 +46,9 @@ export default function CrystalBall() {
             <div className="cb-aura" aria-hidden="true" />
             <div className="cb-sphere">
               <OptimizedImage
-                src="/images/crystal-ball-astera.png"
-                alt="Křišťálová koule"
+                src={crystalBall.image}
+                mobileSrc={crystalBall.mobileImage}
+                alt={crystalBall.eyebrow}
                 className="cb-ball-img"
                 sizes="(max-width: 600px) 98vw, 660px"
                 loading="lazy"
@@ -100,7 +73,7 @@ export default function CrystalBall() {
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && askBall()}
-              placeholder="Napiš svou otázku…"
+              placeholder={crystalBall.inputPlaceholder}
               className="cb-input"
             />
             <button
@@ -108,7 +81,7 @@ export default function CrystalBall() {
               disabled={!question.trim() || isShaking}
               className="cb-btn"
             >
-              {isShaking ? "Koule naslouchá…" : "Zeptat se koule"}
+              {isShaking ? crystalBall.loadingText : crystalBall.buttonText}
             </button>
           </div>
 
@@ -116,9 +89,9 @@ export default function CrystalBall() {
           <div className={`cb-answer-row${revealed && answer ? " cb-answer-visible" : ""}`}>
             <p className="cb-answer-text">{answer}</p>
             <p className="cb-consult-text">
-              Cítíš, že v poselství je něco víc?{" "}
+              {crystalBall.consultLead}{" "}
               <Link href={localizeHref("/sluzby", currentLang)} className="cb-consult-link">
-                Konzultace ti pomůže porozumět tomu do hloubky.
+                {crystalBall.consultLinkText}
               </Link>
             </p>
           </div>

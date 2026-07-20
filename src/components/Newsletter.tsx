@@ -28,6 +28,7 @@ export default function Newsletter() {
             <EditableImg
               section="newsletter"
               field="image"
+              mobileField="mobileImage"
               alt="Astera"
               sizes="(max-width: 768px) calc(100vw - 40px), 430px"
               style={{ width: "100%", height: "auto", borderRadius: "8px", display: "block" }}

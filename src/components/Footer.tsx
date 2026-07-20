@@ -21,6 +21,7 @@ export default function Footer() {
   const f = content.footer;
   const logoHref = addLangPrefix("/", currentLang);
   const logoUrl = content.siteSettings?.logoUrl || "/images/astera-logo.png";
+  const mobileLogoUrl = content.siteSettings?.mobileLogoUrl || logoUrl;
   const ui = UI_STRINGS[currentLang];
   const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
@@ -41,7 +42,7 @@ export default function Footer() {
           {/* Left column */}
           <div>
             <a href={logoHref} style={{ display: "inline-block", marginBottom: "28px" }}>
-              <OptimizedImage src={logoUrl} alt="Astera Light" sizes="80px" style={{ height: "60px", width: "auto" }} />
+              <OptimizedImage src={logoUrl} mobileSrc={mobileLogoUrl} alt="Astera Light" sizes="80px" style={{ height: "60px", width: "auto" }} />
             </a>
 
             <div style={{ marginBottom: "24px" }}>

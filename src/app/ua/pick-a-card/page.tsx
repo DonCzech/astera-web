@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import PickACardGame from "@/app/pick-a-card/PickACardGame";
+import { redirectIfRouteChanged } from "@/lib/route-overrides.server";
 import { SITE_NAME } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -14,6 +15,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function UkPickACardPage() {
+export default async function UkPickACardPage() {
+  await redirectIfRouteChanged("/ua/pick-a-card", "ua");
   return <PickACardGame />;
 }

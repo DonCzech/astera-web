@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import { PageBlock } from "@/lib/content-types";
+import { localizeHtmlHrefs } from "@/lib/i18n";
+import { useContent } from "@/context/ContentContext";
 
 const purple = "#7c3bb2";
 const cream = "#fdf8f3";
@@ -13,6 +15,7 @@ interface Props {
 }
 
 export default function FaqAccordionBlock({ b }: Props) {
+  const { currentLang } = useContent();
   const [openId, setOpenId] = useState<string | null>(null);
   const items = b.faqItems ?? [];
 
@@ -142,7 +145,7 @@ export default function FaqAccordionBlock({ b }: Props) {
                 <div
                   className="faq-answer"
                   style={{ fontFamily: "'Poppins', sans-serif", fontSize: 14, lineHeight: 1.8, color: "#4a3728" }}
-                  dangerouslySetInnerHTML={{ __html: item.a }}
+                  dangerouslySetInnerHTML={{ __html: localizeHtmlHrefs(item.a, currentLang) }}
                 />
               </div>
             </div>

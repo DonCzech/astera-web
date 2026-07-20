@@ -1,9 +1,10 @@
 "use client";
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { useContent } from "@/context/ContentContext";
-import { usePathname } from "next/navigation";
-import { stripLangPrefix } from "@/lib/i18n";
-import { DEFAULT_CONTENT, SiteContent, NavItem, ManifestCard, FooterLink, CustomPage, PageBlock, BlockType, SiteSettings, ServicesContent, ServiceItem, ServiceSection, PickACardGameCard, WheelOfFortuneConfig, WheelSegment, Testimonial, MoonWidgetConfig } from "@/lib/content-types";
+import { usePathname, useRouter } from "next/navigation";
+import { LANGUAGES, Lang, localizePath, resolveLocalizedPageSlug, stripLangPrefix } from "@/lib/i18n";
+import { DEFAULT_CONTENT, SiteContent, NavItem, ManifestCard, FooterLink, CustomPage, PageBlock, BlockType, SiteSettings, ServicesContent, ServiceItem, ServiceSection, PickACardGameCard, WheelOfFortuneConfig, WheelSegment, Testimonial, MoonWidgetConfig, RouteRedirect } from "@/lib/content-types";
+import { withRouteChange } from "@/lib/route-overrides";
 import RichTextEditor from "./RichTextEditor";
 
 type Section = keyof SiteContent;
@@ -16,6 +17,7 @@ const ALL_SECTIONS: { key: Section; label: string }[] = [
   { key: "testimonials", label: "Recenze" },
   { key: "manifest", label: "Cards" },
   { key: "pickacard", label: "Pick Card" },
+  { key: "crystalBall", label: "🔮 Crystal Ball" },
   { key: "oracle", label: "Oracle" },
   { key: "moonWidget", label: "Měsíc" },
   { key: "servicesContent", label: "Služby" },
@@ -23,11 +25,12 @@ const ALL_SECTIONS: { key: Section; label: string }[] = [
   { key: "footer", label: "Footer" },
   { key: "aboutPage", label: "O nás" },
   { key: "pages", label: "📋 Stránky" },
+  { key: "routeRedirects", label: "↪ Redirecty" },
   { key: "siteSettings", label: "⚙️ Web" },
 ];
 
-const HOMEPAGE_KEYS: Section[] = ["header", "hero", "servicesContent", "newsletter", "about", "testimonials", "manifest", "pickacard", "oracle", "moonWidget", "footer", "siteSettings"];
-const CUSTOM_PAGE_KEYS: Section[] = ["pages", "siteSettings"];
+const HOMEPAGE_KEYS: Section[] = ["header", "hero", "servicesContent", "newsletter", "about", "testimonials", "manifest", "pickacard", "crystalBall", "oracle", "moonWidget", "footer", "siteSettings"];
+const CUSTOM_PAGE_KEYS: Section[] = ["pages", "routeRedirects", "siteSettings"];
 const SLUZBY_KEYS: Section[] = ["servicesContent", "wheelOfFortune", "siteSettings"];
 // Static Next.js routes that must never be treated as custom pages
 const STATIC_ROUTES = ["/", "/sluzby", "/about", "/pick-a-card", "/cs", "/en", "/ua"];
@@ -39,6 +42,14 @@ function createEditorId(prefix = "id") {
     return `${prefix}-${globalThis.crypto.randomUUID()}`;
   }
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function mergeChangedFields<T extends object>(current: T, rendered: T, next: T): T {
+  const merged = { ...current };
+  (Object.keys(next) as Array<keyof T>).forEach(key => {
+    if (next[key] !== rendered[key]) merged[key] = next[key];
+  });
+  return merged;
 }
 
 // ── Shared field components ─────────────────────────────────────────────────────
@@ -216,6 +227,35 @@ function ImageField({ label, value, onChange }: { label: string; value: string; 
   );
 }
 
+function ImagePairField({
+  label,
+  desktopValue,
+  mobileValue,
+  onDesktopChange,
+  onMobileChange,
+}: {
+  label: string;
+  desktopValue: string;
+  mobileValue?: string;
+  onDesktopChange: (url: string) => void;
+  onMobileChange: (url: string) => void;
+}) {
+  return (
+    <div style={{ marginBottom: 14, padding: 10, border: "1px solid #e5e7eb", borderRadius: 9, background: "#fafafa" }}>
+      <div style={{ fontSize: 11, fontWeight: 800, color: "#374151", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.4px" }}>
+        {label}
+      </div>
+      <ImageField label="🖥️ Desktop" value={desktopValue} onChange={onDesktopChange} />
+      <ImageField label="📱 Mobil" value={mobileValue || desktopValue} onChange={onMobileChange} />
+      {!mobileValue && (
+        <div style={{ marginTop: -6, fontSize: 10, color: "#9ca3af" }}>
+          Mobil zatím používá desktopový obrázek. Nahráním se vytvoří samostatná mobilní verze.
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Divider ─────────────────────────────────────────────────────────────────────
 
 function Divider({ label }: { label?: string }) {
@@ -230,9 +270,10 @@ function Divider({ label }: { label?: string }) {
 // ── Section editors ──────────────────────────────────────────────────────────────
 
 function HeaderEditor() {
-  const { content, updateSection } = useContent();
+  const { content, updateSection, getLatestSection, currentLang } = useContent();
   const h = content.header;
-  const upd = (k: string, v: string) => updateSection("header", { ...h, [k]: v });
+  const hrefFocusRef = useRef<Record<string, string>>({});
+  const upd = (k: string, v: string) => updateSection("header", current => ({ ...current, [k]: v }));
 
   const updateNav = useCallback(
     (items: NavItem[]) => updateSection("header", { ...h, navItems: items }),
@@ -241,6 +282,18 @@ function HeaderEditor() {
   const updateItem = (i: number, field: string, val: string) => {
     const items = h.navItems.map((item, idx) => idx === i ? { ...item, [field]: val } : item);
     updateNav(items);
+  };
+  const rememberHref = (key: string, value: string) => {
+    hrefFocusRef.current[key] = value;
+  };
+  const commitHref = (key: string, value: string) => {
+    const previous = hrefFocusRef.current[key];
+    delete hrefFocusRef.current[key];
+    if (!previous || previous === value) return;
+
+    const redirects = (getLatestSection("routeRedirects", currentLang) as RouteRedirect[]) || [];
+    const nextRedirects = withRouteChange(redirects, previous, value, currentLang);
+    if (nextRedirects !== redirects) updateSection("routeRedirects", nextRedirects);
   };
   const addItem = () => updateNav([...h.navItems, { label: "New Item", href: "#" }]);
   const removeItem = (i: number) => updateNav(h.navItems.filter((_, idx) => idx !== i));
@@ -259,7 +312,15 @@ function HeaderEditor() {
         <div key={i} style={{ background: "#f9fafb", borderRadius: 8, padding: "10px 12px", marginBottom: 8, border: "1px solid #e5e7eb" }}>
           <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
             <input type="text" value={item.label} onChange={e => updateItem(i, "label", e.target.value)} placeholder="Label" style={{ flex: 1, padding: "6px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12, outline: "none" }} />
-            <input type="text" value={item.href} onChange={e => updateItem(i, "href", e.target.value)} placeholder="URL" style={{ flex: 2, padding: "6px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12, outline: "none" }} />
+            <input
+              type="text"
+              value={item.href}
+              onFocus={() => rememberHref(`nav-${i}`, item.href)}
+              onBlur={e => commitHref(`nav-${i}`, e.target.value)}
+              onChange={e => updateItem(i, "href", e.target.value)}
+              placeholder="URL"
+              style={{ flex: 2, padding: "6px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12, outline: "none" }}
+            />
             <button type="button" onClick={() => removeItem(i)} style={{ padding: "6px 9px", background: "#fee2e2", border: "none", borderRadius: 6, fontSize: 12, cursor: "pointer", color: "#c00" }}>✕</button>
           </div>
           {item.dropdown && item.dropdown.length > 0 && (
@@ -271,10 +332,17 @@ function HeaderEditor() {
                     const items = h.navItems.map((it, idx) => idx === i ? { ...it, dropdown: it.dropdown?.map((s, si) => si === j ? { ...s, label: e.target.value } : s) } : it);
                     updateNav(items);
                   }} style={{ flex: 1, padding: "4px 6px", border: "1px solid #e5e7eb", borderRadius: 4, fontSize: 11, outline: "none" }} />
-                  <input type="text" value={sub.href} onChange={e => {
-                    const items = h.navItems.map((it, idx) => idx === i ? { ...it, dropdown: it.dropdown?.map((s, si) => si === j ? { ...s, href: e.target.value } : s) } : it);
-                    updateNav(items);
-                  }} style={{ flex: 2, padding: "4px 6px", border: "1px solid #e5e7eb", borderRadius: 4, fontSize: 11, outline: "none" }} />
+                  <input
+                    type="text"
+                    value={sub.href}
+                    onFocus={() => rememberHref(`nav-${i}-drop-${j}`, sub.href)}
+                    onBlur={e => commitHref(`nav-${i}-drop-${j}`, e.target.value)}
+                    onChange={e => {
+                      const items = h.navItems.map((it, idx) => idx === i ? { ...it, dropdown: it.dropdown?.map((s, si) => si === j ? { ...s, href: e.target.value } : s) } : it);
+                      updateNav(items);
+                    }}
+                    style={{ flex: 2, padding: "4px 6px", border: "1px solid #e5e7eb", borderRadius: 4, fontSize: 11, outline: "none" }}
+                  />
                 </div>
               ))}
             </div>
@@ -291,7 +359,7 @@ function HeaderEditor() {
 function HeroEditor() {
   const { content, updateSection } = useContent();
   const h = content.hero;
-  const upd = (k: string, v: string) => updateSection("hero", { ...h, [k]: v });
+  const upd = (k: string, v: string) => updateSection("hero", current => ({ ...current, [k]: v }));
 
   return (
     <div>
@@ -314,7 +382,13 @@ function HeroEditor() {
       <ColorField label="Barva hlavního tlačítka" value={h.primaryButtonBg || "#7c3bb2"} onChange={v => upd("primaryButtonBg", v)} />
       <ColorField label="Barva textu tlačítka" value={h.primaryButtonColor || "#ffffff"} onChange={v => upd("primaryButtonColor", v)} />
       <Divider label="Obrázky" />
-      <ImageField label="Pozadí hero (desktop i mobil)" value={h.backgroundImage} onChange={v => upd("backgroundImage", v)} />
+      <ImagePairField
+        label="Pozadí hero"
+        desktopValue={h.backgroundImage}
+        mobileValue={h.mobileImage}
+        onDesktopChange={v => upd("backgroundImage", v)}
+        onMobileChange={v => upd("mobileImage", v)}
+      />
     </div>
   );
 }
@@ -322,7 +396,7 @@ function HeroEditor() {
 function NewsletterEditor() {
   const { content, updateSection } = useContent();
   const n = content.newsletter;
-  const upd = (k: string, v: string) => updateSection("newsletter", { ...n, [k]: v });
+  const upd = (k: string, v: string) => updateSection("newsletter", current => ({ ...current, [k]: v }));
 
   return (
     <div>
@@ -335,7 +409,7 @@ function NewsletterEditor() {
       <Field label="Text tlačítka">
         <PlainInput value={n.buttonText} onChange={v => upd("buttonText", v)} />
       </Field>
-      <ImageField label="Obrázek" value={n.image} onChange={v => upd("image", v)} />
+      <ImagePairField label="Obrázek" desktopValue={n.image} mobileValue={n.mobileImage} onDesktopChange={v => upd("image", v)} onMobileChange={v => upd("mobileImage", v)} />
     </div>
   );
 }
@@ -343,7 +417,7 @@ function NewsletterEditor() {
 function AboutEditor() {
   const { content, updateSection } = useContent();
   const a = content.about;
-  const upd = (k: string, v: string) => updateSection("about", { ...a, [k]: v });
+  const upd = (k: string, v: string) => updateSection("about", current => ({ ...current, [k]: v }));
 
   return (
     <div>
@@ -362,8 +436,8 @@ function AboutEditor() {
       <Field label="URL tlačítka">
         <PlainInput value={a.buttonHref} onChange={v => upd("buttonHref", v)} />
       </Field>
-      <ImageField label="Obrázek nahoře" value={a.imageTop} onChange={v => upd("imageTop", v)} />
-      <ImageField label="Obrázek dole" value={a.imageBottom} onChange={v => upd("imageBottom", v)} />
+      <ImagePairField label="Obrázek nahoře" desktopValue={a.imageTop} mobileValue={a.mobileImageTop} onDesktopChange={v => upd("imageTop", v)} onMobileChange={v => upd("mobileImageTop", v)} />
+      <ImagePairField label="Obrázek dole" desktopValue={a.imageBottom} mobileValue={a.mobileImageBottom} onDesktopChange={v => upd("imageBottom", v)} onMobileChange={v => upd("mobileImageBottom", v)} />
     </div>
   );
 }
@@ -431,14 +505,16 @@ function ManifestEditor() {
   const m = content.manifest;
 
   const updateCard = (i: number, k: string, v: string) => {
-    const cards = m.cards.map((c, idx) => idx === i ? { ...c, [k]: v } : c);
-    updateSection("manifest", { ...m, cards });
+    updateSection("manifest", current => ({
+      ...current,
+      cards: current.cards.map((card, idx) => idx === i ? { ...card, [k]: v } : card),
+    }));
   };
 
   return (
     <div>
       <Field label="Nadpis sekce">
-        <RTE value={m.sectionTitle} onChange={v => updateSection("manifest", { ...m, sectionTitle: v })} />
+        <RTE value={m.sectionTitle} onChange={v => updateSection("manifest", current => ({ ...current, sectionTitle: v }))} />
       </Field>
       {m.cards.map((card: ManifestCard, i: number) => (
         <div key={i} style={{ borderTop: "1px solid #e5e7eb", paddingTop: 16, marginTop: 16 }}>
@@ -457,8 +533,8 @@ function ManifestEditor() {
           <Field label="URL tlačítka">
             <PlainInput value={card.btnHref} onChange={v => updateCard(i, "btnHref", v)} />
           </Field>
-          <ImageField label="Obrázek karty" value={card.image} onChange={v => updateCard(i, "image", v)} />
-          <ImageField label="Badge obrázek" value={card.badge} onChange={v => updateCard(i, "badge", v)} />
+          <ImagePairField label="Obrázek karty" desktopValue={card.image} mobileValue={card.mobileImage} onDesktopChange={v => updateCard(i, "image", v)} onMobileChange={v => updateCard(i, "mobileImage", v)} />
+          <ImagePairField label="Badge obrázek" desktopValue={card.badge} mobileValue={card.mobileBadge} onDesktopChange={v => updateCard(i, "badge", v)} onMobileChange={v => updateCard(i, "mobileBadge", v)} />
         </div>
       ))}
     </div>
@@ -472,9 +548,14 @@ function PickACardEditor() {
     ...content.pickacard,
     cards: content.pickacard.cards?.length ? content.pickacard.cards : DEFAULT_CONTENT.pickacard.cards,
   };
-  const save = (next: typeof p) => updateSection("pickacard", next);
-  const upd = (k: string, v: string) => save({ ...p, [k]: v });
-  const updateCard = (i: number, card: PickACardGameCard) => save({ ...p, cards: p.cards.map((c, idx) => idx === i ? card : c) });
+  const save = (next: typeof p) =>
+    updateSection("pickacard", current => mergeChangedFields(current, p, next));
+  const upd = (k: string, v: string) => updateSection("pickacard", current => ({ ...current, [k]: v }));
+  const updateCardField = (i: number, field: keyof PickACardGameCard, value: string) =>
+    updateSection("pickacard", current => ({
+      ...current,
+      cards: current.cards.map((card, idx) => idx === i ? { ...card, [field]: value } : card),
+    }));
   const addCard = () => {
     let nextNumber = p.cards.length + 1;
     let nextId = `card-${nextNumber}`;
@@ -495,6 +576,7 @@ function PickACardEditor() {
           gradient: "linear-gradient(135deg, #7c3bb2 0%, #c9a84c 100%)",
           symbol: "✦",
           image: "",
+          mobileImage: "",
         },
       ],
     });
@@ -516,7 +598,7 @@ function PickACardEditor() {
       <Field label="URL tlačítka">
         <PlainInput value={p.buttonHref} onChange={v => upd("buttonHref", v)} />
       </Field>
-      <ImageField label="Obrázek" value={p.image} onChange={v => upd("image", v)} />
+      <ImagePairField label="Obrázek" desktopValue={p.image} mobileValue={p.mobileImage} onDesktopChange={v => upd("image", v)} onMobileChange={v => upd("mobileImage", v)} />
 
       <Divider label="Stránka /pick-a-card" />
       <Field label="Nadpis hry">
@@ -541,24 +623,30 @@ function PickACardEditor() {
           <summary style={{ cursor: "pointer", fontSize: 13, fontWeight: 800, color: "#374151" }}>{card.symbol} {card.title || `Karta ${i + 1}`}</summary>
           <div style={{ marginTop: 12 }}>
             <Field label="ID karty">
-              <PlainInput value={card.id} onChange={v => updateCard(i, { ...card, id: v })} />
+              <PlainInput value={card.id} onChange={v => updateCardField(i, "id", v)} />
             </Field>
             <Field label="Název karty">
-              <PlainInput value={card.title} onChange={v => updateCard(i, { ...card, title: v })} />
+              <PlainInput value={card.title} onChange={v => updateCardField(i, "title", v)} />
             </Field>
             <Field label="Koncepty / klíčová slova">
-              <PlainInput value={card.concepts} onChange={v => updateCard(i, { ...card, concepts: v })} />
+              <PlainInput value={card.concepts} onChange={v => updateCardField(i, "concepts", v)} />
             </Field>
             <Field label="Vzkaz karty">
-              <SmallTextarea value={card.message} onChange={v => updateCard(i, { ...card, message: v })} rows={4} />
+              <SmallTextarea value={card.message} onChange={v => updateCardField(i, "message", v)} rows={4} />
             </Field>
             <Field label="Symbol na kartě">
-              <PlainInput value={card.symbol} onChange={v => updateCard(i, { ...card, symbol: v })} />
+              <PlainInput value={card.symbol} onChange={v => updateCardField(i, "symbol", v)} />
             </Field>
             <Field label="Gradient / barva karty">
-              <PlainInput value={card.gradient} onChange={v => updateCard(i, { ...card, gradient: v })} placeholder="linear-gradient(...)" />
+              <PlainInput value={card.gradient} onChange={v => updateCardField(i, "gradient", v)} placeholder="linear-gradient(...)" />
             </Field>
-            <ImageField label="Obrázek karty" value={card.image || ""} onChange={v => updateCard(i, { ...card, image: v })} />
+            <ImagePairField
+              label="Obrázek karty"
+              desktopValue={card.image || ""}
+              mobileValue={card.mobileImage}
+              onDesktopChange={v => updateCardField(i, "image", v)}
+              onMobileChange={v => updateCardField(i, "mobileImage", v)}
+            />
             <button type="button" onClick={() => removeCard(i)} style={{ padding: "7px 12px", border: "1px solid #fecaca", borderRadius: 7, background: "#fee2e2", color: "#b91c1c", cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
               Smazat kartu
             </button>
@@ -572,10 +660,61 @@ function PickACardEditor() {
   );
 }
 
+function CrystalBallEditor() {
+  const { content, updateSection } = useContent();
+  const c = { ...DEFAULT_CONTENT.crystalBall, ...content.crystalBall };
+  const update = (key: keyof typeof c, value: string | string[]) =>
+    updateSection("crystalBall", current => ({ ...current, [key]: value }));
+  const updateAnswer = (index: number, value: string) =>
+    update("answers", c.answers.map((answer, i) => i === index ? value : answer));
+  const addAnswer = () => update("answers", [...c.answers, "Nová odpověď"]);
+  const removeAnswer = (index: number) => update("answers", c.answers.filter((_, i) => i !== index));
+
+  return (
+    <div>
+      <p style={{ fontSize: 12, color: "#6b7280", lineHeight: 1.5, margin: "0 0 14px" }}>
+        Všechna pole níže patří pouze k právě zvolenému jazyku.
+      </p>
+      <Field label="Malý nadpis"><PlainInput value={c.eyebrow} onChange={v => update("eyebrow", v)} /></Field>
+      <Field label="Nadpis"><RTE value={c.title} onChange={v => update("title", v)} /></Field>
+      <Field label="Podnadpis"><RTE value={c.subtitle} onChange={v => update("subtitle", v)} minHeight={70} /></Field>
+      <Field label="Přístupný popisek koule"><PlainInput value={c.ariaLabel} onChange={v => update("ariaLabel", v)} /></Field>
+      <Field label="Placeholder otázky"><PlainInput value={c.inputPlaceholder} onChange={v => update("inputPlaceholder", v)} /></Field>
+      <Field label="Text tlačítka"><PlainInput value={c.buttonText} onChange={v => update("buttonText", v)} /></Field>
+      <Field label="Text při čekání"><PlainInput value={c.loadingText} onChange={v => update("loadingText", v)} /></Field>
+      <Field label="Text před odkazem na konzultaci"><PlainInput value={c.consultLead} onChange={v => update("consultLead", v)} /></Field>
+      <Field label="Text odkazu na konzultaci"><PlainInput value={c.consultLinkText} onChange={v => update("consultLinkText", v)} /></Field>
+      <ImagePairField
+        label="Křišťálová koule"
+        desktopValue={c.image}
+        mobileValue={c.mobileImage}
+        onDesktopChange={v => update("image", v)}
+        onMobileChange={v => update("mobileImage", v)}
+      />
+      <Divider label="Jednotlivé odpovědi" />
+      {c.answers.map((answer, i) => (
+        <div key={i} style={{ display: "flex", gap: 6, alignItems: "flex-start", marginBottom: 8 }}>
+          <span style={{ width: 22, paddingTop: 8, fontSize: 11, color: "#9ca3af", textAlign: "right" }}>{i + 1}.</span>
+          <textarea
+            value={answer}
+            onChange={e => updateAnswer(i, e.target.value)}
+            rows={2}
+            style={{ flex: 1, padding: "7px 9px", border: "1px solid #e5e7eb", borderRadius: 7, fontSize: 12, resize: "vertical", fontFamily: "inherit" }}
+          />
+          <button type="button" onClick={() => removeAnswer(i)} style={{ padding: "6px 8px", background: "#fff", color: "#ef4444", border: "1px solid #fecaca", borderRadius: 6, cursor: "pointer" }}>✕</button>
+        </div>
+      ))}
+      <button type="button" onClick={addAnswer} style={{ width: "100%", padding: "8px", background: "#f5f3ff", color: "#7c3bb2", border: "1px dashed #7c3bb2", borderRadius: 7, cursor: "pointer", fontWeight: 700 }}>
+        + Přidat odpověď
+      </button>
+    </div>
+  );
+}
+
 function OracleEditor() {
   const { content, updateSection } = useContent();
   const o = content.oracle;
-  const upd = (k: string, v: string) => updateSection("oracle", { ...o, [k]: v });
+  const upd = (k: string, v: string) => updateSection("oracle", current => ({ ...current, [k]: v }));
 
   return (
     <div>
@@ -647,13 +786,16 @@ function FooterEditor() {
 function AboutPageEditor() {
   const { content, updateSection } = useContent();
   const p = content.aboutPage;
-  const upd = (data: typeof p) => updateSection("aboutPage", data);
+  const upd = (data: typeof p) =>
+    updateSection("aboutPage", current => mergeChangedFields(current, p, data));
+  const updField = (key: keyof typeof p, value: string) =>
+    updateSection("aboutPage", current => ({ ...current, [key]: value }));
 
   return (
     <div>
       <Field label="Hero nadpis"><RichTextEditor value={p.heroTitle} onChange={v => upd({ ...p, heroTitle: v })} /></Field>
       <Field label="Hero podnapis"><RichTextEditor value={p.heroSubtitle} onChange={v => upd({ ...p, heroSubtitle: v })} /></Field>
-      <Field label="Hero obrázek (URL)"><input value={p.heroImage} onChange={e => upd({ ...p, heroImage: e.target.value })} style={{ width: "100%", padding: "6px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12 }} /></Field>
+      <ImagePairField label="Hero obrázek" desktopValue={p.heroImage} mobileValue={p.heroMobileImage} onDesktopChange={v => updField("heroImage", v)} onMobileChange={v => updField("heroMobileImage", v)} />
       <Divider label="Bio texty" />
       <Field label="Bio odstavec 1"><RichTextEditor value={p.bio1} onChange={v => upd({ ...p, bio1: v })} /></Field>
       <Field label="Bio odstavec 2"><RichTextEditor value={p.bio2} onChange={v => upd({ ...p, bio2: v })} /></Field>
@@ -835,6 +977,7 @@ const BLOCK_TYPES: { type: BlockType; label: string; icon: string }[] = [
   { type: "two-col", label: "Dva sloupce", icon: "⬛⬛" },
   { type: "faq", label: "FAQ Accordion", icon: "❓" },
   { type: "contact-form", label: "Kontaktní formulář", icon: "✉️" },
+  { type: "donation-qr", label: "Darovací QR", icon: "◩" },
   { type: "heading", label: "Nadpis", icon: "H" },
   { type: "text", label: "Text", icon: "T" },
   { type: "image", label: "Obrázek", icon: "🖼" },
@@ -846,7 +989,9 @@ const BLOCK_TYPES: { type: BlockType; label: string; icon: string }[] = [
 
 // ── FAQ block editor ──────────────────────────────────────────────────────────
 
-function FaqBlockEditor({ block, onUpdate }: { block: PageBlock; onUpdate: (b: PageBlock) => void }) {
+type PageBlockUpdate = PageBlock | ((current: PageBlock) => PageBlock);
+
+function FaqBlockEditor({ block, onUpdate }: { block: PageBlock; onUpdate: (update: PageBlockUpdate) => void }) {
   const items = block.faqItems || [];
 
   function updateItem(id: string, field: "q" | "a", val: string) {
@@ -912,17 +1057,20 @@ function FaqBlockEditor({ block, onUpdate }: { block: PageBlock; onUpdate: (b: P
 
 // ── Cards grid block editor (own component, needs card-level state) ─────────────
 
-function CardsGridBlockEditor({ block, onUpdate }: { block: PageBlock; onUpdate: (b: PageBlock) => void }) {
+function CardsGridBlockEditor({ block, onUpdate }: { block: PageBlock; onUpdate: (update: PageBlockUpdate) => void }) {
   const cards = block.cards || [];
 
   function updateCard(i: number, field: string, val: string) {
-    const arr = [...cards];
-    arr[i] = { ...arr[i], [field]: val };
-    onUpdate({ ...block, cards: arr });
+    onUpdate(current => ({
+      ...current,
+      cards: (current.cards || []).map((card, idx) =>
+        idx === i ? { ...card, [field]: val } : card
+      ),
+    }));
   }
 
   function addCard() {
-    onUpdate({ ...block, cards: [...cards, { image: "", title: "Nová karta", text: "", btnText: "Zjistit více", btnHref: "#" }] });
+    onUpdate({ ...block, cards: [...cards, { image: "", mobileImage: "", title: "Nová karta", text: "", btnText: "Zjistit více", btnHref: "#" }] });
   }
 
   function removeCard(i: number) {
@@ -950,7 +1098,13 @@ function CardsGridBlockEditor({ block, onUpdate }: { block: PageBlock; onUpdate:
             <span style={{ fontSize: 11, fontWeight: 700, color: "#374151" }}>Karta {i + 1}</span>
             <button onClick={() => removeCard(i)} style={{ fontSize: 11, color: "#ef4444", border: "1px solid #fca5a5", background: "#fff", borderRadius: 5, padding: "2px 7px", cursor: "pointer" }}>✕</button>
           </div>
-          <ImageField label="Obrázek karty" value={cards[i].image || ""} onChange={v => updateCard(i, "image", v)} />
+          <ImagePairField
+            label="Obrázek karty"
+            desktopValue={cards[i].image || ""}
+            mobileValue={cards[i].mobileImage}
+            onDesktopChange={v => updateCard(i, "image", v)}
+            onMobileChange={v => updateCard(i, "mobileImage", v)}
+          />
           {cardInp(i, "Nadpis karty", "title")}
           {cardInp(i, "Text karty", "text")}
           {cardInp(i, "Text tlačítka", "btnText")}
@@ -966,7 +1120,7 @@ function CardsGridBlockEditor({ block, onUpdate }: { block: PageBlock; onUpdate:
 
 function BlockEditorPanel({ block, onUpdate, onDelete, onUp, onDown, isFirst, isLast }: {
   block: PageBlock;
-  onUpdate: (b: PageBlock) => void;
+  onUpdate: (update: PageBlockUpdate) => void;
   onDelete: () => void;
   onUp: () => void;
   onDown: () => void;
@@ -1024,7 +1178,7 @@ function BlockEditorPanel({ block, onUpdate, onDelete, onUp, onDown, isFirst, is
             {sel("Zarovnání", "align", ["left", "center", "right"])}
           </>}
           {block.type === "image" && <>
-            <ImageField label="Obrázek" value={block.src || ""} onChange={v => onUpdate({ ...block, src: v })} />
+            <ImagePairField label="Obrázek" desktopValue={block.src || ""} mobileValue={block.mobileSrc} onDesktopChange={v => onUpdate(current => ({ ...current, src: v }))} onMobileChange={v => onUpdate(current => ({ ...current, mobileSrc: v }))} />
             {inp("Alt text", "alt")}
             {sel("Šířka", "width", ["100%", "75%", "50%", "25%", "auto"])}
             {inp("Odkaz (href)", "href")}
@@ -1042,7 +1196,7 @@ function BlockEditorPanel({ block, onUpdate, onDelete, onUp, onDown, isFirst, is
             {inp("Nadpis", "content")}
             {inp("Podtitulek", "subtitle")}
             {inp("Barva pozadí (#hex nebo gradient)", "bgColor")}
-            {inp("URL obrázku pozadí", "bgImage")}
+            <ImagePairField label="Obrázek pozadí" desktopValue={block.bgImage || ""} mobileValue={block.mobileBgImage} onDesktopChange={v => onUpdate(current => ({ ...current, bgImage: v }))} onMobileChange={v => onUpdate(current => ({ ...current, mobileBgImage: v }))} />
             {inp("Text CTA buttonu", "ctaText")}
             {inp("Odkaz CTA buttonu", "ctaHref")}
             {sel("Zarovnání", "align", ["left", "center", "right"])}
@@ -1058,7 +1212,7 @@ function BlockEditorPanel({ block, onUpdate, onDelete, onUp, onDown, isFirst, is
           {block.type === "hero-section" && <>
             {inp("Nadpis", "content")}
             {inp("Podnapis", "subtitle")}
-            <ImageField label="Obrázek pozadí" value={block.heroBgImage || ""} onChange={v => onUpdate({ ...block, heroBgImage: v })} />
+            <ImagePairField label="Obrázek pozadí" desktopValue={block.heroBgImage || ""} mobileValue={block.mobileHeroBgImage} onDesktopChange={v => onUpdate(current => ({ ...current, heroBgImage: v }))} onMobileChange={v => onUpdate(current => ({ ...current, mobileHeroBgImage: v }))} />
             {inp("Barva překrytí (rgba(0,0,0,0.4))", "heroOverlay")}
             {inp("Barva pozadí (bez obrázku)", "bgColor")}
             {inp("Text CTA buttonu", "ctaText")}
@@ -1073,7 +1227,7 @@ function BlockEditorPanel({ block, onUpdate, onDelete, onUp, onDown, isFirst, is
             <Field label="Text">
               <RTE value={block.twoColText || ""} onChange={v => onUpdate({ ...block, twoColText: v })} minHeight={80} />
             </Field>
-            <ImageField label="Obrázek" value={block.twoColImage || ""} onChange={v => onUpdate({ ...block, twoColImage: v })} />
+            <ImagePairField label="Obrázek" desktopValue={block.twoColImage || ""} mobileValue={block.mobileTwoColImage} onDesktopChange={v => onUpdate(current => ({ ...current, twoColImage: v }))} onMobileChange={v => onUpdate(current => ({ ...current, mobileTwoColImage: v }))} />
             {inp("Text tlačítka", "twoColBtnText")}
             {inp("Odkaz tlačítka", "twoColBtnHref")}
             <div style={{ marginBottom: 8 }}>
@@ -1088,6 +1242,32 @@ function BlockEditorPanel({ block, onUpdate, onDelete, onUp, onDown, isFirst, is
           {block.type === "faq" && (
             <FaqBlockEditor block={block} onUpdate={onUpdate} />
           )}
+          {block.type === "donation-qr" && <>
+            {inp("Malý nadpis", "qrEyebrow")}
+            {inp("Nadpis", "qrTitle")}
+            <Field label="Popis">
+              <textarea
+                value={block.qrText || ""}
+                onChange={e => onUpdate({ ...block, qrText: e.target.value })}
+                rows={3}
+                style={{ width: "100%", padding: "6px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12, boxSizing: "border-box", resize: "vertical" }}
+              />
+            </Field>
+            {inp("QR payload (SPAYD)", "qrPayload")}
+            {inp("Popisek účtu", "qrAccountLabel")}
+            {inp("Číslo účtu", "qrAccountNumber")}
+            {inp("Kód banky", "qrBankCode")}
+            {inp("Variabilní symbol", "qrVariableSymbol")}
+            {inp("Zpráva pro příjemce", "qrMessage")}
+            <Field label="Poznámka pod QR">
+              <textarea
+                value={block.qrNote || ""}
+                onChange={e => onUpdate({ ...block, qrNote: e.target.value })}
+                rows={2}
+                style={{ width: "100%", padding: "6px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12, boxSizing: "border-box", resize: "vertical" }}
+              />
+            </Field>
+          </>}
         </div>
       )}
     </div>
@@ -1102,13 +1282,32 @@ function PagesEditor({ autoSlug }: { autoSlug?: string } = {}) {
   const [newSlug, setNewSlug] = useState("");
   const [newTitle, setNewTitle] = useState("");
   const [addingBlock, setAddingBlock] = useState(false);
+  const pageSlugFocusRef = useRef("");
 
   const effectiveSelectedId = autoPage?.id ?? selectedId;
   const selected = pages.find(p => p.id === effectiveSelectedId) || null;
 
+  const normalizeSlugInput = (value: string) => value
+    .trim()
+    .replace(/^https?:\/\/[^/]+/i, "")
+    .replace(/[?#].*$/g, "")
+    .replace(/^\/+|\/+$/g, "")
+    .split("/")
+    .filter(part => part !== "cs" && part !== "en" && part !== "ua")
+    .join("-")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  const slugHref = (slug: string) => currentLang === "cs" ? `/${slug}` : `/${currentLang}/${slug}`;
+
   function addPage() {
     if (!newSlug.trim() || !newTitle.trim()) return;
-    const slug = newSlug.toLowerCase().replace(/[^a-z0-9-]/g, "-");
+    const slug = normalizeSlugInput(newSlug);
+    if (!slug) return;
     const page: CustomPage = { id: createEditorId("page"), slug, title: newTitle.trim(), blocks: [] };
     updateSection("pages", [...pages, page]);
     setSelectedId(page.id);
@@ -1121,11 +1320,34 @@ function PagesEditor({ autoSlug }: { autoSlug?: string } = {}) {
     if (selectedId === id) setSelectedId(null);
   }
 
-  function updatePage(page: CustomPage) {
+  function updatePage(update: CustomPage | ((current: CustomPage) => CustomPage)) {
     // Use getLatestSection (reads from ref) to avoid overwriting concurrent edits
     // made by EditableText/EditableImg while the sidebar was open.
     const latestPages = (getLatestSection("pages", currentLang) as CustomPage[]) || [];
-    updateSection("pages", latestPages.map(p => p.id === page.id ? page : p));
+    const targetId = typeof update === "function" ? effectiveSelectedId : update.id;
+    if (!targetId) return;
+    updateSection("pages", latestPages.map(page => {
+      if (page.id !== targetId) return page;
+      return typeof update === "function" ? update(page) : update;
+    }));
+  }
+
+  function updatePageSlug(value: string) {
+    if (!selected) return;
+    const slug = normalizeSlugInput(value);
+    updatePage({ ...selected, slug });
+  }
+
+  function commitPageSlug(value: string) {
+    if (!selected) return;
+    const previous = pageSlugFocusRef.current;
+    pageSlugFocusRef.current = "";
+    const next = normalizeSlugInput(value);
+    if (!previous || !next || previous === next) return;
+
+    const redirects = (getLatestSection("routeRedirects", currentLang) as RouteRedirect[]) || [];
+    const nextRedirects = withRouteChange(redirects, slugHref(previous), slugHref(next), currentLang);
+    if (nextRedirects !== redirects) updateSection("routeRedirects", nextRedirects);
   }
 
   function addBlock(type: BlockType) {
@@ -1133,23 +1355,35 @@ function PagesEditor({ autoSlug }: { autoSlug?: string } = {}) {
     const BLOCK_DEFAULTS: Record<BlockType, Partial<PageBlock>> = {
       heading: { content: "Nový nadpis", level: "h2", align: "left" },
       text: { content: "<p>Nový text...</p>", align: "left" },
-      image: { src: "", alt: "", width: "100%", align: "center" },
+      image: { src: "", mobileSrc: "", alt: "", width: "100%", align: "center" },
       button: { content: "Klikni zde", href: "#", bgColor: "#7c3bb2", textColor: "#fff", size: "md", align: "center" },
-      banner: { content: "Banner nadpis", subtitle: "Podnapis", bgColor: "linear-gradient(135deg,#7c3bb2,#5f2a8d)", ctaText: "Zjistit více", ctaHref: "#", align: "center" },
+      banner: { content: "Banner nadpis", subtitle: "Podnapis", bgColor: "linear-gradient(135deg,#7c3bb2,#5f2a8d)", bgImage: "", mobileBgImage: "", ctaText: "Zjistit více", ctaHref: "#", align: "center" },
       newsletter: { content: "Přihlás se k odběru", body: "Dostávej novinky přímo na email.", align: "center" },
       spacer: { height: 40 },
-      "hero-section": { content: "Váš Hero Nadpis", subtitle: "Podnapis sekce", bgColor: "linear-gradient(135deg,#7c3bb2,#5f2a8d)", ctaText: "Zjistit více", ctaHref: "#", align: "center" },
+      "hero-section": { content: "Váš Hero Nadpis", subtitle: "Podnapis sekce", bgColor: "linear-gradient(135deg,#7c3bb2,#5f2a8d)", heroBgImage: "", mobileHeroBgImage: "", ctaText: "Zjistit více", ctaHref: "#", align: "center" },
       "cards-grid": { sectionTitle: "Naše služby", cards: [
-        { image: "", title: "Karta 1", text: "Popis karty 1.", btnText: "Zjistit více", btnHref: "#" },
-        { image: "", title: "Karta 2", text: "Popis karty 2.", btnText: "Zjistit více", btnHref: "#" },
-        { image: "", title: "Karta 3", text: "Popis karty 3.", btnText: "Zjistit více", btnHref: "#" },
+        { image: "", mobileImage: "", title: "Karta 1", text: "Popis karty 1.", btnText: "Zjistit více", btnHref: "#" },
+        { image: "", mobileImage: "", title: "Karta 2", text: "Popis karty 2.", btnText: "Zjistit více", btnHref: "#" },
+        { image: "", mobileImage: "", title: "Karta 3", text: "Popis karty 3.", btnText: "Zjistit více", btnHref: "#" },
       ]},
-      "two-col": { twoColTitle: "Nadpis sekce", twoColText: "<p>Text popis sekce.</p>", twoColBtnText: "Číst více", twoColBtnHref: "#", imageLeft: true },
+      "two-col": { twoColTitle: "Nadpis sekce", twoColText: "<p>Text popis sekce.</p>", twoColImage: "", mobileTwoColImage: "", twoColBtnText: "Číst více", twoColBtnHref: "#", imageLeft: true },
       faq: { faqTitle: "Časté dotazy", faqSubtitle: "Odpovědi na vaše otázky", faqItems: [
         { id: createEditorId("faq"), q: "Otázka 1", a: "Odpověď na otázku 1." },
         { id: createEditorId("faq"), q: "Otázka 2", a: "Odpověď na otázku 2." },
       ]},
       "contact-form": {},
+      "donation-qr": {
+        qrEyebrow: "Dobrovolná podpora",
+        qrTitle: "Pomozte tam, kde je to potřeba",
+        qrText: "QR kód slouží pro dobrovolný příspěvek na výklad či poradenství pro člověka, který podporu právě potřebuje, ale nemůže si ji dovolit.",
+        qrPayload: "SPD*1.0*ACC:CZ0000000000000000000000*CC:CZK*MSG:POMOC PRES ASTERA LIGHT",
+        qrAccountLabel: "Náhledový účet",
+        qrAccountNumber: "000000-0000000000",
+        qrBankCode: "0000",
+        qrVariableSymbol: "",
+        qrMessage: "POMOC PRES ASTERA LIGHT",
+        qrNote: "Účet je zatím náhledový. Před spuštěním ho vyměníme za reálný.",
+      },
     };
     const defaults: Partial<PageBlock> = BLOCK_DEFAULTS[type] || {};
     const block: PageBlock = { id: createEditorId("block"), type, ...defaults };
@@ -1157,9 +1391,15 @@ function PagesEditor({ autoSlug }: { autoSlug?: string } = {}) {
     setAddingBlock(false);
   }
 
-  function updateBlock(block: PageBlock) {
+  function updateBlock(blockId: string, update: PageBlockUpdate) {
     if (!selected) return;
-    updatePage({ ...selected, blocks: selected.blocks.map(b => b.id === block.id ? block : b) });
+    updatePage(currentPage => ({
+      ...currentPage,
+      blocks: currentPage.blocks.map(currentBlock => {
+        if (currentBlock.id !== blockId) return currentBlock;
+        return typeof update === "function" ? update(currentBlock) : update;
+      }),
+    }));
   }
 
   function deleteBlock(id: string) {
@@ -1183,7 +1423,7 @@ function PagesEditor({ autoSlug }: { autoSlug?: string } = {}) {
             <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer" }} onClick={() => setSelectedId(p.id)}>
               {p.title} <span style={{ color: "#9ca3af", fontWeight: 400 }}>/{p.slug}</span>
             </span>
-            <a href={`/${p.slug}`} target="_blank" style={{ fontSize: 11, color: "#7c3bb2" }}>↗</a>
+            <a href={slugHref(p.slug)} target="_blank" style={{ fontSize: 11, color: "#7c3bb2" }}>↗</a>
             <button onClick={() => setSelectedId(p.id)} style={{ padding: "3px 10px", fontSize: 11, background: "#7c3bb2", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer" }}>Upravit</button>
             <button onClick={() => deletePage(p.id)} style={{ padding: "3px 8px", fontSize: 11, background: "#fff", color: "#ef4444", border: "1px solid #fca5a5", borderRadius: 6, cursor: "pointer" }}>✕</button>
           </div>
@@ -1204,15 +1444,27 @@ function PagesEditor({ autoSlug }: { autoSlug?: string } = {}) {
         <button onClick={() => setSelectedId(null)} style={{ padding: "5px 10px", fontSize: 12, background: "#f3f4f6", border: "1px solid #e5e7eb", borderRadius: 6, cursor: "pointer" }}>← Zpět</button>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: "#374151" }}>{selected.title}</div>
-          <a href={`/${selected.slug}`} target="_blank" style={{ fontSize: 11, color: "#7c3bb2" }}>/{selected.slug} ↗</a>
+          <a href={slugHref(selected.slug)} target="_blank" style={{ fontSize: 11, color: "#7c3bb2" }}>{slugHref(selected.slug)} ↗</a>
         </div>
       </div>
+
+      <Field label="URL stránky">
+        <input
+          type="text"
+          value={selected.slug}
+          onFocus={() => { pageSlugFocusRef.current = selected.slug; }}
+          onChange={e => updatePageSlug(e.target.value)}
+          onBlur={e => commitPageSlug(e.target.value)}
+          placeholder="napr. jak-podekovat"
+          style={{ width: "100%", padding: "6px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12, boxSizing: "border-box" }}
+        />
+      </Field>
 
       {selected.blocks.map((block, i) => (
         <BlockEditorPanel
           key={block.id}
           block={block}
-          onUpdate={updateBlock}
+          onUpdate={update => updateBlock(block.id, update)}
           onDelete={() => deleteBlock(block.id)}
           onUp={() => moveBlock(i, -1)}
           onDown={() => moveBlock(i, 1)}
@@ -1248,8 +1500,11 @@ function PagesEditor({ autoSlug }: { autoSlug?: string } = {}) {
 
 function SiteSettingsEditor() {
   const { content, updateSection } = useContent();
-  const s: SiteSettings = content.siteSettings || { accentColor: "#7c3bb2", logoUrl: "", metaTitle: "", metaDescription: "", customCss: "" };
-  const upd = (data: SiteSettings) => updateSection("siteSettings", data);
+  const s: SiteSettings = content.siteSettings || { accentColor: "#7c3bb2", logoUrl: "", mobileLogoUrl: "", metaTitle: "", metaDescription: "", customCss: "" };
+  const upd = (data: SiteSettings) =>
+    updateSection("siteSettings", current => mergeChangedFields(current, s, data));
+  const updField = (key: keyof SiteSettings, value: string) =>
+    updateSection("siteSettings", current => ({ ...current, [key]: value }));
 
   return (
     <div>
@@ -1262,8 +1517,7 @@ function SiteSettingsEditor() {
             style={{ flex: 1, padding: "6px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12 }} />
         </div>
       </Field>
-      <Field label="URL loga"><input value={s.logoUrl || ""} onChange={e => upd({ ...s, logoUrl: e.target.value })}
-        style={{ width: "100%", padding: "6px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12, boxSizing: "border-box" }} /></Field>
+      <ImagePairField label="Logo" desktopValue={s.logoUrl || ""} mobileValue={s.mobileLogoUrl} onDesktopChange={v => updField("logoUrl", v)} onMobileChange={v => updField("mobileLogoUrl", v)} />
 
       <Divider label="SEO & Meta" />
       <Field label="Meta title (titulek stránky)"><input value={s.metaTitle || ""} onChange={e => upd({ ...s, metaTitle: e.target.value })}
@@ -1278,6 +1532,42 @@ function SiteSettingsEditor() {
       <textarea value={s.customCss || ""} onChange={e => upd({ ...s, customCss: e.target.value })}
         rows={10} placeholder={`.btn-primary { background: #ff5500; }\nh1 { font-family: 'Georgia'; }`}
         style={{ width: "100%", padding: "8px 10px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 11, fontFamily: "monospace", boxSizing: "border-box", resize: "vertical", lineHeight: 1.6 }} />
+    </div>
+  );
+}
+
+function RouteRedirectsEditor() {
+  const { content, updateSection } = useContent();
+  const redirects = content.routeRedirects || [];
+
+  return (
+    <div>
+      <p style={{ fontSize: 12, color: "#6b7280", lineHeight: 1.5, margin: "0 0 12px" }}>
+        Redirecty se přidávají automaticky při změně URL v menu nebo u stránky.
+      </p>
+      {redirects.length === 0 ? (
+        <p style={{ fontSize: 12, color: "#9ca3af", margin: 0 }}>Zatím žádné redirecty.</p>
+      ) : redirects.map((item, i) => (
+        <div key={item.id || `${item.from}-${item.to}`} style={{ padding: 10, border: "1px solid #e5e7eb", borderRadius: 8, background: "#f9fafb", marginBottom: 8 }}>
+          <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 4 }}>Z původní URL</div>
+          <div style={{ fontSize: 12, fontFamily: "monospace", color: "#374151", wordBreak: "break-all" }}>{item.from}</div>
+          <div style={{ fontSize: 11, color: "#6b7280", margin: "8px 0 4px" }}>Na novou URL</div>
+          <div style={{ fontSize: 12, fontFamily: "monospace", color: "#374151", wordBreak: "break-all" }}>{item.to}</div>
+          {item.target && (
+            <>
+              <div style={{ fontSize: 11, color: "#6b7280", margin: "8px 0 4px" }}>Vykresluje obsah</div>
+              <div style={{ fontSize: 12, fontFamily: "monospace", color: "#374151", wordBreak: "break-all" }}>{item.target}</div>
+            </>
+          )}
+          <button
+            type="button"
+            onClick={() => updateSection("routeRedirects", redirects.filter((_, idx) => idx !== i))}
+            style={{ marginTop: 10, padding: "5px 9px", background: "#fff", color: "#ef4444", border: "1px solid #fecaca", borderRadius: 6, fontSize: 11, cursor: "pointer" }}
+          >
+            Smazat redirect
+          </button>
+        </div>
+      ))}
     </div>
   );
 }
@@ -1626,6 +1916,7 @@ const EDITORS: Record<Section, React.ComponentType> = {
   testimonials: TestimonialsEditor,
   manifest: ManifestEditor,
   pickacard: PickACardEditor,
+  crystalBall: CrystalBallEditor,
   oracle: OracleEditor,
   moonWidget: MoonWidgetEditor,
   servicesContent: ServicesEditor,
@@ -1633,22 +1924,28 @@ const EDITORS: Record<Section, React.ComponentType> = {
   footer: FooterEditor,
   aboutPage: AboutPageEditor,
   pages: PagesEditor,
+  routeRedirects: RouteRedirectsEditor,
   siteSettings: SiteSettingsEditor,
 };
 
 // ── Main LiveEditor panel ──────────────────────────────────────────────────────
 
 export default function LiveEditor() {
-  const { admin, content, saveAll, undo, canUndo, saveStatus, logout } = useContent();
+  const { admin, content, currentLang, saveAll, undo, canUndo, saveStatus, logout } = useContent();
   const pathname = usePathname();
+  const router = useRouter();
   const basePath = stripLangPrefix(pathname ?? "/");
   const [open, setOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<Section>("hero");
   const [editorKey, setEditorKey] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+  const [viewportReady, setViewportReady] = useState(false);
 
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth <= 700);
+    const check = () => {
+      setIsMobile(window.innerWidth <= 700);
+      setViewportReady(true);
+    };
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
@@ -1670,12 +1967,12 @@ export default function LiveEditor() {
   }, [isMobile, open]);
 
   // Context-aware: detect current custom page
-  const currentCustomPage = useMemo(
-    () => STATIC_ROUTES.includes(basePath)
-      ? null
-      : (content.pages || []).find(p => `/${p.slug}` === basePath) ?? null,
-    [content.pages, basePath]
-  );
+  const currentCustomPage = useMemo(() => {
+    if (STATIC_ROUTES.includes(basePath)) return null;
+    const requestedSlug = basePath.replace(/^\/+/, "").split("/")[0] || "";
+    const candidates = resolveLocalizedPageSlug(requestedSlug, currentLang);
+    return (content.pages || []).find(page => candidates.includes(page.slug)) ?? null;
+  }, [content.pages, basePath, currentLang]);
 
   // Filter sections based on current route (use lang-stripped basePath)
   const visibleSections = useMemo(() => {
@@ -1685,7 +1982,7 @@ export default function LiveEditor() {
     return ALL_SECTIONS;
   }, [basePath, currentCustomPage]);
 
-  if (!admin.isAdmin) return null;
+  if (!admin.isAdmin || !viewportReady) return null;
 
   const resolvedActiveSection = visibleSections.some(s => s.key === activeSection)
     ? activeSection
@@ -1700,6 +1997,12 @@ export default function LiveEditor() {
   async function handleLogout() {
     await logout();
     setOpen(false);
+  }
+
+  async function switchLanguage(lang: Lang) {
+    if (lang === currentLang) return;
+    await saveAll();
+    router.push(localizePath(pathname ?? "/", lang));
   }
 
   // Save status indicator
@@ -1817,6 +2120,30 @@ export default function LiveEditor() {
               </button>
             )}
           </div>
+        </div>
+
+        <div style={{ flexShrink: 0, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, padding: "9px 12px", borderBottom: "1px solid #e5e7eb", background: "#fff" }}>
+          {LANGUAGES.map(language => (
+            <button
+              key={language.code}
+              type="button"
+              onClick={() => switchLanguage(language.code)}
+              title={`Editovat ${language.label}`}
+              style={{
+                padding: "8px 6px",
+                borderRadius: 8,
+                border: currentLang === language.code ? "2px solid #7c3bb2" : "1px solid #e5e7eb",
+                background: currentLang === language.code ? "#f5f3ff" : "#fff",
+                color: currentLang === language.code ? "#5f2a8d" : "#6b7280",
+                cursor: "pointer",
+                fontSize: 11,
+                fontWeight: currentLang === language.code ? 800 : 600,
+              }}
+            >
+              <span style={{ fontSize: 18, display: "block", marginBottom: 2 }}>{language.flag}</span>
+              {language.code.toUpperCase()}
+            </button>
+          ))}
         </div>
 
         {/* Section tabs — 2-row wrap grid */}

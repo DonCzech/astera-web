@@ -53,3 +53,9 @@ astera-content.db-wal
 !/public/uploads/astera-upload-1777543712527-v1mmzjakq5.png
 !/public/uploads/astera-upload-1777543812845-9puk6rdon7f.png
 !/public/uploads/astera-upload-1780220684302-0u741zmozlhg-nobg.webp
+.env*.local
+
+# Lokální zálohy obsahu a fotek (vytváří scripts/fix-lang-image-defaults.mjs a cleanup-orphan-blobs.mjs)
+zaloha-fotek/
+zaloha-obsahu-*.json
+obnova-obrazku.html

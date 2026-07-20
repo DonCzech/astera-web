@@ -2,12 +2,13 @@ import { unstable_cache } from "next/cache";
 import { Pool } from "pg";
 import { DEFAULT_CONTENT, SiteContent } from "./content-types";
 import { Lang, getDefaultContent } from "./i18n";
+import { getPgSslConfig } from "./pg-config";
 
 // ── Pool ──────────────────────────────────────────────────────────────────────
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
+  ssl: getPgSslConfig(process.env.DATABASE_URL),
   max: 5,
 });
 
@@ -62,40 +63,61 @@ async function initDb(): Promise<void> {
 
 // ── Content ──────────────────────────────────────────────────────────────────
 
-// Sections that are not language-specific and should always mirror CS DB content
-// when no explicit EN/UA version has been saved yet.
-const CS_FALLBACK_SECTIONS = ["pages", "siteSettings"] as const;
-
+/**
+ * Every language owns its content outright — its own texts AND its own images
+ * (desktop and mobile alike). Nothing is inherited at read time: whatever sits
+ * in `site_content_i18n` for that language is exactly what renders.
+ *
+ * Code-level defaults (`getDefaultContent`) are a *seed*, never a fallback.
+ * Merging them in at read time was what silently resurrected stale images: a
+ * language whose row lacked a key fell through to a hardcoded `/images/*.png`
+ * instead of showing what the admin had uploaded.
+ *
+ * A language row that has never existed is materialised once, from the Czech
+ * content, so the editor starts from a real page rather than a code snapshot.
+ * After that the row is authoritative and the languages never touch again.
+ */
 export async function getAllContentForLang(lang: Lang): Promise<SiteContent> {
   await initDb();
   if (lang === "cs") return getAllContent();
-  const defaults = getDefaultContent(lang);
+
   const { rows } = await pool.query(
     "SELECT section, content FROM site_content_i18n WHERE lang = $1",
     [lang]
   );
-  const result: Record<string, unknown> = { ...defaults };
-  const savedSections = new Set<string>();
+
+  const result: Record<string, unknown> = {};
   for (const row of rows) {
-    savedSections.add(row.section);
-    const stored = typeof row.content === "string" ? JSON.parse(row.content) : row.content;
-    const def = result[row.section];
-    result[row.section] = isPlainObject(def) && isPlainObject(stored)
-      ? { ...def, ...stored }
-      : stored;
+    result[row.section] = typeof row.content === "string" ? JSON.parse(row.content) : row.content;
   }
-  // For sections with no EN/UA version saved yet, fall back to CS DB content.
-  // This ensures custom pages (konzultace, kniha, etc.) and site settings are
-  // always available even before the admin explicitly translates them.
-  const missing = CS_FALLBACK_SECTIONS.filter(s => !savedSections.has(s));
+
+  // First run for this language: seed the missing sections from CS and persist
+  // them, so this branch is taken at most once per section per language.
+  const allSections = Object.keys(DEFAULT_CONTENT);
+  const missing = allSections.filter(section => !(section in result));
   if (missing.length > 0) {
-    const cs = await getAllContent();
-    const csAny = cs as unknown as Record<string, unknown>;
+    const cs = (await getAllContent()) as unknown as Record<string, unknown>;
+    const langDefaults = getDefaultContent(lang) as unknown as Record<string, unknown>;
     for (const section of missing) {
-      result[section] = csAny[section];
+      // Prefer CS (real, admin-maintained content) and only fall back to the
+      // per-language code defaults for sections CS itself has never had.
+      const seed = section in cs ? cs[section] : langDefaults[section];
+      result[section] = seed;
+      await seedI18nSection(section, lang, seed);
     }
   }
+
   return result as unknown as SiteContent;
+}
+
+/** Write a language row only if it does not exist yet — never overwrites admin edits. */
+async function seedI18nSection(section: string, lang: Lang, content: unknown): Promise<void> {
+  await pool.query(
+    `INSERT INTO site_content_i18n (section, lang, content, updated_at)
+     VALUES ($1, $2, $3, now())
+     ON CONFLICT (section, lang) DO NOTHING`,
+    [section, lang, JSON.stringify(content)]
+  );
 }
 
 export async function saveI18nSection(section: string, lang: Lang, content: unknown): Promise<void> {
@@ -112,22 +134,18 @@ export async function saveI18nSection(section: string, lang: Lang, content: unkn
 export async function getAllContent(): Promise<SiteContent> {
   await initDb();
   const { rows } = await pool.query("SELECT section, content FROM site_content");
+  // DEFAULT_CONTENT only fills sections that have no row at all (initDb seeds
+  // them, so in practice never). A stored section is used verbatim — merging
+  // defaults key-by-key is what used to bring hardcoded /images/*.png back to
+  // life whenever a saved object was missing a field.
   const result: Record<string, unknown> = { ...DEFAULT_CONTENT };
   for (const row of rows) {
     // pg returns JSONB as parsed object already
-    const stored = typeof row.content === "string"
+    result[row.section] = typeof row.content === "string"
       ? JSON.parse(row.content)
       : row.content;
-    const defaults = result[row.section];
-    result[row.section] = isPlainObject(defaults) && isPlainObject(stored)
-      ? { ...defaults, ...stored }
-      : stored;
   }
   return result as unknown as SiteContent;
-}
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
 export const CONTENT_CACHE_TAG = "site-content";

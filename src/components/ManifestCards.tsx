@@ -33,6 +33,7 @@ export default function ManifestCards() {
                   <EditableImg
                     section="manifest"
                     field={`cards.${i}.image`}
+                    mobileField={`cards.${i}.mobileImage`}
                     alt={card.title}
                     sizes="(max-width: 600px) calc(100vw - 40px), (max-width: 900px) calc((100vw - 64px) / 2), 331px"
                     style={{ width: "100%", height: "auto", display: "block" }}
@@ -42,6 +43,7 @@ export default function ManifestCards() {
                     <EditableImg
                       section="manifest"
                       field={`cards.${i}.image`}
+                      mobileField={`cards.${i}.mobileImage`}
                       alt={card.title}
                       sizes="(max-width: 600px) calc(100vw - 40px), (max-width: 900px) calc((100vw - 64px) / 2), 331px"
                       style={{ width: "100%", height: "auto", display: "block" }}

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { OPTIMIZED_IMAGE_MAP } from "@/lib/optimized-image-map";
 
 type Props = React.ImgHTMLAttributes<HTMLImageElement> & {
+  mobileSrc?: string;
   pictureStyle?: React.CSSProperties;
   noPlaceholder?: boolean;
 };
@@ -94,9 +95,11 @@ export function optimizedImageSet(src?: string) {
   )`;
 }
 
-export default function OptimizedImage({ src, alt = "", pictureStyle, noPlaceholder, ...imgProps }: Props) {
+export default function OptimizedImage({ src, mobileSrc, alt = "", pictureStyle, noPlaceholder, ...imgProps }: Props) {
   const stringSrc = typeof src === "string" ? src : undefined;
   const image = getOptimizedImage(stringSrc);
+  const effectiveMobileSrc = mobileSrc || stringSrc;
+  const mobileImage = getOptimizedImage(effectiveMobileSrc);
   const sizes = imgProps.sizes || "100vw";
   const isEager = imgProps.fetchPriority === "high" || imgProps.loading === "eager";
   const loading = imgProps.loading ?? (isEager ? "eager" : "lazy");
@@ -110,12 +113,12 @@ export default function OptimizedImage({ src, alt = "", pictureStyle, noPlacehol
     queueMicrotask(() => setLoaded(true));
   }, []);
 
-  if (!image) {
+  if (!image && (!mobileSrc || mobileSrc === stringSrc)) {
     // eslint-disable-next-line @next/next/no-img-element
     return <img src={stringSrc} alt={alt} loading={loading} decoding={decoding} {...imgProps} />;
   }
 
-  const usePlaceholder = !noPlaceholder && !!image.lqip;
+  const usePlaceholder = !noPlaceholder && !!image?.lqip;
 
   return (
     <picture
@@ -123,7 +126,7 @@ export default function OptimizedImage({ src, alt = "", pictureStyle, noPlacehol
         ...pictureStyle,
         position: "relative",
         display: pictureStyle?.display ?? "block",
-        backgroundImage: usePlaceholder && !loaded ? `url(${image.lqip})` : undefined,
+        backgroundImage: usePlaceholder && !loaded ? `url(${image?.lqip})` : undefined,
         backgroundSize: "cover",
         backgroundPosition: "center",
         overflow: "hidden",
@@ -144,15 +147,25 @@ export default function OptimizedImage({ src, alt = "", pictureStyle, noPlacehol
           }}
         />
       )}
-      <source srcSet={image.webpSrcSet || image.webp} sizes={sizes} type="image/webp" />
+      {mobileSrc && mobileImage && (
+        <source media="(max-width: 768px)" srcSet={mobileImage.webpSrcSet || mobileImage.webp} sizes={sizes} type="image/webp" />
+      )}
+      {mobileSrc && (
+        <source
+          media="(max-width: 768px)"
+          srcSet={mobileImage?.fallbackSrcSet || mobileImage?.fallback || mobileSrc}
+          sizes={sizes}
+        />
+      )}
+      {image && <source srcSet={image.webpSrcSet || image.webp} sizes={sizes} type="image/webp" />}
       <img
         ref={imgRef}
-        src={image.fallback}
-        srcSet={image.fallbackSrcSet}
+        src={image?.fallback || stringSrc}
+        srcSet={image?.fallbackSrcSet}
         sizes={sizes}
         alt={alt}
-        width={image.width}
-        height={image.height}
+        width={image?.width}
+        height={image?.height}
         loading={loading}
         decoding={decoding}
         {...imgProps}

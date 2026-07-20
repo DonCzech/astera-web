@@ -4,40 +4,57 @@ import { useContent } from "@/context/ContentContext";
 import { SiteContent } from "@/lib/content-types";
 import OptimizedImage from "@/components/OptimizedImage";
 
-function getPath(obj: any, path: string): string {
-  return String(path.split(".").reduce((o: any, k: string) => o?.[k], obj) ?? "");
+type EditableObject = Record<string, unknown> | unknown[];
+
+function readKey(obj: unknown, key: string) {
+  if (Array.isArray(obj)) return obj[Number(key)];
+  if (obj && typeof obj === "object") return (obj as Record<string, unknown>)[key];
+  return undefined;
 }
 
-function setPath(obj: any, path: string, val: string): any {
+function getPath(obj: unknown, path: string): string {
+  return String(path.split(".").reduce<unknown>((value, key) => readKey(value, key), obj) ?? "");
+}
+
+function setPath<T>(obj: T, path: string, val: string): T {
   const parts = path.split(".");
-  const root = Array.isArray(obj) ? [...obj] : { ...obj };
-  let current: any = root;
+  const source = obj as EditableObject;
+  const root: EditableObject = Array.isArray(source) ? [...source] : { ...source };
+  let current: EditableObject = root;
 
   parts.forEach((part, index) => {
     const key = Array.isArray(current) ? Number(part) : part;
     if (index === parts.length - 1) {
-      current[key] = val;
+      if (Array.isArray(current)) current[key as number] = val;
+      else current[key as string] = val;
       return;
     }
 
-    const next = current[key];
-    current[key] = Array.isArray(next) ? [...next] : { ...next };
-    current = current[key];
+    const next = Array.isArray(current) ? current[key as number] : current[key as string];
+    const clonedNext: EditableObject = Array.isArray(next)
+      ? [...next]
+      : next && typeof next === "object"
+        ? { ...(next as Record<string, unknown>) }
+        : {};
+    if (Array.isArray(current)) current[key as number] = clonedNext;
+    else current[key as string] = clonedNext;
+    current = clonedNext;
   });
 
-  return root;
+  return root as T;
 }
 
 interface Props {
   section: keyof SiteContent;
   field: string;
+  mobileField?: string;
   alt?: string;
   style?: React.CSSProperties;
   className?: string;
   sizes?: string;
 }
 
-export default function EditableImg({ section, field, alt, style, className, sizes }: Props) {
+export default function EditableImg({ section, field, mobileField, alt, style, className, sizes }: Props) {
   const { content, admin, updateSection, saveSection, getLatestSection } = useContent();
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -46,7 +63,9 @@ export default function EditableImg({ section, field, alt, style, className, siz
   const [localPreview, setLocalPreview] = useState<string | null>(null);
   const [dims, setDims] = useState<{ w: number; h: number } | null>(null);
 
-  const src = localPreview ?? getPath(content[section], field);
+  const desktopSrc = getPath(content[section], field);
+  const mobileSrc = mobileField ? getPath(content[section], mobileField) || desktopSrc : undefined;
+  const src = localPreview ?? desktopSrc;
 
   // Pre-fetch natural dimensions only for admins (used by hover overlay).
   // Non-admins should never trigger this fetch — for non-optimized raw images
@@ -158,7 +177,7 @@ export default function EditableImg({ section, field, alt, style, className, siz
 
   // Non-admin: render plain img
   if (!admin.isAdmin) {
-    return <OptimizedImage src={src} alt={alt} style={style} className={className} sizes={sizes} />;
+    return <OptimizedImage src={src} mobileSrc={mobileSrc} alt={alt} style={style} className={className} sizes={sizes} />;
   }
 
   // Admin mode: wrap with hover overlay
@@ -181,6 +200,7 @@ export default function EditableImg({ section, field, alt, style, className, siz
     >
       <OptimizedImage
         src={src}
+        mobileSrc={mobileSrc}
         alt={alt}
         sizes={sizes}
         style={{
@@ -188,8 +208,8 @@ export default function EditableImg({ section, field, alt, style, className, siz
           width: "100%",
           height: style?.height || "auto",
           borderRadius: style?.borderRadius,
-          objectFit: (style as any)?.objectFit,
-          objectPosition: (style as any)?.objectPosition,
+          objectFit: style?.objectFit,
+          objectPosition: style?.objectPosition,
         }}
       />
 

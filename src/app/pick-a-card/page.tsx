@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import PickACardGame from "./PickACardGame";
+import { redirectIfRouteChanged } from "@/lib/route-overrides.server";
 import { absoluteUrl, PUBLIC_ROUTES, SITE_NAME } from "@/lib/seo";
 
 const route = PUBLIC_ROUTES.find((item) => item.path === "/pick-a-card")!;
@@ -18,6 +19,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function PickACardPage() {
+export default async function PickACardPage() {
+  await redirectIfRouteChanged("/pick-a-card", "cs");
   return <PickACardGame />;
 }

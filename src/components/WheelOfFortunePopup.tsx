@@ -335,6 +335,9 @@ type Phase = "idle" | "spinning" | "win" | "loss" | "done";
 export default function WheelOfFortunePopup() {
   const { content, admin } = useContent();
   const cfg = content.wheelOfFortune;
+  // Read once, so the value the callbacks close over is the same expression
+  // they list as a dependency — otherwise the compiler drops their memoization.
+  const segments = cfg?.segments;
   const displayStyle = cfg?.displayStyle || "popup";
   const showFrequency = cfg?.showFrequency || "once_per_day";
 
@@ -565,7 +568,7 @@ export default function WheelOfFortunePopup() {
   }, [resetAndClose]);
 
   const selectWinner = useCallback((): WheelSegment => {
-    const segs = cfg.segments;
+    const segs = segments!;
     const totalW = segs.reduce((s, seg) => s + Number(seg.weight), 0);
     let r = Math.random() * totalW;
     for (const seg of segs) {
@@ -573,14 +576,14 @@ export default function WheelOfFortunePopup() {
       if (r <= 0) return seg;
     }
     return segs[segs.length - 1];
-  }, [cfg?.segments]);
+  }, [segments]);
 
   const doSpin = useCallback(() => {
     const won = selectWinner();
     setWinner(won);
     setPhase("spinning");
 
-    const segs   = cfg.segments;
+    const segs   = segments!;
     // Vizuální díly jsou vždy stejně velké — segDeg = 360/N
     const segDeg = 360 / segs.length;
     const wonIdx = segs.findIndex(s => s.id === won.id);
@@ -611,7 +614,7 @@ export default function WheelOfFortunePopup() {
         }
       }, 5400);
     }
-  }, [selectWinner, cfg?.segments, playAllSounds]);
+  }, [selectWinner, segments, playAllSounds]);
 
   const handleSpin = useCallback(() => {
     if (phase !== "idle") return;

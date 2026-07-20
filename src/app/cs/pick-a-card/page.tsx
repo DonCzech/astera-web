@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import PickACardGame from "@/app/pick-a-card/PickACardGame";
+import { redirectIfRouteChanged } from "@/lib/route-overrides.server";
 import { SITE_NAME } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -8,6 +9,7 @@ export const metadata: Metadata = {
   openGraph: { title: "Vyber si kartu | Astera Light", siteName: SITE_NAME, type: "website", locale: "cs_CZ" },
 };
 
-export default function CsPickACardPage() {
+export default async function CsPickACardPage() {
+  await redirectIfRouteChanged("/cs/pick-a-card", "cs");
   return <PickACardGame />;
 }

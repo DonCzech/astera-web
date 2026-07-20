@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import { useContent } from "@/context/ContentContext";
 import { DEFAULT_CONTENT, PickACardGameCard } from "@/lib/content-types";
 import { UI_STRINGS } from "@/lib/i18n";
+import OptimizedImage from "@/components/OptimizedImage";
 
 const CARD_W = 200;
 const CARD_H = 290;
@@ -347,9 +348,9 @@ export default function PickACardGame() {
                   <div style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at 50% 30%, rgba(255,255,255,0.18) 0%, transparent 60%)" }} />
                   {selected.image && (
                     <div style={{ position: "absolute", inset: 0 }}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
+                      <OptimizedImage
                         src={selected.image}
+                        mobileSrc={selected.mobileImage}
                         alt={selected.title}
                         style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", opacity: 0.78 }}
                       />

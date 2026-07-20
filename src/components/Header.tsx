@@ -15,6 +15,7 @@ export default function Header() {
   const pathname = usePathname() || "/";
   const logoHref = addLangPrefix("/", detectLang(pathname));
   const logoUrl = content.siteSettings?.logoUrl || "/images/astera-logo.png";
+  const mobileLogoUrl = content.siteSettings?.mobileLogoUrl || logoUrl;
   const adminBarH = admin.isAdmin ? 26 : 0;
 
   const localizeInternalHref = (href: string) => localizeHref(href, currentLang);
@@ -58,6 +59,7 @@ export default function Header() {
           <OptimizedImage
             className="site-logo"
             src={logoUrl}
+            mobileSrc={mobileLogoUrl}
             alt="Astera Light"
             sizes="92px"
             noPlaceholder

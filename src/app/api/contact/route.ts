@@ -1,8 +1,9 @@
 import { Pool } from "pg";
+import { getPgSslConfig } from "@/lib/pg-config";
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
+  ssl: getPgSslConfig(process.env.DATABASE_URL),
   max: 5,
 });
 

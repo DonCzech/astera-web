@@ -46,21 +46,25 @@ function setPath<T>(obj: T, path: string, val: string): T {
   return root as T;
 }
 
+const NAMED_ENTITIES: Record<string, string> = {
+  nbsp: " ", amp: "&", lt: "<", gt: ">", quot: "\"", apos: "'",
+  hellip: "…", mdash: "—", ndash: "–",
+  lsquo: "‘", rsquo: "’", ldquo: "“", rdquo: "”",
+};
+
+/**
+ * Must stay pure — this runs during render on both sides. It used to parse via
+ * `document.createElement` in the browser and via regex on the server, so the
+ * two produced different text and every non-rich EditableText tripped React's
+ * hydration check.
+ */
 function htmlToText(html: string): string {
-  if (typeof window === "undefined") {
-    return html
-      .replace(/<br\s*\/?>/gi, "")
-      .replace(/<[^>]*>/g, "")
-      .replace(/&nbsp;/g, " ")
-      .replace(/&amp;/g, "&")
-      .replace(/&lt;/g, "<")
-      .replace(/&gt;/g, ">")
-      .replace(/&quot;/g, "\"")
-      .replace(/&#39;/g, "'");
-  }
-  const el = document.createElement("div");
-  el.innerHTML = html;
-  return el.textContent || "";
+  return html
+    .replace(/<br\s*\/?>/gi, "")
+    .replace(/<[^>]*>/g, "")
+    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(parseInt(code, 16)))
+    .replace(/&([a-z]+);/gi, (match, name) => NAMED_ENTITIES[name.toLowerCase()] ?? match);
 }
 
 const FONTS = ["Poppins", "Playfair Display", "Arial", "Georgia", "Verdana", "Times New Roman"];

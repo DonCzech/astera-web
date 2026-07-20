@@ -4,7 +4,9 @@ import { verifyToken, COOKIE_NAME } from "@/lib/auth";
 import { getAllContent, saveSection, getAllContentForLang, saveI18nSection, CONTENT_CACHE_TAG } from "@/lib/db";
 import { Lang } from "@/lib/i18n";
 
-const VALID_LANGS: Lang[] = ["cs", "en", "ua"];
+// The editor reads through this route and must always see committed state —
+// a cached response here is how stale images came back minutes after upload.
+export const dynamic = "force-dynamic";
 
 function parseLang(value: string | null): Lang {
   if (value === "en" || value === "ua") return value;

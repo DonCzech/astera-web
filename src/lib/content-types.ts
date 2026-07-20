@@ -12,7 +12,9 @@ export interface Testimonial {
 
 export interface ManifestCard {
   image: string;
+  mobileImage?: string;
   badge: string;
+  mobileBadge?: string;
   title: string;
   text: string;
   btnText: string;
@@ -27,6 +29,7 @@ export interface PickACardGameCard {
   gradient: string;
   symbol: string;
   image: string;
+  mobileImage?: string;
 }
 
 export interface FooterLink {
@@ -39,7 +42,7 @@ export interface SocialLink {
   href: string;
 }
 
-export type BlockType = "heading" | "text" | "image" | "button" | "banner" | "newsletter" | "spacer" | "hero-section" | "cards-grid" | "two-col" | "faq" | "contact-form";
+export type BlockType = "heading" | "text" | "image" | "button" | "banner" | "newsletter" | "spacer" | "hero-section" | "cards-grid" | "two-col" | "faq" | "contact-form" | "donation-qr";
 
 export interface PageBlock {
   id: string;
@@ -50,6 +53,7 @@ export interface PageBlock {
   color?: string;
   fontSize?: number;
   src?: string;
+  mobileSrc?: string;
   alt?: string;
   width?: string;
   href?: string;
@@ -57,6 +61,7 @@ export interface PageBlock {
   textColor?: string;
   size?: "sm" | "md" | "lg";
   bgImage?: string;
+  mobileBgImage?: string;
   subtitle?: string;
   ctaText?: string;
   ctaHref?: string;
@@ -64,10 +69,11 @@ export interface PageBlock {
   height?: number;
   // hero-section
   heroBgImage?: string;
+  mobileHeroBgImage?: string;
   heroOverlay?: string; // rgba color
   // cards-grid
   sectionTitle?: string;
-  cards?: Array<{ image: string; title: string; text: string; btnText: string; btnHref: string }>;
+  cards?: Array<{ image: string; mobileImage?: string; title: string; text: string; btnText: string; btnHref: string }>;
   // faq
   faqTitle?: string;
   faqSubtitle?: string;
@@ -75,10 +81,22 @@ export interface PageBlock {
   // two-col
   imageLeft?: boolean;
   twoColImage?: string;
+  mobileTwoColImage?: string;
   twoColTitle?: string;
   twoColText?: string;
   twoColBtnText?: string;
   twoColBtnHref?: string;
+  // donation-qr
+  qrEyebrow?: string;
+  qrTitle?: string;
+  qrText?: string;
+  qrPayload?: string;
+  qrAccountLabel?: string;
+  qrAccountNumber?: string;
+  qrBankCode?: string;
+  qrVariableSymbol?: string;
+  qrMessage?: string;
+  qrNote?: string;
 }
 
 export interface CustomPage {
@@ -88,9 +106,18 @@ export interface CustomPage {
   blocks: PageBlock[];
 }
 
+export interface RouteRedirect {
+  id: string;
+  from: string;
+  to: string;
+  target?: string;
+  createdAt?: string;
+}
+
 export interface SiteSettings {
   accentColor: string;
   logoUrl: string;
+  mobileLogoUrl?: string;
   metaTitle: string;
   metaDescription: string;
   customCss: string;
@@ -136,6 +163,7 @@ export interface AboutPageSection {
   heroTitle: string;
   heroSubtitle: string;
   heroImage: string;
+  heroMobileImage?: string;
   bio1: string;
   bio2: string;
   bio3: string;
@@ -205,6 +233,21 @@ export interface ServicesContent {
   items: ServiceItem[];
 }
 
+export interface CrystalBallContent {
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  image: string;
+  mobileImage: string;
+  ariaLabel: string;
+  inputPlaceholder: string;
+  buttonText: string;
+  loadingText: string;
+  consultLead: string;
+  consultLinkText: string;
+  answers: string[];
+}
+
 export interface SiteContent {
   header: {
     navItems: NavItem[];
@@ -229,6 +272,7 @@ export interface SiteContent {
     body: string;
     buttonText: string;
     image: string;
+    mobileImage?: string;
   };
   about: {
     title: string;
@@ -237,7 +281,9 @@ export interface SiteContent {
     buttonText: string;
     buttonHref: string;
     imageTop: string;
+    mobileImageTop?: string;
     imageBottom: string;
+    mobileImageBottom?: string;
   };
   testimonials: {
     sectionTitle: string;
@@ -253,6 +299,7 @@ export interface SiteContent {
     buttonText: string;
     buttonHref: string;
     image: string;
+    mobileImage?: string;
     gameTitle: string;
     gameIntro: string;
     gameInstructions: string;
@@ -265,6 +312,7 @@ export interface SiteContent {
     body: string;
     youtubeUrl: string;
   };
+  crystalBall: CrystalBallContent;
   footer: {
     newsletterTitle: string;
     copyright: string;
@@ -274,6 +322,7 @@ export interface SiteContent {
   aboutPage: AboutPageSection;
   servicesContent: ServicesContent;
   pages: CustomPage[];
+  routeRedirects: RouteRedirect[];
   siteSettings: SiteSettings;
   wheelOfFortune: WheelOfFortuneConfig;
   moonWidget: MoonWidgetConfig;
@@ -314,6 +363,7 @@ export const DEFAULT_CONTENT: SiteContent = {
     body: "Jednou měsíčně pošlu užitečné tipy, jemné vedení a praktické návody pro harmonii domova i vnitřního prostoru. Žádný spam, jen obsah, který má smysl.",
     buttonText: "Přihlásit se",
     image: "/images/astera-with-computer.jpg",
+    mobileImage: "",
   },
   about: {
     title: "O Asteře",
@@ -322,7 +372,9 @@ export const DEFAULT_CONTENT: SiteContent = {
     buttonText: "Více o mně",
     buttonHref: "/about",
     imageTop: "/images/astera-about-home.png",
+    mobileImageTop: "",
     imageBottom: "",
+    mobileImageBottom: "",
   },
   testimonials: {
     sectionTitle: "Co o mně říkají",
@@ -369,6 +421,7 @@ export const DEFAULT_CONTENT: SiteContent = {
     buttonText: "Vybrat kartu",
     buttonHref: `${SITE}/pick-a-card/`,
     image: "/images/astera-pick-card.png",
+    mobileImage: "",
     gameTitle: "Vyberte si svojí kartu",
     gameIntro: "Karty jsou starodávným nástrojem duchovního vedení. Položte si v duchu otázku, projděte kartami a vyberte tu, která vás osloví. Karta vám poskytne vhled do dalšího kroku.",
     gameInstructions: "Posuňte kartami nebo klikněte na šipky. Pak kliknutím vyberte svou kartu.",
@@ -411,6 +464,33 @@ export const DEFAULT_CONTENT: SiteContent = {
     title: "Měsíční intuitivní vhled",
     body: "Krátké vedení pro období, kdy potřebujete víc klidu, jasnosti a důvěry v další krok.",
     youtubeUrl: "https://www.youtube.com/embed/UcJoLcwuMP4",
+  },
+  crystalBall: {
+    eyebrow: "Křišťálová koule",
+    title: "Zeptej se křišťálové koule",
+    subtitle: "Nech křišťálovou kouli odhalit, co si teď žádá tvou pozornost…",
+    image: "/images/crystal-ball-astera.png",
+    mobileImage: "/images/crystal-ball-astera.png",
+    ariaLabel: "Klikni na kouli",
+    inputPlaceholder: "Napiš svou otázku…",
+    buttonText: "Zeptat se koule",
+    loadingText: "Koule naslouchá…",
+    consultLead: "Cítíš, že v poselství je něco víc?",
+    consultLinkText: "Konzultace ti pomůže porozumět tomu do hloubky.",
+    answers: [
+      "Záři mezi správnými lidmi.",
+      "Buď k sobě laskavá.",
+      "Naslouchej své intuici.",
+      "Malé změny pomohou.",
+      "Ukliď své finance.",
+      "Přehodnoť své vztahy.",
+      "Dopřej mysli klid.",
+      "Zpomal a odpočívej.",
+      "Otevři staré otázky.",
+      "Všímej si znamení.",
+      "Následuj svá přání.",
+      "Pusť staré věci.",
+    ],
   },
   footer: {
     newsletterTitle: "Získej jemné vedení a novinky od Astery.",
@@ -455,6 +535,7 @@ export const DEFAULT_CONTENT: SiteContent = {
     heroTitle: "About Astera-Light",
     heroSubtitle: "Intuitivní průvodkyně pro klid, energii a harmonii prostoru.",
     heroImage: "/images/astera-home-top.png",
+    heroMobileImage: "",
     bio1: "Astera-Light provází lidi chvílemi, kdy jejich domov, pracovní prostor nebo vnitřní nastavení potřebují znovu klid, lehkost a jasnost.",
     bio2: "Její práce propojuje citlivou intuici s praktickým přístupem. Věnuje se očistě prostor, energetické harmonizaci a jednoduchým postupům, které si klienti mohou dlouhodobě osvojit.",
     bio3: "Každý prostor vnímá individuálně a s respektem. Důraz klade na etiku, bezpečí a výsledek, který podporuje každodenní život, ne jen krátkodobý efekt.",
@@ -572,9 +653,11 @@ export const DEFAULT_CONTENT: SiteContent = {
     ],
   },
   pages: [],
+  routeRedirects: [],
   siteSettings: {
     accentColor: "#7c3bb2",
     logoUrl: "/images/astera-logo.png",
+    mobileLogoUrl: "",
     metaTitle: "Astera Light",
     metaDescription: "Experience Your Magic with Astera-Light",
     customCss: "",

@@ -4,42 +4,14 @@ import { useState } from "react";
 import OptimizedImage from "@/components/OptimizedImage";
 import { useContent } from "@/context/ContentContext";
 import { localizeHref } from "@/lib/i18n";
+import { DEFAULT_CONTENT } from "@/lib/content-types";
 
 type Phase = "idle" | "animating" | "revealed";
 
-const crystalBallCopy = {
-  cs: {
-    title: "Zeptej se křišťálové koule",
-    subtitle: "Nech křišťálovou kouli odhalit, co si teď žádá tvou pozornost…",
-  },
-  en: {
-    title: "Ask the crystal ball",
-    subtitle: "Let the crystal ball reveal what is asking for your attention right now…",
-  },
-  ua: {
-    title: "Запитай кришталеву кулю",
-    subtitle: "Нехай кришталева куля відкриє, що зараз потребує твоєї уваги…",
-  },
-};
-
-const answers = [
-  "Záři mezi správnými lidmi.",
-  "Buď k sobě laskavá.",
-  "Naslouchej své intuici.",
-  "Malé změny pomohou.",
-  "Ukliď své finance.",
-  "Přehodnoť své vztahy.",
-  "Dopřej mysli klid.",
-  "Zpomal a odpočívej.",
-  "Otevři staré otázky.",
-  "Všímej si znamení.",
-  "Následuj svá přání.",
-  "Pusť staré věci.",
-];
-
 export default function PickACard() {
-  const { currentLang } = useContent();
-  const copy = crystalBallCopy[currentLang] ?? crystalBallCopy.cs;
+  const { content, currentLang } = useContent();
+  const crystalBall = { ...DEFAULT_CONTENT.crystalBall, ...content.crystalBall };
+  const answers = crystalBall.answers?.length ? crystalBall.answers : DEFAULT_CONTENT.crystalBall.answers;
   const [phase, setPhase] = useState<Phase>("idle");
   const [answer, setAnswer] = useState<string | null>(null);
 
@@ -72,15 +44,16 @@ export default function PickACard() {
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === "Enter" && handleClick()}
-              aria-label="Klikni na kouli"
+              aria-label={crystalBall.ariaLabel}
             >
               {/* Inner mask: clips the white JPG background */}
               <div className="pac-mask">
                 <div className="pac-ring pac-ring-a" aria-hidden="true" />
                 <div className="pac-ring pac-ring-b" aria-hidden="true" />
                 <OptimizedImage
-                  src="/images/crystal-ball-astera.png"
-                  alt="Křišťálová koule"
+                  src={crystalBall.image}
+                  mobileSrc={crystalBall.mobileImage}
+                  alt={crystalBall.eyebrow}
                   className="pac-img"
                   sizes="(max-width: 600px) 98vw, 660px"
                   loading="lazy"
@@ -98,9 +71,9 @@ export default function PickACard() {
             {phase === "idle" && (
               <>
                 <span className="pac-line" />
-                <h2 className="pac-title">{copy.title}</h2>
+                <h2 className="pac-title">{crystalBall.title}</h2>
                 <p className="pac-subtitle">
-                  {copy.subtitle}
+                  {crystalBall.subtitle}
                 </p>
               </>
             )}
@@ -116,9 +89,9 @@ export default function PickACard() {
                 <span className="pac-line" />
                 <p className="pac-answer">{answer}</p>
                 <p className="pac-consult">
-                  Cítíš, že v poselství je něco víc?{" "}
+                  {crystalBall.consultLead}{" "}
                   <Link href={localizeHref("/sluzby", currentLang)} className="pac-consult-link">
-                    Konzultace ti pomůže porozumět tomu do hloubky.
+                    {crystalBall.consultLinkText}
                   </Link>
                 </p>
               </div>

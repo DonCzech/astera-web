@@ -22,6 +22,25 @@ import LiveEditorLoader from "@/components/admin/LiveEditorLoader";
 import CustomStyles from "@/components/CustomStyles";
 import { SITE_LANGUAGE, SITE_LOCALE, SITE_NAME, SITE_URL } from "@/lib/seo";
 import { getCachedContent, getCachedContentForLang } from "@/lib/db";
+import { OPTIMIZED_IMAGE_MAP } from "@/lib/optimized-image-map";
+
+const HERO_PRELOAD_WIDTHS = [480, 828, 1600];
+
+/**
+ * Server-safe srcset for the hero preload. `getOptimizedImage` lives in a
+ * "use client" module and cannot be called from a server layout.
+ */
+function heroSrcSet(src: string | undefined): string | null {
+  if (!src || src.startsWith("data:") || src.endsWith(".svg")) return null;
+  const mapped = OPTIMIZED_IMAGE_MAP[src];
+  if (mapped?.webpSrcSet) return mapped.webpSrcSet;
+  const isUpload = src.startsWith("/uploads/") || (src.startsWith("http") && src.includes("/astera-upload-"));
+  if (!isUpload) return null;
+  const base = src.startsWith("/uploads/")
+    ? `/optimized${src.replace(/\.(png|jpe?g|webp)$/i, "")}`
+    : src.replace(/\.(png|jpe?g|webp)(\?.*)?$/i, "");
+  return HERO_PRELOAD_WIDTHS.map(w => `${base}-${w}w.webp ${w}w`).join(", ");
+}
 
 export const revalidate = 3600;
 
@@ -96,6 +115,9 @@ export default async function RootLayout({
     getCachedContentForLang("en"),
     getCachedContentForLang("ua"),
   ]);
+  // Derived from the live hero image. This used to be a hardcoded srcset, so
+  // every page preloaded an image the site had stopped using months ago.
+  const heroPreload = heroSrcSet(cs.hero?.backgroundImage);
   return (
     <html lang="cs" className={`${playfair.variable} ${poppins.variable}`}>
       <head>
@@ -105,14 +127,16 @@ export default async function RootLayout({
         />
         <link rel="preconnect" href="https://qmioor33ehuegiuc.public.blob.vercel-storage.com" />
         <link rel="preload" as="image" href="/optimized/images/astera-logo.webp" type="image/webp" />
-        <link
-          rel="preload"
-          as="image"
-          imageSrcSet="/optimized/uploads/astera-upload-1777542736772-d2souok25x7-331w.webp 331w, /optimized/uploads/astera-upload-1777542736772-d2souok25x7-480w.webp 480w, /optimized/uploads/astera-upload-1777542736772-d2souok25x7-662w.webp 662w, /optimized/uploads/astera-upload-1777542736772-d2souok25x7-828w.webp 828w, /optimized/uploads/astera-upload-1777542736772-d2souok25x7-1200w.webp 1200w, /optimized/uploads/astera-upload-1777542736772-d2souok25x7-1600w.webp 1600w, /optimized/uploads/astera-upload-1777542736772-d2souok25x7-1787w.webp 1787w"
-          imageSizes="100vw"
-          type="image/webp"
-          fetchPriority="high"
-        />
+        {heroPreload && (
+          <link
+            rel="preload"
+            as="image"
+            imageSrcSet={heroPreload}
+            imageSizes="100vw"
+            type="image/webp"
+            fetchPriority="high"
+          />
+        )}
         <Script id="gtag-consent-init" strategy="beforeInteractive">
           {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('consent','default',{analytics_storage:'granted',ad_storage:'denied',wait_for_update:500});`}
         </Script>

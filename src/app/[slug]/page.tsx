@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { getAllContent } from "@/lib/db";
 import SeoLandingPage from "@/components/SeoLandingPage";
+import { renderRouteAliasTarget } from "@/components/RouteAliasRenderer";
+import { getEffectiveRouteSlug } from "@/lib/route-overrides.server";
+import { resolveRouteRedirect } from "@/lib/route-overrides";
 import { absoluteUrl, findSeoPage, SEO_PAGES, SITE_NAME, SITE_URL } from "@/lib/seo";
 import DynamicPageClient from "./DynamicPageClient";
 
@@ -38,8 +42,9 @@ export async function generateMetadata({
 
   try {
     const content = await getAllContent();
+    const { effectiveSlug } = getEffectiveRouteSlug(content, `/${slug}`);
     const pages = (content.pages ?? []) as Array<{ slug: string; title?: string; description?: string }>;
-    const page = pages.find((p) => p.slug === slug);
+    const page = pages.find((p) => p.slug === effectiveSlug);
 
     if (!page) return {};
 
@@ -78,6 +83,17 @@ export default async function DynamicPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const content = await getAllContent();
+  const destination = resolveRouteRedirect(content.routeRedirects, `/${slug}`);
+  if (destination) redirect(destination);
+
+  const { aliasTarget, effectiveSlug } = getEffectiveRouteSlug(content, `/${slug}`);
+  if (aliasTarget) {
+    const staticPage = renderRouteAliasTarget(aliasTarget);
+    if (staticPage) return staticPage;
+    return <DynamicPageClient params={Promise.resolve({ slug: effectiveSlug })} />;
+  }
+
   const seoPage = findSeoPage(slug);
   if (seoPage) return <SeoLandingPage page={seoPage} />;
 

@@ -16,6 +16,16 @@ const nextConfig: NextConfig = {
         destination: "https://shop.asteralight.cz",
         permanent: true,
       },
+      {
+        source: "/:lang(en|ua|cs)/e-shop",
+        destination: "https://shop.asteralight.cz",
+        permanent: true,
+      },
+      {
+        source: "/:lang(en|ua|cs)/shop",
+        destination: "https://shop.asteralight.cz",
+        permanent: true,
+      },
     ];
   },
   images: {
