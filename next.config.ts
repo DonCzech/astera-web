@@ -17,12 +17,22 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
-        source: "/:lang(en|ua|cs)/e-shop",
+        source: "/:lang(en|ua)/e-shop",
+        destination: "https://shop.asteralight.cz/:lang",
+        permanent: true,
+      },
+      {
+        source: "/:lang(en|ua)/shop",
+        destination: "https://shop.asteralight.cz/:lang",
+        permanent: true,
+      },
+      {
+        source: "/cs/e-shop",
         destination: "https://shop.asteralight.cz",
         permanent: true,
       },
       {
-        source: "/:lang(en|ua|cs)/shop",
+        source: "/cs/shop",
         destination: "https://shop.asteralight.cz",
         permanent: true,
       },
