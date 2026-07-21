@@ -44,6 +44,7 @@ export function detectLang(pathname: string): Lang {
 
 /** Strip the language prefix from a pathname, returning the base path */
 export function stripLangPrefix(pathname: string): string {
+  if (pathname === "/index" || pathname === "/index.html") return "/";
   if (pathname === "/en" || pathname === "/ua" || pathname === "/cs") return "/";
   if (pathname.startsWith("/en/")) return pathname.slice(3);
   if (pathname.startsWith("/ua/")) return pathname.slice(3);
@@ -61,7 +62,9 @@ export function addLangPrefix(pathname: string, lang: Lang): string {
 }
 
 export function localizePath(pathname: string, lang: Lang): string {
-  const base = stripLangPrefix(pathname).split(/[?#]/)[0] || "/";
+  const stripped = stripLangPrefix(pathname).split(/[?#]/)[0] || "/";
+  // Next.js prerender quirk: bare-root routes can surface as "/index" in usePathname()
+  const base = stripped === "/index" || stripped === "/index.html" ? "/" : stripped;
   if (base === "/") return addLangPrefix("/", lang);
 
   const parts = base.replace(/^\/+/, "").split("/");
